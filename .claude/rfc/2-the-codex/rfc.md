@@ -127,8 +127,8 @@ Total estimated effort: **{N} sessions**.
 
 | Milestone                         | Description                                                                           | Est. effort | GitHub Issue |
 | :-------------------------------- | :------------------------------------------------------------------------------------ | :---------- | :----------- |
-| M1 — Foundation & Deployment      | Nextra scaffold, LaTeX pipeline, Docker Compose + Nginx, CI build/Lighthouse guards   | {N}         | #{issue}     |
-| M2 — Roman Theme & Search Polish  | Custom theme override, FlexSearch tuning, mobile LaTeX scroll containers, QA pass     | {N}         | #{issue}     |
+| M1 — Foundation & Deployment      | Nextra scaffold, LaTeX pipeline, Docker Compose + Nginx, CI build/Lighthouse guards   | 2 FTE         | #2     |
+| M2 — Roman Theme & Search Polish  | Custom theme override, FlexSearch tuning, mobile LaTeX scroll containers, QA pass     | 2 FTE         | #3     |
 
 ### Recommended Order
 

@@ -20,7 +20,7 @@ TASK-1 ──► TASK-2
 
 ## TASK-1 — Foundation & Deployment
 
-**GitHub Issue:** TBD
+**GitHub Issue:** [Foundation & Deployment](https://github.com/Volscente/aerarium-saturni/issues/2)
 **Effort estimate:** 2 FTE-days
 
 ### Scope
@@ -48,7 +48,7 @@ The Next.js project is initialized with Nextra's `nextra` wrapper in `next.confi
 
 ## TASK-2 — Roman Theme & Search Polish
 
-**GitHub Issue:** TBD
+**GitHub Issue:** [Roman Theme & Search Polish](https://github.com/Volscente/aerarium-saturni/issues/3)
 **Effort estimate:** 2 FTE-days
 
 ### Scope

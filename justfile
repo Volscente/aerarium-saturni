@@ -18,3 +18,13 @@ help:
         echo "Error: Command must be run from the root directory: {{ ROOT_DIR }}"; \
         exit 1; \
     fi
+
+# Start The Codex dev server and open it in the browser
+codex-dev: check_root
+    #!/usr/bin/env bash
+    cd "{{ ROOT_DIR }}/the-codex"
+    if [ ! -d node_modules ]; then
+        npm install
+    fi
+    open http://localhost:3000 &
+    npm run dev

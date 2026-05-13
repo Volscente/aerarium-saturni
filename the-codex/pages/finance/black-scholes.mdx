@@ -1,0 +1,50 @@
+# Black-Scholes Model
+
+The **Black-Scholes model** (Black & Scholes, 1973) provides a closed-form solution for pricing European-style options on non-dividend-paying assets. It is the foundational reference model for options markets and underlies many extensions used in practice.
+
+## The formula
+
+The fair value of a European **call** option is:
+
+$$C = S_0 \, N(d_1) - K e^{-rT} N(d_2)$$
+
+The fair value of a European **put** option (via put-call parity):
+
+$$P = K e^{-rT} N(-d_2) - S_0 \, N(-d_1)$$
+
+where the auxiliary terms $d_1$ and $d_2$ are:
+
+$$d_1 = \frac{\ln(S_0 / K) + \bigl(r + \tfrac{1}{2}\sigma^2\bigr)T}{\sigma \sqrt{T}}$$
+
+$$d_2 = d_1 - \sigma \sqrt{T}$$
+
+## Variables
+
+| Symbol       | Description                                              |
+| :----------- | :------------------------------------------------------- |
+| $S_0$        | Current spot price of the underlying asset               |
+| $K$          | Strike price of the option                               |
+| $r$          | Continuously compounded risk-free interest rate          |
+| $T$          | Time to expiration in years                              |
+| $\sigma$     | Annualised volatility of the underlying asset            |
+| $N(\cdot)$   | Standard normal cumulative distribution function         |
+
+## Assumptions
+
+The Black-Scholes model rests on several idealising assumptions:
+
+1. The underlying follows a **geometric Brownian motion** with constant drift $\mu$ and volatility $\sigma$.
+2. **No dividends** are paid during the life of the option.
+3. **Frictionless markets** — no transaction costs, taxes, or short-selling restrictions.
+4. The **risk-free rate** $r$ is constant and the same for all maturities.
+5. The option is **European** — it can only be exercised at expiry.
+
+## Interpretation
+
+The term $N(d_2)$ is the risk-neutral probability that the option expires in the money ($S_T > K$). The term $N(d_1)$ is the option's **delta** — the sensitivity of the call price $C$ to a unit change in the spot price $S_0$.
+
+The call price decomposes as:
+
+$$C = \underbrace{S_0 \, N(d_1)}_{\text{asset leg}} - \underbrace{K e^{-rT} N(d_2)}_{\text{strike leg}}$$
+
+The **asset leg** is the present value of receiving the asset conditional on exercise; the **strike leg** is the present value of paying the strike conditional on exercise.

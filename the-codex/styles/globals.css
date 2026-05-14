@@ -1,11 +1,83 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 @import 'katex/dist/katex.min.css';
+
+@layer base {
+  /* Roman palette mapped onto Nextra's CSS custom property surface */
+  :root {
+    --nextra-primary-hue: 18;
+    --nextra-primary-saturation: 58%;
+    color-scheme: dark;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    background-color: #1A1A2E;
+    color: #F5F0E8;
+  }
+
+  /* Nextra sidebar, navbar, and content area background */
+  .nextra-sidebar-container,
+  .nextra-nav-container,
+  nav.nextra-nav-container-blur {
+    background-color: #1A1A2E !important;
+    border-color: #8B8680 !important;
+  }
+
+  /* Sidebar item colors */
+  .nextra-sidebar li a,
+  .nextra-sidebar li button {
+    color: #F5F0E8;
+  }
+
+  .nextra-sidebar li a:hover,
+  .nextra-sidebar li button:hover,
+  .nextra-sidebar li a.active {
+    color: #C0553A;
+    background-color: rgba(192, 85, 58, 0.1);
+  }
+
+  /* Content area */
+  article {
+    color: #F5F0E8;
+  }
+
+  /* Headings */
+  h1, h2, h3, h4, h5, h6 {
+    color: #B8860B;
+    font-family: Georgia, Cambria, 'Times New Roman', serif;
+  }
+
+  /* Links */
+  a:not(.nextra-nav-link):not(.nextra-sidebar a) {
+    color: #C0553A;
+  }
+
+  a:not(.nextra-nav-link):not(.nextra-sidebar a):hover {
+    color: #B8860B;
+  }
+
+  /* Code blocks background */
+  pre, code {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid #8B8680;
+  }
+
+  /* Table of contents */
+  .nextra-toc a {
+    color: #8B8680;
+  }
+
+  .nextra-toc a:hover,
+  .nextra-toc a.active {
+    color: #C0553A;
+  }
+}
 
 *,
 *::before,
 *::after {
   box-sizing: border-box;
-}
-
-html {
-  -webkit-text-size-adjust: 100%;
 }

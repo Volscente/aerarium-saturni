@@ -8,7 +8,7 @@ The Codex is the standalone documentation service for the Aerarium Saturni platf
 
 - **`next.config.mjs`** — Nextra wrapper with the remark-math → rehype-katex plugin chain and standalone output mode
 - **`pages/`** — MDX content tree: `index.mdx` (landing), `finance/black-scholes.mdx` (sample financial article)
-- **`theme/config.tsx`** — Nextra theme configuration (logo, project link, footer)
+- **`theme/config.tsx`** — Nextra theme configuration (logo, project link, footer, dark mode toggle)
 - **`theme/index.tsx`** — Custom theme entry point stub; will become the full Roman-aesthetic override in TASK-2
 - **`styles/globals.css`** — Global stylesheet including the KaTeX CSS import
 - **`Dockerfile`** — Multi-stage Docker build: builder stage produces `.next/standalone`; runner stage is minimal
@@ -37,6 +37,8 @@ The Codex is the standalone documentation service for the Aerarium Saturni platf
 - Documentation builds must complete within 3 minutes; enforced by `timeout-minutes: 3` on the CI build step.
 - All LaTeX is pre-rendered at build time — no KaTeX JS bundle is shipped to the browser.
 - No standard Nextra styling may be visible in the final site (enforced in TASK-2 theme override).
+- Search requires a minimum of 2 characters before querying the index; supports full substring matching via `tokenize: 'full'`.
+- The search index file is fetched from `/_next/static/chunks/nextra-data-en-US.json`; the locale key `en-US` matches Nextra's `DEFAULT_LOCALE` used when no i18n config is present.
 
 ## Out of scope
 
@@ -70,6 +72,12 @@ docker compose up --build -d
 ---
 
 ### Changelog
+
+#### 2026-05-14
+
+- Light/dark mode toggle added to the Navbar (Sun/Moon icon); preference persisted in `localStorage` under `the-codex-theme`; default is dark
+- Fixed search locale mismatch: component now uses `en-US` to match Nextra's `DEFAULT_LOCALE`, resolving the silent 404 on the search index file
+- Search now requires a minimum of 2 characters before querying; full substring matching confirmed via `tokenize: 'full'`
 
 #### 2026-05-12
 

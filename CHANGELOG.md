@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.3] - 2026-05-13
+
+### Added
+
+- **The Codex / Theme**: `theme/components/Navbar.tsx` — Roman-aesthetic navbar with `BookOpen` and `Github` Lucide icons; injected via `DocsThemeConfig.navbar.component`.
+- **The Codex / Theme**: `theme/components/Sidebar.tsx` — `SidebarTitle` component with `Folder`, `FileText`, and `ChevronRight` Lucide icons; injected via `DocsThemeConfig.sidebar.titleComponent`.
+- **The Codex / Theme**: `theme/components/Footer.tsx` — Roman footer with `Scale` Lucide icon and year auto-fill; injected via `DocsThemeConfig.footer.component`.
+- **The Codex / Theme**: `theme/components/CodeBlock.tsx` — Styled `<pre>` wrapper with copy-to-clipboard button using `Copy`/`Check` Lucide icons; injected via `DocsThemeConfig.components.pre`.
+- **The Codex / Theme**: `theme/components/Search.tsx` — Custom FlexSearch component fetching `nextra-data-${locale}.json` directly and building a Document index with 2× title-field boost for h1/h2 heading prioritization; injected via `DocsThemeConfig.search.component`. Includes keyboard navigation (ArrowUp/Down, Enter, Escape) and 150 ms debounce.
+- **The Codex / Theme**: `theme/index.tsx` — Full `Layout` component wrapping `nextra-theme-docs`'s Layout; applies Roman palette Tailwind classes to the outer page shell.
+- **The Codex / Styles**: `tailwind.config.js` — Tailwind JIT config with Roman color palette (`obsidian`, `parchment`, `terracotta`, `gold`, `stone`); content paths cover project source only (`theme/`, `pages/`, `rehype/`).
+- **The Codex / Styles**: `postcss.config.js` — PostCSS config enabling Tailwind and Autoprefixer.
+- **The Codex / Styles**: Updated `styles/globals.css` — Tailwind directives, Roman CSS custom properties, `@layer base` overrides for Nextra sidebar, navbar, headings, links, and TOC surfaces.
+- **The Codex / Rehype**: `rehype/katexOverflow.ts` — Typed rehype plugin that wraps every `.katex-display` div in an `overflow-x-auto` scroll container, preventing LaTeX overflow on narrow viewports. Registered inline in `next.config.mjs` after `rehype-katex`.
+- **The Codex / Tests**: `tests/mobile-screenshot.spec.ts` — Playwright tests at 375 × 812 px: no-horizontal-overflow assertion, `overflow-x-auto` wrapper verification for all `.katex-display` elements, and visual snapshot comparison.
+- **The Codex / Tests**: `playwright.config.ts` — Playwright config with iPhone SE device, `maxDiffPixelRatio: 0.02` tolerance, and `webServer` for `next start`.
+- **Infrastructure**: Updated `.github/workflows/ci.yml` — Added `playwright` job (installs Chromium, runs mobile screenshot tests, uploads HTML report). Added `update-snapshots` workflow-dispatch job for generating Linux baseline screenshots.
+
+### Changed
+
+- **The Codex**: Updated `theme/config.tsx` — Replaced minimal stub config with full `DocsThemeConfig`: Lucide icons for project/chat slots, forced dark mode (`forcedTheme: 'dark'`), `primaryHue: 18` (terracotta), all component override slots wired.
+- **The Codex**: Updated `next.config.mjs` — Added `katexOverflow` rehype plugin (inlined from `rehype/katexOverflow.ts`) after `rehype-katex` in the MDX plugin pipeline.
+- **The Codex**: Bumped `package.json` version to `0.0.3`; added `tailwindcss`, `autoprefixer`, `postcss`, `@tailwindcss/typography`, `lucide-react`, and `@playwright/test` to devDependencies.
+
 ## [0.0.2] - 2026-05-12
 
 ### Added

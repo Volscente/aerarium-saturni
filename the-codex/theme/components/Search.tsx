@@ -239,7 +239,7 @@ export function Search({
 
   return (
     <div className={['relative', className].filter(Boolean).join(' ')}>
-      <div className="flex items-center rounded-md border border-roman-stone/60 bg-roman-obsidian/80 px-3 py-1.5 focus-within:border-roman-terracotta transition-colors">
+      <div className="flex items-center rounded-md border border-roman-stone/60 bg-roman-parchment/90 dark:bg-roman-obsidian/80 px-3 py-1.5 focus-within:border-roman-terracotta transition-colors">
         <SearchIcon className="mr-2 h-4 w-4 flex-shrink-0 text-roman-stone" />
         <input
           ref={inputRef}
@@ -253,7 +253,7 @@ export function Search({
           onBlur={() => setTimeout(() => setOpen(false), 200)}
           onKeyDown={handleKeyDown}
           placeholder="Search The Codex…"
-          className="w-full bg-transparent text-sm text-roman-parchment placeholder:text-roman-stone outline-none"
+          className="w-full bg-transparent text-sm text-roman-obsidian dark:text-roman-parchment placeholder:text-roman-stone outline-none"
           aria-label="Search documentation"
           aria-autocomplete="list"
           aria-controls="search-results"
@@ -262,7 +262,7 @@ export function Search({
         {query && (
           <button
             onClick={() => { setQuery(''); setResults([]); inputRef.current?.focus() }}
-            className="ml-1 text-roman-stone hover:text-roman-parchment"
+            className="ml-1 text-roman-stone hover:text-roman-terracotta"
             aria-label="Clear search"
           >
             <X className="h-3.5 w-3.5" />
@@ -275,7 +275,7 @@ export function Search({
           id="search-results"
           ref={listRef}
           role="listbox"
-          className="absolute left-0 z-50 mt-1 max-h-80 w-96 overflow-y-auto rounded-md border border-roman-stone/50 bg-roman-obsidian py-1 shadow-lg"
+          className="absolute left-0 z-50 mt-1 max-h-80 w-96 overflow-y-auto rounded-md border border-roman-stone/50 bg-roman-parchment dark:bg-roman-obsidian py-1 shadow-lg"
         >
           {loading && (
             <li className="px-4 py-3 text-sm text-roman-stone">Searching…</li>
@@ -300,8 +300,8 @@ export function Search({
                 className={[
                   'cursor-pointer px-4 py-2.5 transition-colors',
                   i === active
-                    ? 'bg-roman-terracotta/20 text-roman-parchment'
-                    : 'text-roman-parchment/80 hover:bg-roman-stone/10',
+                    ? 'bg-roman-terracotta/20 text-roman-obsidian dark:text-roman-parchment'
+                    : 'text-roman-obsidian/80 dark:text-roman-parchment/80 hover:bg-roman-stone/10',
                 ].join(' ')}
               >
                 <p className="text-sm font-medium text-roman-gold">{result.title}</p>

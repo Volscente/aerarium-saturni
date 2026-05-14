@@ -43,11 +43,10 @@ const config: DocsThemeConfig = {
 
   nextThemes: {
     defaultTheme: 'dark',
-    forcedTheme: 'dark',
     storageKey: 'the-codex-theme',
   },
 
-  darkMode: false,
+  darkMode: true,
 
   primaryHue: { light: 18, dark: 18 },
   primarySaturation: { light: 58, dark: 58 },

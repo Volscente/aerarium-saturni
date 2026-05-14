@@ -9,26 +9,47 @@
   :root {
     --nextra-primary-hue: 18;
     --nextra-primary-saturation: 58%;
-    color-scheme: dark;
   }
 
+  /* Light mode base */
   html {
     -webkit-text-size-adjust: 100%;
+    background-color: #F5F0E8;
+    color: #1A1A2E;
+  }
+
+  /* Dark mode base */
+  html.dark {
+    color-scheme: dark;
     background-color: #1A1A2E;
     color: #F5F0E8;
   }
 
-  /* Nextra sidebar, navbar, and content area background */
+  /* Nextra sidebar and nav — light mode */
   .nextra-sidebar-container,
   .nextra-nav-container,
   nav.nextra-nav-container-blur {
+    background-color: #EDE8E0 !important;
+    border-color: #8B8680 !important;
+  }
+
+  /* Nextra sidebar and nav — dark mode */
+  .dark .nextra-sidebar-container,
+  .dark .nextra-nav-container,
+  .dark nav.nextra-nav-container-blur {
     background-color: #1A1A2E !important;
     border-color: #8B8680 !important;
   }
 
-  /* Sidebar item colors */
+  /* Sidebar item colors — light mode */
   .nextra-sidebar li a,
   .nextra-sidebar li button {
+    color: #1A1A2E;
+  }
+
+  /* Sidebar item colors — dark mode */
+  .dark .nextra-sidebar li a,
+  .dark .nextra-sidebar li button {
     color: #F5F0E8;
   }
 
@@ -39,12 +60,17 @@
     background-color: rgba(192, 85, 58, 0.1);
   }
 
-  /* Content area */
+  /* Content area — light mode */
   article {
+    color: #1A1A2E;
+  }
+
+  /* Content area — dark mode */
+  .dark article {
     color: #F5F0E8;
   }
 
-  /* Headings */
+  /* Headings — gold works on both backgrounds */
   h1, h2, h3, h4, h5, h6 {
     color: #B8860B;
     font-family: Georgia, Cambria, 'Times New Roman', serif;
@@ -59,10 +85,16 @@
     color: #B8860B;
   }
 
-  /* Code blocks background */
+  /* Code blocks — light mode */
   pre, code {
-    background-color: rgba(255, 255, 255, 0.05) !important;
+    background-color: rgba(0, 0, 0, 0.05) !important;
     border: 1px solid #8B8680;
+  }
+
+  /* Code blocks — dark mode */
+  .dark pre,
+  .dark code {
+    background-color: rgba(255, 255, 255, 0.05) !important;
   }
 
   /* Table of contents */

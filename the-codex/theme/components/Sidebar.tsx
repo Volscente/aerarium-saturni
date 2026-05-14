@@ -19,7 +19,7 @@ export function SidebarTitle({ title, type }: SidebarTitleProps) {
         : FileText
 
   return (
-    <span className="flex items-center gap-2 text-roman-parchment group-hover:text-roman-terracotta">
+    <span className="flex items-center gap-2 text-roman-obsidian dark:text-roman-parchment group-hover:text-roman-terracotta">
       {Icon && (
         <Icon className="h-3.5 w-3.5 flex-shrink-0 text-roman-stone group-hover:text-roman-terracotta transition-colors" />
       )}

@@ -14,7 +14,7 @@ import DocsLayout from 'nextra-theme-docs'
  */
 export default function Layout({ children, ...props }: NextraThemeLayoutProps) {
   return (
-    <div className="bg-roman-obsidian text-roman-parchment min-h-screen font-roman">
+    <div className="bg-roman-parchment text-roman-obsidian dark:bg-roman-obsidian dark:text-roman-parchment min-h-screen font-roman">
       <DocsLayout {...props}>{children}</DocsLayout>
     </div>
   )

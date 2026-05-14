@@ -27,7 +27,7 @@ export function CodeBlock({ children, className, ...props }: CodeBlockProps) {
       <pre
         {...props}
         className={[
-          'overflow-x-auto rounded-md border border-roman-stone/50 bg-roman-obsidian/80 p-4 text-sm text-roman-parchment',
+          'overflow-x-auto rounded-md border border-roman-stone/50 bg-roman-parchment/90 dark:bg-roman-obsidian/80 p-4 text-sm text-roman-obsidian dark:text-roman-parchment',
           className,
         ]
           .filter(Boolean)
@@ -38,7 +38,7 @@ export function CodeBlock({ children, className, ...props }: CodeBlockProps) {
       <button
         onClick={handleCopy}
         aria-label="Copy code"
-        className="absolute right-2 top-2 rounded p-1.5 text-roman-stone opacity-0 transition-opacity hover:text-roman-parchment group-hover:opacity-100 focus:opacity-100"
+        className="absolute right-2 top-2 rounded p-1.5 text-roman-stone opacity-0 transition-opacity hover:text-roman-terracotta group-hover:opacity-100 focus:opacity-100"
       >
         {copied ? (
           <Check className="h-4 w-4 text-roman-terracotta" />

@@ -12,6 +12,7 @@
 | Date       | Status | Note |
 | :--------- | :----- | :--- |
 | 2026-05-09 | Draft  |      |
+| 2026-05-14 | Active | Light/dark toggle shipped; search locale bug fixed; min-2-char threshold and substring search confirmed |
 
 ### Table of contents
 
@@ -44,7 +45,7 @@ The Aerarium Saturni platform lacks a centralized, authoritative source for fina
 - **Build a production-ready MDX documentation site**: Deliver a Nextra-powered documentation platform where financial analysts can author articles in MDX with full component and LaTeX formula support.
 - **Enable pixel-perfect KaTeX rendering**: Integrate `remark-math` and `rehype-katex` so all mathematical formulas render via KaTeX with zero overflow or clipping on any viewport size.
 - **Implement a bespoke Roman-aesthetic theme**: Fully override Nextra's default styling using the Aerarium Saturni color palette, Tailwind CSS, and Lucide React icons — leaving no generic Nextra UI visible.
-- **Deliver sub-200ms search**: Configure FlexSearch with header-prioritized indexing so that financial terms return results in under 200 ms without any backend dependency.
+- **Deliver sub-200ms search**: Configure FlexSearch with header-prioritized indexing so that financial terms return results in under 200 ms without any backend dependency. Search activates after 2 characters and supports full substring matching (`tokenize: 'full'`).
 - **Containerize for one-command deployment**: Package the documentation service in Docker Compose behind Nginx, supporting both subdomain (`docs.aerariumsaturni.com`) and path-based (`/wiki`) routing.
 
 ## Scope {#scope}
@@ -174,6 +175,7 @@ A:
 | **LaTeX overflow on narrow screens**: Long formulas may break the Roman-style layout on mobile viewports                  | Medium     | Wrap all block LaTeX in CSS scroll-container divs; add mobile-viewport screenshot tests to CI to catch regressions automatically.                      |
 | **Nextra major version breaking changes**: Nextra is actively developed; a major version bump could break the custom theme | Low        | Pin Nextra to a minor version range in `package.json`; review the Nextra changelog as part of each dependency update cycle before upgrading.           |
 | **Nginx path-based routing complexity**: Serving at `/wiki` requires consistent `basePath` in all internal links and assets | Low–Medium | Prefer subdomain routing as the primary deployment topology; validate path-based routing in a staging environment before enabling it in production.     |
+| **Search locale mismatch**: Custom search component defaulted `locale` to `'en'` but Nextra's webpack plugin uses `DEFAULT_LOCALE = 'en-US'`, producing `nextra-data-en-US.json` — a silent 404 | **RESOLVED** | Default `router.locale` to `'en-US'` in `Search.tsx`. Added 2-character minimum before querying; substring search confirmed via `tokenize: 'full'`. |
 
 ## References {#references}
 

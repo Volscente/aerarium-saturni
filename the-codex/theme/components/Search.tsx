@@ -31,6 +31,8 @@ type SectionDoc = {
   display?: string
 }
 
+const MIN_QUERY_LENGTH = 2
+
 const indexCache: Record<string, SearchIndexes> = {}
 const loadingPromises = new Map<string, Promise<void>>()
 
@@ -154,7 +156,8 @@ export function Search({
   directories: Item[]
 }) {
   const router = useRouter()
-  const { locale = 'en', basePath } = router
+  // Nextra generates the search index with DEFAULT_LOCALE = 'en-US' when no i18n is configured.
+  const { locale = 'en-US', basePath } = router
 
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<SearchResult[]>([])
@@ -166,7 +169,7 @@ export function Search({
 
   const doSearch = useCallback(
     async (q: string) => {
-      if (!q.trim()) {
+      if (q.trim().length < MIN_QUERY_LENGTH) {
         setResults([])
         return
       }
@@ -270,7 +273,7 @@ export function Search({
         )}
       </div>
 
-      {open && query.trim() && (
+      {open && query.trim().length >= MIN_QUERY_LENGTH && (
         <ul
           id="search-results"
           ref={listRef}

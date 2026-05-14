@@ -145,11 +145,15 @@ export default function Layout({ children, pageOpts, themeConfig }: NextraThemeL
 export function Search({ className, directories }: { className?: string; directories: Item[] }): JSX.Element
 // Custom search component injected via DocsThemeConfig.search.component.
 //
-// On first keystroke: fetches /_next/static/chunks/nextra-data-${locale}.json
-// (same endpoint as Nextra's built-in search), builds two FlexSearch.Document
-// indexes — pageIndex and sectionIndex — with a `boost` function that returns
-// 2 for the title field and 1 for content, prioritising h1/h2 headings.
-// Subsequent searches reuse cached indexes.
+// Activates after MIN_QUERY_LENGTH (2) characters are typed to suppress
+// spurious single-character lookups.
+//
+// On first qualifying keystroke: fetches /_next/static/chunks/nextra-data-en-US.json
+// (locale key 'en-US' matches Nextra's DEFAULT_LOCALE when no i18n config is present).
+// Builds two FlexSearch.Document indexes — pageIndex and sectionIndex — with a
+// `boost` function that returns 2 for the title field and 1 for content,
+// prioritising h1/h2 headings. Subsequent searches reuse cached indexes.
+// tokenize: 'full' enables full substring matching (e.g. "form" matches "formula").
 //
 // FlexSearch is already bundled by nextra-theme-docs; import it directly:
 //   import FlexSearch from 'flexsearch'  (no entry in package.json needed)
@@ -242,3 +246,4 @@ interface CustomIndexOptions {
 - [x] **Nextra v2 search API surface — RESOLVED:** The `search` key in `DocsThemeConfig` is validated by a strict Zod schema (`index.d.mts`) and only accepts UI-layer props (`component`, `emptyResult`, `error`, `loading`, `placeholder`). **FlexSearch index options are not exposed** — the full index configuration is hardcoded inside `nextra-theme-docs/dist/index.js` in the `loadIndexesImpl()` closure. The existing hardcoded config already uses `tokenize: "full"`, `resolution: 9`, `depth: 2`, bidirectional context — no further tuning is reachable without forking. **Required change to spec:** Replace the "FlexSearch configuration" deliverable with a custom search component injected via `search.component` in `DocsThemeConfig`. The component receives `directories: Item[]` and `className?: string` and must: (1) fetch `/_next/static/chunks/nextra-data-${locale}.json` directly, (2) initialize a `FlexSearch.Document` with a custom `document.index` `boost` function giving `title` fields a 2× weight, (3) implement the search UX. The `FlexSearch` package is already bundled by Nextra — import it as `import FlexSearch from 'flexsearch'` without adding it to `package.json`.
 - [x] **Tailwind + Nextra class purging — RESOLVED:** The concern was unfounded. Nextra's own class names use the `nx-` prefix and are **not** Tailwind utility classes — scanning Nextra's `node_modules` would be useless and wasteful. The correct `tailwind.config.js` content paths are only the project's own source files: `./theme/**/*.{js,ts,jsx,tsx}`, `./pages/**/*.{js,ts,jsx,tsx,mdx}`, and `./rehype/**/*.{js,ts}`. No Nextra node_modules path is needed, so there is zero impact on Tailwind scan time.
 - [x] **Playwright CI flakiness on screenshot diffs — RESOLVED:** Playwright's canonical solution for cross-platform rendering differences is to generate and commit baseline snapshots on the CI runtime (Linux), never on macOS. Steps: (1) Add a one-time `update-snapshots` CI job that runs `playwright test --update-snapshots` on Ubuntu and commits the resulting `*.png` files to `the-codex/tests/snapshots/`. (2) All subsequent CI runs compare against those Linux-generated baselines. (3) Set `maxDiffPixelRatio: 0.02` in `playwright.config.ts` as a permissive tolerance for sub-pixel anti-aliasing differences. macOS dev runs will show expected diff warnings — this is acceptable and explicitly documented in the test README.
+- [x] **Search locale mismatch — RESOLVED:** Nextra's webpack plugin (in `nextra/dist/constants.mjs`) defines `DEFAULT_LOCALE = "en-US"` and uses it as the search index key when no Next.js i18n config is present, generating the file `nextra-data-en-US.json`. The custom `Search.tsx` component was using `router.locale ?? 'en'`, causing every search fetch to 404 silently. **Fix:** default `router.locale` to `'en-US'` in the component. Added `MIN_QUERY_LENGTH = 2` constant to suppress single-character queries. Substring matching confirmed functional via `tokenize: 'full'` in the FlexSearch index configuration.

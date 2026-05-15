@@ -27,6 +27,9 @@ function katexOverflow() {
 const withNextra = nextra({
   theme: 'nextra-theme-docs',
   themeConfig: './theme/config',
+  search: {
+    codeblocks: false,
+  },
   mdxOptions: {
     remarkPlugins: [remarkMath],
     rehypePlugins: [rehypeKatex, katexOverflow],

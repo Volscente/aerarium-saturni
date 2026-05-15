@@ -2,10 +2,55 @@
 
 How markets work, supply/demand, and liquidity. This page covers the structural mechanics underlying financial markets: how prices are discovered, what drives order flow, and how liquidity conditions affect execution and volatility.
 
-## Topics
+## Primary vs. Secondary Markets
 
-- Supply and demand curves
-- Price discovery and market microstructure
-- Bid-ask spread and market depth
-- Liquidity: definition, measurement, and risk
-- Market efficiency and the EMH
+- The **primary market** is where securities are created and sold for the first time
+  - A company sells new stocks or bonds directly, for example through an **IPO** (Initial Public Offering)
+  - In an IPO, an underwriting firm determines the offer price based on internal research not disclosed to the public
+- The **secondary market** is where those securities are subsequently traded among investors
+  - This is what is commonly called the "Stock Market"
+  - It includes exchanges like NASDAQ and the New York Stock Exchange (NYSE)
+
+## Orders
+
+Brokers receive instructions from clients in the form of **orders**:
+
+- **Limit Order** — buy or sell a security at a specified price or better
+- **Market Order** — buy or sell a security immediately at whatever price is available
+
+### Order Book
+
+The **Order Book** is the live record of all outstanding limit orders, mapping buyers to sellers:
+
+- **Bid** — the highest price a buyer is willing to pay
+- **Ask** — the lowest price a seller is willing to accept
+
+| Buyers | Sellers |
+| --- | --- |
+| $27 · 500 shares | $31 · 500 shares |
+|  | $32 · 1,000 shares |
+|  | $38 · 20,000 shares |
+
+- **Last Price / Last Trade** — the price of the most recently filled order (limit or market). This is the value shown in stock price charts.
+
+## Candlestick Charts
+
+Candlestick charts visualise the price activity of a security within a given period. Each candle encodes four data points: **Open**, **Close**, **High**, and **Low**.
+
+- Green candle → price closed higher than it opened (up day)
+- Red candle → price closed lower than it opened (down day)
+
+![Example candlestick chart](/fundamentals/candlestick-chart.png)
+
+The **body** of the candle spans the open-to-close range. The **wicks** (shadows) extend to the intraday high and low.
+
+![Candlestick anatomy: High, Open, Close, Low, upper and lower shadow](/fundamentals/candlestick-anatomy.png)
+
+- **High** — highest price reached during the period
+- **Low** — lowest price reached during the period
+- **Open** — price at the start of the period
+- **Close** — price at the end of the period
+
+The **volume bars** at the bottom show the number of shares traded: green on up days, red on down days.
+
+![DAX weekly candlestick chart with volume](/fundamentals/candlestick-real.png)

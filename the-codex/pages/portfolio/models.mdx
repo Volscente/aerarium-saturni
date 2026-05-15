@@ -1,12 +1,148 @@
 # Models
 
-Famous portfolios: All-Weather, 60/40, Swensen. Pre-built allocation frameworks offer tested starting points for constructing a portfolio. This page surveys the most influential models, their design rationale, and their historical performance.
+Famous portfolios: All-Weather, 60/40, Swensen. Pre-built allocation frameworks offer tested starting points for constructing a portfolio. This page surveys the most influential models, their design rationale, and historical performance. It also covers the core investment strategies and approaches used to implement any portfolio.
 
-## Topics
+## Investment Strategies
 
-- The 60/40 portfolio: stocks and bonds balanced for growth and stability
-- Ray Dalio's All-Weather portfolio and risk parity
-- David Swensen's Yale Endowment model
-- The Permanent Portfolio (Browne) and the Golden Butterfly
-- Lifecycle investing and target-date fund glide paths
-- Comparing drawdowns, CAGR, and Sharpe ratios across models
+### Buy & Hold
+
+Invest capital as soon as it is available, then hold indefinitely without selling.
+
+**Pros:**
+- Maximises time in the market
+- Eliminates transaction costs and capital gains events from rebalancing
+- Simplest to execute
+
+**Cons:**
+- Portfolio weights drift over time as assets appreciate at different rates
+- May feel psychologically difficult for beginners during large drawdowns
+
+### Strategic Rebalancing
+
+Buy & Hold plus periodic rebalancing (typically every 6 months to 2 years) back to target weights.
+
+**Cons:**
+- Each rebalancing event triggers capital gains taxes
+- Incurs transaction costs
+
+### Dollar Cost Averaging (DCA)
+
+Invest a fixed amount at regular intervals (e.g., €500/month), regardless of market conditions.
+
+- Reduces the impact of entry-point timing and volatility relative to a lump-sum Buy & Hold
+- Particularly useful when accumulating capital incrementally from income
+- Studies consistently show that systematic monthly investment outperforms attempts to time purchases around market dips
+
+### Value Averaging (VA)
+
+The portfolio must grow by a fixed target amount each period. If the portfolio grew less than the target (e.g., because prices fell), invest more; if it grew more, invest less or hold cash.
+
+**Compared to DCA:**
+- Buys more when prices are low and less when they are high — mechanically contrarian
+- Risk: during prolonged bull markets, VA accumulates a large cash reserve that misses compounding
+- Harder to track and execute consistently
+- Appropriate only for experienced investors comfortable with the liquidity management required
+
+---
+
+## Investing Approaches
+
+### Passive vs. Active
+
+| | Passive | Active |
+| --- | --- | --- |
+| Core instruments | ETFs and index funds | ETFs, index funds, and individual stocks |
+| Stock selection | No individual stock picking | Yes — selecting specific securities |
+| Goal | Match the market return | Beat the market return |
+| Cost | Low TER | Higher fees, taxes from trading |
+
+Passive investors can still make strategic choices about **asset allocation** (which markets, which sectors) without selecting individual securities. Most evidence shows active management does not consistently outperform passive indexing over long periods, after fees.
+
+### Activity Level Spectrum
+
+You can choose how active to be along four dimensions:
+
+1. **Asset Allocation** — decide what proportion goes into equities, bonds, commodities, etc.
+2. **Security Selection** — pick individual ETFs or stocks within each class
+3. **Rebalancing** — restore target weights when drift occurs
+4. **Tactical Asset Allocation (TAA)** — temporarily override strategic weights based on market conditions
+
+**Tactical Asset Allocation** is an active approach: you adjust sector or asset class weights based on your current market view. For example, after a market crash you might increase the weighting of defensive sectors (Consumer Staples, Healthcare) expecting a rebound. This is fundamentally different from mechanical rebalancing — it requires a correct market prediction and is therefore significantly riskier.
+
+### Leverage Investing
+
+Leverage amplifies both gains and losses by using borrowed capital. A ×2 leveraged position doubles the potential return but also doubles the potential loss (and adds the cost of the loan).
+
+Leveraged ETFs exist (e.g., ×2 or ×3 S&P 500), but three structural factors erode their expected returns significantly:
+
+1. **Volatility drag** — due to the mathematics of compounding, a fund with ×2 volatility does not produce ×2 long-term returns. Volatility itself destroys the expected multiplier.
+2. **Financing cost** — the borrowing rate (often SOFR-linked) is charged daily. Even at moderate rates, this erodes compounding over years.
+3. **Higher TER** — leveraged ETFs carry expense ratios above 0.5% compared to sub-0.1% for standard index ETFs.
+
+Net result: real expected returns from leveraged ETFs are substantially below the naive multiplier, while volatility is doubled.
+
+Leverage only makes sense if: you fully understand the risks, you have a very long investment horizon, and you are deliberately choosing to invest on margin.
+
+---
+
+## Famous Portfolio Models
+
+### The 60/40 Portfolio
+
+60% global equities + 40% government bonds. The most widely cited baseline for balanced long-term investing. Equities drive growth; bonds cushion drawdowns. The proportions can be adjusted along the `100 - Age` heuristic as the investor ages.
+
+### Ray Dalio's All Seasons Portfolio
+
+Designed to perform across any economic environment — growth, recession, inflation, and deflation. Target allocation:
+
+- 30% equities
+- 40% long-term bonds
+- 15% intermediate bonds
+- 7.5% gold
+- 7.5% commodities
+
+Very stable and consistent across market cycles, at the cost of lower long-term returns compared to equity-heavy portfolios. Suitable for risk-averse investors or those nearing retirement. TAA adjustments (e.g., temporarily increasing equities when young) can improve returns without fully abandoning the risk-parity structure.
+
+Resources:
+- [portfoliocharts.com — All Seasons](https://portfoliocharts.com/portfolios/all-seasons-portfolio/)
+- [lazyportfolioetf.com — Ray Dalio All Weather](https://www.lazyportfolioetf.com/allocation/ray-dalio-all-weather/)
+
+### US Sector Portfolio (XLK / XLV / XLP / XLY)
+
+A US-focused equity portfolio distributed across four non-correlated GICS sectors:
+
+- **XLK** — Technology
+- **XLV** — Healthcare
+- **XLP** — Consumer Staples
+- **XLY** — Consumer Discretionary
+
+This combination provides exposure to both cyclical and defensive sectors, reducing sector concentration without moving outside US equities.
+
+### David Swensen's Yale Endowment Model
+
+Swensen diversified aggressively beyond traditional stocks and bonds:
+
+- Domestic equities (~30%)
+- Foreign developed equities (~15%)
+- Emerging market equities (~10%)
+- Real estate / REITs (~20%)
+- US Treasury bonds (~15%)
+- TIPS (~10%)
+
+Designed for very long-horizon institutional capital. The high real estate and alternative allocations are difficult to replicate exactly for retail investors.
+
+### The Permanent Portfolio (Harry Browne)
+
+25% equities, 25% long-term bonds, 25% gold, 25% cash. Designed to perform in all four economic conditions: prosperity, recession, inflation, and deflation. Simpler than All Seasons with broadly similar resilience characteristics.
+
+---
+
+## Portfolio Research Tools
+
+| Tool | Purpose |
+| --- | --- |
+| [portfoliocharts.com](https://portfoliocharts.com/portfolios/) | Browse and compare famous portfolio models |
+| [lazyportfolioetf.com](https://www.lazyportfolioetf.com/) | Lazy portfolio ideas and historical performance |
+| [portfoliovisualizer.com](https://www.portfoliovisualizer.com/) | Backtest portfolios against benchmarks; analyse Sharpe ratio, CAGR, and max drawdown |
+
+When backtesting, avoid cherry-picking start dates. A robust portfolio should show consistent risk-adjusted performance regardless of the starting year.

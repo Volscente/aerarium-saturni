@@ -2,11 +2,143 @@
 
 ETFs, Mutual Funds, and Index Funds. Pooled investment vehicles allow investors to gain diversified exposure to a basket of securities through a single instrument. This page compares the main structures and examines their cost, tax, and liquidity implications.
 
-## Topics
+## Mutual Funds
 
-- Mutual funds: active management and NAV pricing
-- Index funds: passive replication and tracking error
-- ETFs: exchange-traded mechanics and creation/redemption
-- Total Expense Ratio (TER) and its compounding drag
-- Distributing vs. accumulating share classes
-- Domicile, UCITS compliance, and withholding tax considerations
+### Definition
+
+A mutual fund pools money from many investors to purchase a diversified portfolio of stocks, bonds, or other securities. A professional manager oversees the pool and decides what to buy and sell. Hedge funds operate similarly but also take short positions — betting on securities that are expected to fall in price.
+
+### Characteristics
+
+- Active management means they generally cannot beat the index they are benchmarked against, yet they do not aim to replicate it — they aim to beat it
+- Higher fees than index funds, up to 5%
+- Frequent trading of underlying securities results in higher tax obligations for investors
+
+### Types
+
+| Type | Mechanics |
+| --- | --- |
+| Open-End | New investor capital flows directly into the fund |
+| Closed-End | Like an ETF — the fund issues a fixed number of shares that trade on an exchange; you cannot invest directly in the fund itself |
+
+---
+
+## Index Funds
+
+### Definition
+
+An index fund tracks a specified basket of underlying market securities. The goal is to replicate the composition and performance of a market index — not to outperform it.
+
+- **S&P 500** — 500 companies representing the US stock market
+- **CAC 40** — 40 companies representing the French market
+- **DAX** — Germany
+- **Nikkei** — Japan
+- **TSX** — Canada
+
+### Characteristics
+
+- Low fees (Expense Ratio typically up to 0.09%)
+- No active management decisions — the fund just holds the index constituents
+
+### Price-Weighted vs. Market-Cap Weighted
+
+- **Dow Jones** is price-weighted: shares with a higher price exert more influence on the index
+- **S&P 500** is market-cap weighted: each company's influence reflects its size relative to the others — a more accurate representation of economic importance
+
+---
+
+## Exchange-Traded Funds (ETFs)
+
+### Definition
+
+An ETF is a fund whose shares trade on a stock exchange, just like individual stocks. Unlike an index fund (where you invest money directly into the fund), an ETF issues shares that track an underlying index or basket of assets.
+
+- **Index Fund** → you invest money into the fund pool
+- **ETF** → you buy shares of a fund that tracks the index (e.g., SPY tracks the S&P 500, XLF tracks the financial sector)
+
+The performance difference between an index fund and its ETF equivalent is typically explained by the ETF's fees.
+
+### Advantages
+
+| Advantage | Description |
+| --- | --- |
+| Passive | Replicates an index without trying to outperform it |
+| Tradable | Can be bought and sold at any point during market hours |
+| Economic | Low fees compared to active funds |
+
+### Errors to Avoid
+
+- Using ETFs as a vehicle for active trading — this defeats the purpose
+- Switching from one ETF to a cheaper equivalent: although the new ETF has a lower TER, selling triggers a taxable event and the savings rarely compensate
+- Investing in thematic ETFs without deep understanding of the sector — this is factor investing, not passive investing
+- Ignoring currency risk; currency hedging is expensive and usually not worth it
+
+### Accumulating vs. Distributing
+
+Accumulating (Acc) share classes reinvest dividends automatically rather than paying them out. This is generally preferable for long-term investors:
+
+- More capital compounds over 30 years — the tax deferral effect (_Steuerstundeffekt_)
+- The inflation effect reduces the real value of future tax payments: €10 of tax today is worth much more than €10 in 30 years
+- Note: even a distributing ETF does not hold dividends in its AUM — it liquidates a portion of the fund to pay them out. A distributing ETF and an accumulating ETF in which you sell an equivalent amount are mathematically equivalent, ignoring taxes.
+
+### Comparing ETFs
+
+To identify the most liquid ETFs on any given index:
+
+1. Go to [tradingview.com/etf-screener](https://tradingview.com/etf-screener)
+2. Add the **Average Volume (90 days)** column
+3. Sort descending — higher average volume means greater liquidity and tighter bid-ask spreads
+
+### How to Inspect an ETF
+
+1. Find the ETF on the issuer's website (e.g., iShares, Vanguard) and open **Holdings**
+2. Verify no single company represents more than 5–7% of the fund's weight
+3. Check the Expense Ratio (TER)
+4. Read the ETF factsheet and prospectus
+5. Check the "Annual Report" and "Investor Relations" documents for the Risk section
+
+### Evaluation Checklist
+
+| Criterion | What to look for |
+| --- | --- |
+| TER / Expense Ratio | ≤ 0.2% is good; ≥ 0.7% is expensive |
+| Fund domicile | Ireland or Luxembourg preferred for dividend withholding tax treaties |
+| Index replication | Physical replication preferred over synthetic |
+| AUM / Fund size | Larger is better — more liquidity and more accurate index tracking |
+| Distributing vs. Accumulating | Prefer Acc for long-term |
+| Hedging | Avoid currency-hedged versions — hedging is expensive |
+| ETF age | At least 1–2 years of track record |
+| Tracking error | Difference between ETF performance and underlying index; smaller is better |
+| Benchmark comparison | Consistent outperformance of its own index may indicate imprecise replication and hidden risk |
+
+Resources: [JustETF.com](https://justetf.com), [etfdb.com](https://etfdb.com), issuer websites.
+
+Avoid thematic ETFs. They introduce sector concentration risk and undermine the passive investing thesis.
+
+### Major ETF Issuers
+
+| Issuer | Notes |
+| --- | --- |
+| Vanguard | Pioneer of low-cost indexing; investor-owned structure |
+| iShares / BlackRock | Largest global ETF provider |
+| SPDR (State Street) | Issues SPY, one of the oldest and most liquid ETFs |
+| Schwab | Very competitive TERs |
+| Invesco (PowerShares) | Issues QQQ — the largest US technology sector index (~40% FAANG) |
+
+### Smart Beta
+
+Smart beta ETFs sit between passive and active investing. They weight holdings according to a specific **factor** rather than purely by market cap:
+
+| Factor | Description |
+| --- | --- |
+| Value | Favours companies trading at low valuation ratios (low P/E, low P/B) |
+| Low Volatility | Selects securities with historically low price fluctuation |
+| Momentum | Selects companies with the strongest recent price appreciation |
+
+The best-performing factor changes depending on the market cycle. Smart beta is not passive investing — it requires a view on which factor is currently favourable.
+
+---
+
+## CFDs (Contracts for Difference)
+
+CFDs are derivative instruments that do not give you direct ownership of the underlying asset. They are built on top of a stock (or other security) rather than representing it. Avoid CFDs: they carry counterparty risk, introduce leverage implicitly, and are not appropriate for long-term investment.

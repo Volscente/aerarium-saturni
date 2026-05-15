@@ -1,12 +1,197 @@
 # Pensions
 
-Pension schemas vs. private PAC strategies. State pension systems provide a baseline retirement income, but their adequacy varies widely by country. This page compares public pension architectures with private accumulation plans (PAC) and individual retirement accounts.
+German pension landscape: comparing public and private retirement vehicles. Five main options compete for a saver's attention — the statutory pension, Riester-Rente, ETF-Sparplan, ETF-Police, and the employer-sponsored Betriebliche Altersversorgung (BaV). Each differs in tax treatment, flexibility, cost structure, and long-term return potential.
 
-## Topics
+## The German Pension Landscape
 
-- Defined benefit (DB) vs. defined contribution (DC) plans
-- The three-pillar pension model (state, occupational, private)
-- Italian pension system: INPS and the contributivo method
-- Private PAC (Piano di Accumulo del Capitale): mechanics and tax treatment
-- Individual pension funds vs. insurance-linked pension products
-- Integrating pension income into a broader retirement income plan
+Germany's retirement system offers the following vehicles:
+
+1. **Gesetzliche Rentenversicherung (GRV)** — the statutory pay-as-you-go pension; provides a baseline but is insufficient alone for most savers
+2. **Riester-Rente** — state-subsidised contract; today relevant mainly for low-income households with children
+3. **Betriebliche Altersversorgung (BaV)** — employer-sponsored occupational pension, funded via gross salary diversion (*Entgeltumwandlung*)
+4. **ETF-Sparplan** — classic, uninsured PAC invested in ETFs; maximum flexibility, minimum cost
+5. **ETF-Police / Nettopolice** — insurance wrapper around an ETF portfolio; deferred taxation at the cost of higher fees
+
+---
+
+## ETF-Sparplan
+
+A classic *Piano di Accumulo del Capitale* (PAC): regular contributions into one or more ETFs, held in a standard brokerage depot.
+
+### Taxation
+
+- Gains are taxed via the ***Kapitalertragssteuer*** (capital gains tax) at **26.375%** (including *Solidaritätszuschlag*)
+- Equity ETFs with >51% equity content qualify for a ***Teilfreistellung*** (partial exemption) of **30%**, reducing the effective rate to **~18.46%**
+  - ETFs with ≥25% equity content receive a smaller 15% *Teilfreistellung*
+  - Example: €1,000 gain on an equity ETF → €300 is tax-free; €700 is taxed at 26.375%
+- During the accumulation phase, the ***Vorabpauschale*** (advance lump-sum tax) applies annually on unrealised gains
+- A ***Freistellungsauftrag*** (*Sparer-Pauschbetrag*) of **€1,000 per year** shelters the first €1,000 of capital income from all these taxes
+
+### Costs
+
+The ETF-Sparplan has the leanest cost structure of all options:
+
+![ETF-Sparplan cost breakdown](/pensions/etf-sparplan-costs.png)
+
+- **Purchase costs**: €0
+- **Sale costs**: €1–€70
+- **TER**: 0.05%–0.25% per year
+- **Depot fee**: €0 (most modern brokers)
+- **Management / advisory fee**: €0
+
+---
+
+## ETF-Police
+
+An insurance contract (*Rentenversicherung*) in which the underlying investment is a portfolio of ETFs. Some providers offer limited ETF selection flexibility. The key feature is deferred taxation.
+
+### Taxation
+
+- **No *Kapitalertragssteuer*** during accumulation
+- Gains are taxed as *Einkommensteuer* only at payout — a significant deferral advantage
+- **No *Vorabpauschale*** applies
+- A ***Teilfreistellung*** of **15%** applies (lower than the ETF-Sparplan's 30%)
+- ***Halbeinkünfteverfahren*** applies if the contract runs ≥12 years and the holder is ≥62 years old:
+  - Only **half** of the remaining taxable gain is subject to *Einkommensteuer*
+  - Example: €100 gain → −15% *Teilfreistellung* = €85 taxable → only €42.50 enters the income tax base
+
+The table below shows indicative tax rates at payout assuming a €45,000 taxable income base:
+
+![ETF-Police tax example at payout](/pensions/etf-police-tax-example.png)
+
+### Pros and cons
+
+**Advantages**
+1. Taxes deferred until payout — compounding works on the pre-tax amount throughout
+2. *Halbeinkünfteverfahren* significantly reduces the effective rate if conditions are met
+3. Tax rules locked in at contract inception (no future legislative risk on accumulated gains)
+4. Enforced discipline: no easy withdrawal
+
+**Disadvantages**
+1. Higher costs than a plain ETF-Sparplan (see comparison below)
+2. Full tax advantages only materialise after 12 years and age 62
+3. Narrower ETF selection than a direct depot
+4. A *Honorarberater* is required for *Nettopolicen* (fee-based, commission-free contracts)
+5. Insurance company default risk (not state-guaranteed)
+
+---
+
+## Betriebliche Altersversorgung (BaV)
+
+An employer-sponsored occupational pension. The most common form today is *Entgeltumwandlung*: the employee diverts part of their gross salary into the BaV contract before income and social security taxes are applied.
+
+### How it works
+
+- Contributions are deducted from gross salary → lower *Einkommensteuer* and social security contributions during accumulation
+- Employers are legally required to contribute **at least 15%** of the diverted amount (since 2019)
+- Some employers match 100% — those contributions are pure gain
+- **Beware**: diverted salary means fewer contributions to the statutory pension (GRV), which reduces the eventual GRV payout
+
+### Tax treatment in retirement
+
+- BaV pensions are subject to *Einkommensteuer* at withdrawal
+- The first **€187.25/month** of BaV pension is exempt from statutory health insurance contributions (*Krankenversicherung*) for compulsorily insured retirees
+- Gross salary reduction during accumulation reduces:
+  - *Steuer-Brutto* by up to **€644/month**
+  - *SV-Brutto* by up to **€322/month**
+- **Important for high earners**: those who already hit the contribution ceiling for *Krankenversicherung* (KV) and *Pflegeversicherung* (PV) do not benefit from the social security savings. The tax advantage is therefore less compelling at higher income levels.
+
+### Limitations
+
+- Portability is complicated when changing employers; rules around vesting periods apply (currently 3 years minimum)
+- BaV contracts typically invest heavily in bonds, severely limiting long-term return potential
+- In the event of employer insolvency, the *Pensionssicherungsverein* (PSV) is the backstop — this only applies to the classic employer-funded BaV
+
+### Simulation
+
+The table below illustrates a typical BaV scenario: €4,208 gross monthly salary, €180 gross contribution, yielding a net cost of **€96/month** after tax and social security savings. The best-case net pension is **€160/month** at 2% interest — taking 18 years to recover contributions.
+
+![BaV net cost and net pension simulation](/pensions/bav-simulation.png)
+
+---
+
+## Riester-Rente
+
+Introduced to offset the statutory pension cuts, the Riester-Rente combined state subsidies with a private contract. Persistently low interest rates over the following decades eroded its appeal dramatically.
+
+**Today it is only worth considering for:**
+- Single parents and families with multiple children
+- Low to middle incomes who receive meaningful subsidy relative to their contribution
+
+### State subsidies
+
+| Subsidy | Amount |
+|---|---|
+| *Grundzulage* (base) | €175/year |
+| *Kinderzulage* (child born ≥2008) | €300/year per child |
+| *Kinderzulage* (child born before 2008) | €185/year per child |
+
+To receive the full subsidy, total annual contributions (including the subsidies themselves) must equal **≥4% of the prior year's gross income**, up to a maximum of **€2,100/year**.
+
+### Drawbacks
+
+- **Performance**: effectively zero real return; the guarantee only covers nominal contributions plus subsidies
+- **Costs**: upfront *Abschlusskosten* (provision) in the hundreds to thousands of euros
+- **Tax benefit** is capped by the €2,100 contribution ceiling, making it unattractive for high earners
+- The guarantee is provided by the *insurer*, not the state — counterparty risk applies
+
+---
+
+## Comparison
+
+### Costs
+
+The cost gap between a plain ETF-Sparplan and insurance-based products is substantial:
+
+![Cost comparison: ETF-Sparplan vs Nettopolicen](/pensions/cost-comparison.png)
+
+- **ETF-Sparplan**: only TER (0.05%–0.25%) + occasional sale fee
+- **Alte Leipziger HFR 10**: €36/year depot fee + 0.3% management
+- **LV1871 MeinPlan Netto**: 4% purchase fee + €950 *Honorar* + 0.22% management
+- BaV contracts typically carry a ~2% provision
+
+### Final Capital: No Rebalancing
+
+In a buy-and-hold scenario (no portfolio rebalancing), the ETF-Sparplan outperforms both Nettopolicen tested despite paying more tax upfront, because it avoids their higher ongoing costs:
+
+![Final capital after tax — no rebalancing](/pensions/final-capital-no-rebalancing.png)
+
+| Vehicle | Final capital (net) | Tax paid |
+|---|---|---|
+| ETF-Sparplan | €785,000 | €133,000 |
+| Alte Leipziger | €775,000 | €102,000 |
+| LV1871 | €765,000 | €99,000 |
+
+### Final Capital: With Rebalancing
+
+When regular rebalancing triggers capital gains events, the ETF-Sparplan's tax drag increases and the Nettopolicen's tax deferral becomes more valuable — narrowing or reversing the gap:
+
+![Final capital after tax — with rebalancing](/pensions/final-capital-with-rebalancing.png)
+
+| Vehicle | Final capital (net) | Tax paid |
+|---|---|---|
+| ETF-Sparplan | €738,000 | €75,000 |
+| Alte Leipziger | €751,000 | €97,000 |
+| LV1871 | €740,000 | €96,000 |
+
+The difference remains small, and the ETF-Sparplan's superior flexibility may offset the slight return disadvantage.
+
+### Flexibility
+
+| Vehicle | Liquidity | Portability | Early withdrawal |
+|---|---|---|---|
+| ETF-Sparplan | Full | Full | Any time |
+| ETF-Police | Restricted | Restricted | Taxable event; loses *Halbeinkünfteverfahren* |
+| BaV | Low | Complicated on job change | Generally not possible |
+| Riester-Rente | Very low | Fixed | Subsidies must be repaid |
+
+---
+
+## Strategy
+
+A combined approach makes the most sense for most situations:
+
+- **Core**: ETF-Sparplan for maximum flexibility, lowest cost, and full liquidity
+- **Supplement**: a *Nettopolice* (ETF-Police via *Honorarberater*) adds deferred-tax compounding on a portion of savings, particularly valuable for long horizons (≥12 years) and if the *Halbeinkünfteverfahren* conditions will be met
+- **BaV**: accept only if the employer contributes significantly (≥50% match); the tax advantages erode at higher incomes and the compounding deficit relative to equity ETFs is severe
+- **Riester-Rente**: skip unless you are a low-income household with multiple children

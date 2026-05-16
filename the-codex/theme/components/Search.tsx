@@ -14,7 +14,7 @@ type SearchResult = {
   excerpt: string
 }
 
-type SearchIndexes = [FlexSearch.Document<PageDoc, string[]>, FlexSearch.Document<SectionDoc, string[]>]
+type SearchIndexes = [any, any]
 
 type PageDoc = {
   id: number
@@ -47,14 +47,15 @@ async function loadIndexes(basePath: string, locale: string): Promise<void> {
     const res = await fetch(`${basePath}/_next/static/chunks/nextra-data-${locale}.json`)
     const searchData: SearchData = await res.json()
 
-    const pageIndex = new FlexSearch.Document<PageDoc, string[]>({
+    // @ts-ignore
+    const pageIndex = new (FlexSearch as any).Document({
       cache: 100,
       tokenize: 'full',
       document: {
         id: 'id',
         index: [
-          { field: 'title', boost: (_words, _term, _idx) => 2 },
-          { field: 'content', boost: (_words, _term, _idx) => 1 },
+          { field: 'title', boost: (_words: any, _term: any, _idx: any) => 2 },
+          { field: 'content', boost: (_words: any, _term: any, _idx: any) => 1 },
         ],
         store: ['title'],
       },
@@ -65,15 +66,16 @@ async function loadIndexes(basePath: string, locale: string): Promise<void> {
       },
     })
 
-    const sectionIndex = new FlexSearch.Document<SectionDoc, string[]>({
+    // @ts-ignore
+    const sectionIndex = new (FlexSearch as any).Document({
       cache: 100,
       tokenize: 'full',
       document: {
         id: 'id',
         tag: 'pageId',
         index: [
-          { field: 'title', boost: (_words, _term, _idx) => 2 },
-          { field: 'content', boost: (_words, _term, _idx) => 1 },
+          { field: 'title', boost: (_words: any, _term: any, _idx: any) => 2 },
+          { field: 'content', boost: (_words: any, _term: any, _idx: any) => 1 },
         ],
         store: ['title', 'content', 'url', 'display'],
       },

@@ -1,15 +1,6 @@
 {
   "index": "Overview",
-  "diversification": {
-    "title": "Diversification",
-    "search": true
-  },
-  "models": {
-    "title": "Models",
-    "search": true
-  },
-  "selection-rules": {
-    "title": "Selection Rules",
-    "search": true
-  }
+  "diversification": "Diversification",
+  "models": "Models",
+  "selection-rules": "Selection Rules"
 }

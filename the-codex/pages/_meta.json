@@ -1,27 +1,9 @@
 {
   "index": "Introduction",
-  "fundamentals": {
-    "title": "Fundamentals",
-    "search": true
-  },
-  "instruments": {
-    "title": "Instruments",
-    "search": true
-  },
-  "portfolio": {
-    "title": "Portfolio",
-    "search": true
-  },
-  "personal": {
-    "title": "Personal",
-    "search": true
-  },
-  "infrastructure": {
-    "title": "Infrastructure",
-    "search": true
-  },
-  "library": {
-    "title": "Library",
-    "search": true
-  }
+  "fundamentals": "Fundamentals",
+  "instruments": "Instruments",
+  "portfolio": "Portfolio",
+  "personal": "Personal",
+  "infrastructure": "Infrastructure",
+  "library": "Library"
 }

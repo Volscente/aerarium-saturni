@@ -1,15 +1,6 @@
 {
   "index": "Overview",
-  "net-worth": {
-    "title": "Net Worth",
-    "search": true
-  },
-  "fire-movement": {
-    "title": "FIRE Movement",
-    "search": true
-  },
-  "pensions": {
-    "title": "Pensions",
-    "search": true
-  }
+  "net-worth": "Net Worth",
+  "fire-movement": "FIRE Movement",
+  "pensions": "Pensions"
 }

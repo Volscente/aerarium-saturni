@@ -9,10 +9,11 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "flexsearch": "^0.8.212",
     "katex": "^0.16.0",
-    "next": "^13.5.0",
-    "nextra": "^2.13.0",
-    "nextra-theme-docs": "^2.13.0",
+    "next": "13.5.11",
+    "nextra": "2.13.4",
+    "nextra-theme-docs": "2.13.4",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "rehype-katex": "^7.0.0",
@@ -21,6 +22,7 @@
   "devDependencies": {
     "@playwright/test": "^1.60.0",
     "@tailwindcss/typography": "^0.5.19",
+    "@types/flexsearch": "^0.7.6",
     "@types/node": "^20.0.0",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",

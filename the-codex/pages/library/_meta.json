@@ -1,6 +1,15 @@
 {
   "index": "Overview",
-  "media": "Media",
-  "education": "Education",
-  "reading-list": "Reading List"
+  "media": {
+    "title": "Media",
+    "search": true
+  },
+  "education": {
+    "title": "Education",
+    "search": true
+  },
+  "reading-list": {
+    "title": "Reading List",
+    "search": true
+  }
 }

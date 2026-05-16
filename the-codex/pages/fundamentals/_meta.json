@@ -1,6 +1,15 @@
 {
   "index": "Overview",
-  "mechanics": "Mechanics",
-  "money-inflation": "Money & Inflation",
-  "mathematics": "Mathematics"
+  "mechanics": {
+    "title": "Mechanics",
+    "search": true
+  },
+  "money-inflation": {
+    "title": "Money & Inflation",
+    "search": true
+  },
+  "mathematics": {
+    "title": "Mathematics",
+    "search": true
+  }
 }

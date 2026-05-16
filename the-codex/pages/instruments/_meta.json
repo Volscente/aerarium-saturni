@@ -1,7 +1,19 @@
 {
   "index": "Overview",
-  "equities": "Equities",
-  "fixed-income": "Fixed Income",
-  "pooled-funds": "Pooled Funds",
-  "commodities": "Commodities"
+  "equities": {
+    "title": "Equities",
+    "search": true
+  },
+  "fixed-income": {
+    "title": "Fixed Income",
+    "search": true
+  },
+  "pooled-funds": {
+    "title": "Pooled Funds",
+    "search": true
+  },
+  "commodities": {
+    "title": "Commodities",
+    "search": true
+  }
 }

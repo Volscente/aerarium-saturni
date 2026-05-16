@@ -1,6 +1,15 @@
 {
   "index": "Overview",
-  "brokers": "Brokers",
-  "taxation": "Taxation",
-  "costs-fees": "Costs & Fees"
+  "brokers": {
+    "title": "Brokers",
+    "search": true
+  },
+  "taxation": {
+    "title": "Taxation",
+    "search": true
+  },
+  "costs-fees": {
+    "title": "Costs & Fees",
+    "search": true
+  }
 }

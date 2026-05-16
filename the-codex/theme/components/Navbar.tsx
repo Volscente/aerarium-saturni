@@ -1,15 +1,10 @@
+'use client'
+
 import { useState, useEffect } from 'react'
 import { BookOpen, Github, Sun, Moon } from 'lucide-react'
 import { useTheme } from 'next-themes'
-import type { Item, PageItem, MenuItem } from 'nextra/normalize-pages'
-import { Search } from './Search'
 
-type NavBarProps = {
-  flatDirectories: Item[]
-  items: (PageItem | MenuItem)[]
-}
-
-export function Navbar({ flatDirectories, items }: NavBarProps) {
+export function CustomNavbar() {
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
@@ -25,24 +20,7 @@ export function Navbar({ flatDirectories, items }: NavBarProps) {
           <span className="hidden sm:inline">Aerarium Saturni — The Codex</span>
         </a>
 
-        <Search
-          className="mx-4 w-64 shrink-0"
-          directories={flatDirectories}
-        />
-
         <div className="ml-auto flex items-center gap-4">
-          {items
-            .filter((item) => item.type === 'page' || item.type === 'menu')
-            .map((item) => (
-              <a
-                key={item.route}
-                href={item.route}
-                className="text-sm text-roman-obsidian/70 dark:text-roman-parchment/80 hover:text-roman-terracotta transition-colors"
-              >
-                {item.title}
-              </a>
-            ))}
-
           {mounted && (
             <button
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}

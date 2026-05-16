@@ -1,0 +1,6 @@
+export default {
+  index: 'Overview',
+  diversification: 'Diversification',
+  models: 'Models',
+  'selection-rules': 'Selection Rules',
+}

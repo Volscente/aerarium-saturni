@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react'
-import { Fragment } from 'react'
 import { Layout, Navbar, Footer } from 'nextra-theme-docs'
 import { getPageMap } from 'nextra/page-map'
 import { CustomNavbar } from '../theme/components/Navbar'
@@ -23,9 +22,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           nextThemes={{ defaultTheme: 'dark', storageKey: 'the-codex-theme' }}
           sidebar={{ defaultMenuCollapseLevel: 1, toggleButton: true }}
         >
-          <Fragment key="page-content">
-            {children}
-          </Fragment>
+          {children}
         </Layout>
       </body>
     </html>

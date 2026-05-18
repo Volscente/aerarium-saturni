@@ -28,6 +28,7 @@ codex-rebuild: check_root
     fi
     rm -rf .next
     npm run build
+    npx pagefind --site .next/server/app --output-path public/_pagefind
 
 # Start The Codex dev server and open it in the browser
 codex-dev: check_root codex-rebuild

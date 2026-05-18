@@ -34,4 +34,4 @@ codex-dev: check_root codex-rebuild
     #!/usr/bin/env bash
     cd "{{ ROOT_DIR }}/the-codex"
     open http://localhost:3000 &
-    npm run dev
+    npm run start

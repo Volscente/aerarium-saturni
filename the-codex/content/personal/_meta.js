@@ -1,0 +1,6 @@
+export default {
+  index: 'Overview',
+  'net-worth': 'Net Worth',
+  'fire-movement': 'FIRE Movement',
+  pensions: 'Pensions',
+}

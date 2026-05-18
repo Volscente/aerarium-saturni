@@ -1,10 +1,6 @@
 import { Scale } from 'lucide-react'
 
-type FooterProps = {
-  menu: boolean
-}
-
-export function Footer({ menu: _menu }: FooterProps) {
+export function CustomFooter() {
   return (
     <footer className="border-t border-roman-stone/40 bg-roman-parchment dark:bg-roman-obsidian py-6">
       <div className="mx-auto flex max-w-[90rem] items-center justify-between px-6 text-sm text-roman-stone">

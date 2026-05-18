@@ -1,0 +1,6 @@
+export default {
+  index: 'Overview',
+  media: 'Media',
+  education: 'Education',
+  'reading-list': 'Reading List',
+}

@@ -1,0 +1,169 @@
+# Bitcoin & Cryptocurrency
+
+Bitcoin is a decentralized digital currency and the first working implementation of digital cash without a trusted intermediary. This page covers its history, mechanics, security model, and its role—and limitations—as a financial instrument.
+
+## Overview
+
+Bitcoin can be best understood as a distributed software that allows for transfer of value using a currency protected from unexpected inflation without relying on trusted third parties.
+
+Beyond digital scarcity, Bitcoin is also the first example of **absolute scarcity**: the only liquid commodity—digital or physical—with a fixed supply that cannot conceivably be increased.
+
+## History
+
+Satoshi Nakamoto (a pseudonym) introduced Bitcoin in 2008. In May 2010, the first real-world purchase took place when someone paid 10,000 bitcoins for two pizzas worth $25, pricing one bitcoin at $0.0025.
+
+The creator's stated motivation was to build a "purely peer-to-peer form of electronic cash that would not require trust in third parties for transactions and whose supply cannot be altered by any other party."
+
+## Technology
+
+### Network Architecture
+
+Bitcoin operates as a distributed peer-to-peer network with no single point of failure. The core technologies are hashing, digital signatures, and proof-of-work. Every transaction must be recorded by every member of the network so that all nodes share one common ledger of balances and transactions.
+
+When a transaction is made, the sender broadcasts it to all network nodes, who verify the sender has sufficient funds and that the coins have not been double-spent. Once validated by a majority of the network's processing power, the transaction is inscribed on the shared ledger and all members update their balances accordingly.
+
+Bitcoin can thus be understood as a technology that converts electricity into truthful records through the expenditure of processing power.
+
+### Proof-of-Work
+
+In order for a node to commit a block of transactions to the ledger, it must expend processing power solving mathematical problems that are hard to solve but whose correct solution is easy to verify. Only with a correct solution can a block be committed and verified by all network members.
+
+The node that first produces the correct solution broadcasts it to the network; other nodes vote for its validity, and once a majority approves, work begins on the next block.
+
+The hardware used for proof-of-work has evolved from personal computers to **Application Specific Integrated Circuits (ASICs)**, first introduced in 2012, which are built specifically to run the Bitcoin software with maximum efficiency.
+
+### Difficulty Adjustment
+
+As more people hold Bitcoin, its market value rises, making mining more profitable and attracting more miners. More miners means more processing power, which would naturally speed up block production and increase the rate of new bitcoin issuance. Bitcoin counters this through **difficulty adjustment**: as processing power rises, the difficulty of the proof-of-work problems increases to ensure blocks continue to take approximately ten minutes to produce.
+
+This is perhaps the most ingenious aspect of Bitcoin's design and what makes it fundamentally different from every other form of money.
+
+## Mining
+
+### Definition
+
+The node that commits a valid block to the network receives a **block reward**: newly created bitcoins plus all transaction fees paid by senders in that block. This process is called mining, analogous to the mining of precious metals.
+
+### Reward Schedule and Halving
+
+At launch, the block reward was 50 bitcoins. Every 210,000 blocks (approximately four years), the reward halves. The quantity of bitcoins created is preprogrammed and cannot be altered regardless of how much processing power is expended.
+
+| Halving | Approximate Year | Block Reward |
+| --- | --- | --- |
+| Genesis | 2009 | 50 BTC |
+| 1st halving | 2012 | 25 BTC |
+| 2nd halving | 2016 | 12.5 BTC |
+| 3rd halving | 2020 | 6.25 BTC |
+| 4th halving | 2024 | 3.125 BTC |
+
+The total supply is capped at **21 million bitcoins**.
+
+## Security
+
+### Asymmetric Verification Costs
+
+The security of Bitcoin rests on an asymmetry between costs: solving the proof-of-work required to commit a transaction costs ever-increasing quantities of electricity and processing power, while verifying the validity of a transaction costs nearly nothing and scales freely regardless of how much Bitcoin grows.
+
+To submit fraudulent transactions is to deliberately waste resources on proof-of-work only to have nodes reject the result at essentially no cost—forfeiting the block reward in the process.
+
+### Private Keys and Ownership
+
+Ownership of coins is assigned through public addresses, not by the identity of the holder. Access to coins is secured through a **private key**—a string of characters analogous to a password.
+
+### 51% Attack
+
+For an attacker to insert fraudulent transactions, he would need more than 50% of the network's total processing power. Honest nodes have no incentive to cooperate with such an attack, as it would undermine Bitcoin's integrity and destroy the value of their own mining rewards.
+
+Even if such an attack succeeded, the economic gain would be minimal: compromising the network would likely reduce the value of bitcoin to near zero. In other words, a successful attack destroys the very thing being attacked. Furthermore, honest nodes can revert to the pre-attack ledger and resume operation.
+
+### Forks
+
+If a subset of the network adopts incompatible software, the result is a **fork**—effectively two separate currencies and networks. For a new fork to succeed, it would need an overwhelming majority of users, mining hash power, and all related infrastructure to migrate simultaneously. For as long as any members remain on the original network, it retains its infrastructure, mining equipment, network effect, and name recognition.
+
+### Encryption and Block Size
+
+Bitcoin uses the **SHA-256 hashing function** as an integral part of its operation. Improvements in processing power could theoretically allow computers to reverse-calculate these hashing functions, rendering addresses vulnerable—a known long-term risk.
+
+Bitcoin blocks are capped at **1 megabyte**. This limit keeps the blockchain small enough to be run on personal computers, which is essential to decentralization. Increasing block size would raise the cost of running a node, reduce the number of nodes, and push the network toward centralization—defeating the entire point.
+
+> The core trade-off: keep the 1 MB limit and preserve decentralization but constrain transaction throughput, or increase block size and risk losing the ability to run a node on a personal computer.
+
+## Usage and Adoption
+
+### Block Size and Scaling Limits
+
+With blocks limited to 1 megabyte, Bitcoin can process approximately 500,000 transactions per day at most—comparable to the volume of a small town, not a medium-sized economy. Despite this throughput constraint, the total value of the bitcoin supply and daily transaction value has continued to grow, suggesting that adopters value it more as a **store of value** than a medium of exchange.
+
+Bitcoin's volatility derives from the fact that its supply is utterly inflexible and not responsive to demand changes, because it is programmed to grow at a predetermined rate.
+
+### Off-Chain Scaling
+
+Scaling for Bitcoin transactions will likely come off-chain, where simpler technologies can handle small and routine payments without compromising Bitcoin's two core properties: digital sound money and digital cash. These properties justify the extensive processing power; small consumer payments do not.
+
+### Store of Value vs. Medium of Exchange
+
+For the bitcoin price to rise, people must hold it rather than spend it. Without a sufficient number of people willing to hold the currency over time, continued selling keeps the price down and prevents appreciation.
+
+Bitcoin is beginning to look more like a **reserve currency** than a currency for everyday transactions—similar to gold cash reserves in the nineteenth century, where "cash settlement" referred to the transfer of physical gold between banks, not small consumer purchases.
+
+## Bitcoin and the Banking System
+
+### Central Bank Holdings
+
+If Bitcoin continues to appreciate significantly, central banks could benefit from holding a small allocation as insurance against the scenario of it succeeding. Given the strictly limited supply, acquiring even a small portion today could provide significant optionality in the future.
+
+### International Settlement
+
+An international settlement currency should be neutral to the monetary policies of different countries—the role gold played during the gold standard. Bitcoin has a potential advantage over gold for this purpose:
+
+- Settlement completes in minutes
+- Transaction authenticity can be verified by anyone with an internet connection, at virtually no cost
+- Gold transport takes more time and relies on trusted intermediaries
+
+This could lead to a division of roles: gold for in-person cash transactions, Bitcoin for international settlement.
+
+### Second-Layer Banking
+
+The future use of Bitcoin for small payments will likely occur through **second-layer protocols** rather than the base blockchain. This mirrors how central bank gold reserves underpinned commercial banking without being used for everyday transactions. Each individual would be able to audit the holdings of any intermediary in real time, with online verification systems confirming that no inflation is occurring.
+
+## Advantages Over Traditional Systems
+
+### No Intermediary Required
+
+Bitcoin holders can send large amounts of value across the planet without asking permission from anyone. This eliminates:
+
+- Risk of theft or technical failure introduced by third parties
+- Surveillance and potential bans by political authorities
+- Debasement or confiscation by governments
+
+### Transaction Irreversibility
+
+Having every transaction recorded by every network member is a costly redundancy whose sole purpose is to remove intermediation. This comes with a trade-off: errors in a blockchain are significantly more expensive to fix than errors in a centralized system, where an appeal to the intermediary can reverse a mistake.
+
+## Alternatives and the Broader Blockchain Ecosystem
+
+### Ethereum
+
+Ethereum, unlike Bitcoin, can be rolled back—meaning it is effectively a centralized database under the control of its operators. All blockchains smaller or less decentralized than Bitcoin share this characteristic.
+
+### Blockchain Applications
+
+Blockchain consultants have built prototypes for stock trading, asset registries, voting, and payment clearance. None have been commercially deployed because they are more expensive than simpler methods using established database and software stacks.
+
+There cannot be wide adoption of blockchain technology in industries that rely on trusted intermediaries, because the mere presence of intermediaries makes all the costs of running a blockchain superfluous. Any blockchain application only makes commercial sense if it relies on electronic cash whose disintermediation provides economic benefits that outweigh the use of regular currencies and payment channels.
+
+### Smart Contracts
+
+Smart contracts encode agreements into a blockchain to make them self-executing, beyond the reach of courts. The problem is that the code language used by smart contract developers is understood by far fewer people than the natural language of legal contracts. The most proficient programmers will always hold a strategic advantage over everyone else—code competence replicates the same power asymmetry that legal expertise creates.
+
+Smart contracts have not replaced courts with code; they have replaced courts with software developers who have little experience in arbitration.
+
+## Role in a Portfolio
+
+| Consideration | Detail |
+| --- | --- |
+| Correlation | Can reach 60% correlation with global equities—does not provide the same diversification benefit as gold |
+| Scarcity | Absolutely scarce; supply is fixed at 21 million and cannot be increased |
+| Volatility | High; supply is inflexible and cannot respond to demand changes |
+| Store of value | Primary use case for adopters; not primarily a medium of exchange |
+| Liquidity | Highly liquid; can be sold globally 24/7 |

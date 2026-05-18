@@ -1,0 +1,117 @@
+# Mechanics
+
+How markets work, supply/demand, and liquidity. This page covers the structural mechanics underlying financial markets: how prices are discovered, what drives order flow, and how liquidity conditions affect execution and volatility.
+
+## Primary vs. Secondary Markets
+
+- The **primary market** is where securities are created and sold for the first time
+  - A company sells new stocks or bonds directly, for example through an **IPO** (Initial Public Offering)
+  - In an IPO, an underwriting firm determines the offer price based on internal research not disclosed to the public
+- The **secondary market** is where those securities are subsequently traded among investors
+  - This is what is commonly called the "Stock Market"
+  - It includes exchanges like NASDAQ and the New York Stock Exchange (NYSE)
+
+## Orders
+
+Brokers receive instructions from clients in the form of **orders**:
+
+- **Limit Order** - buy or sell a security at a specified price or better
+- **Market Order** - buy or sell a security immediately at whatever price is available
+
+### Order Book
+
+The **Order Book** is the live record of all outstanding limit orders, mapping buyers to sellers:
+
+- **Bid** - the highest price a buyer is willing to pay
+- **Ask** - the lowest price a seller is willing to accept
+
+| Buyers | Sellers |
+| --- | --- |
+| $27 · 500 shares | $31 · 500 shares |
+|  | $32 · 1,000 shares |
+|  | $38 · 20,000 shares |
+
+- **Last Price / Last Trade** - the price of the most recently filled order (limit or market). This is the value shown in stock price charts.
+
+## Candlestick Charts
+
+Candlestick charts visualise the price activity of a security within a given period. Each candle encodes four data points: **Open**, **Close**, **High**, and **Low**.
+
+- Green candle → price closed higher than it opened (up day)
+- Red candle → price closed lower than it opened (down day)
+
+![Example candlestick chart](/fundamentals/candlestick-chart.png)
+
+The **body** of the candle spans the open-to-close range. The **wicks** (shadows) extend to the intraday high and low.
+
+![Candlestick anatomy: High, Open, Close, Low, upper and lower shadow](/fundamentals/candlestick-anatomy.png)
+
+- **High** - highest price reached during the period
+- **Low** - lowest price reached during the period
+- **Open** - price at the start of the period
+- **Close** - price at the end of the period
+
+The **volume bars** at the bottom show the number of shares traded: green on up days, red on down days.
+
+![DAX weekly candlestick chart with volume](/fundamentals/candlestick-real.png)
+
+---
+
+## Market Theories
+
+### Investment vs. Speculation
+
+What distinguishes an investment from a speculation is the **time horizon** of the expected return and the **predictability** of that return. An investment is a commitment of capital where the return can be estimated with reasonable confidence over a defined horizon. A speculation relies primarily on price movements driven by market sentiment, with no anchor in underlying value.
+
+### Price Determination Theories
+
+Two broad schools of thought have historically dominated debate about what drives asset prices:
+
+**The Firm-Foundation Theory** assumes that every investment instrument has an intrinsic value - a true, calculable worth derived from earnings, dividends, growth rates, and interest rates. Price deviations from this intrinsic value are temporary; they revert as the market recognises the mispricing.
+
+**The Castle-in-the-Air Theory**, articulated by John Maynard Keynes, argues that investors are primarily concerned not with intrinsic value but with what other investors will pay in the future. Price is determined by crowd psychology rather than fundamentals.
+
+> *Res tantum valet quantum vendi potest* - a thing is worth only what someone else will pay for it.
+
+Historical example: during 1959-1962, adding "Electronics" to a company name was sufficient to attract investor capital, regardless of whether the company had any meaningful activity in electronics. A textbook case of herd psychology overriding valuation.
+
+### Modern Portfolio Theory (MPT)
+
+Developed by Harry Markowitz, MPT introduced the concept of the **efficient frontier**: the set of portfolios that offer the maximum expected return for a given level of risk. It formalised diversification as a mathematical optimisation problem and underpins the risk/return framework used in modern portfolio construction.
+
+### Behavioural Finance
+
+Behaviouralists argue that market prices are systematically imprecise because investor irrationality is *correlated* - it does not cancel out across participants. Four recurring biases drive irrational market behaviour:
+
+1. **Overconfidence** - investors overestimate the precision of their judgements and the quality of their information
+2. **Biased judgements** - anchoring, recency bias, and other cognitive errors distort probability assessments
+3. **Herd mentality** - the tendency to follow what others are doing, creating momentum and bubbles
+4. **Loss aversion** - losses feel disproportionately painful relative to equivalent gains, leading to suboptimal decisions
+
+### Random Walk Theory
+
+The Random Walk hypothesis states that past stock price movements cannot reliably predict future movements. Although weak short-term momentum exists in markets, any investor paying transaction costs and taxes cannot exploit it profitably after costs.
+
+Implication: no short-term trading strategy can consistently outperform a policy of simply buying and holding a diversified index portfolio.
+
+**Why security analysts cannot predict the future:**
+
+1. Random, unforeseeable events drive a large share of company outcomes
+2. Reported earnings can be misleading due to accounting discretion or outright fraud
+3. Analysts make errors and operate on incomplete models
+4. The best analysts are routinely moved into higher-margin roles (sales desk, portfolio management), leaving lower-quality analysis in public research
+5. Structural conflicts of interest - analysts at investment banks face pressure to avoid negative ratings on client companies
+
+**Why mutual funds cannot beat the market:**
+
+Over long periods, actively managed mutual fund portfolios have not outperformed randomly selected stock portfolios. Short-term outperformance is not persistent and cannot be predicted in advance. An additional distortion is **survivorship bias**: underperforming funds are quietly merged into better-performing ones, erasing their records and inflating the apparent average performance of the surviving fund universe.
+
+**Core conclusions:**
+
+1. Risk and return are related - higher expected returns require accepting higher risk
+2. The longer the investment horizon, the lower the effective variability of returns
+3. Dollar-cost averaging reduces timing risk
+4. Rebalancing reduces portfolio risk without sacrificing expected return
+5. Risk tolerance is personal - it depends on your specific financial situation and time horizon
+
+The core of every long-term portfolio should consist of low-cost, tax-efficient, broad-based index funds.

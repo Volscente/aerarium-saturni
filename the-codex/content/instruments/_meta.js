@@ -4,4 +4,5 @@ export default {
   'fixed-income': 'Fixed Income',
   'pooled-funds': 'Pooled Funds',
   commodities: 'Commodities',
+  crypto: 'Bitcoin & Crypto',
 }

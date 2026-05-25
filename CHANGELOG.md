@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.4] - 2026-05-25
+
+### Added
+
+- **The Codex / Content**: `content/tabularium.mdx` — Tabularium section stub; sidebar-free, ToC-free placeholder establishing the `/tabularium` routing slot for the future portfolio management pillar.
+- **The Codex / Content**: `content/codex/_meta.js` — Codex subtree navigation config mapping the six wiki section directories (fundamentals, instruments, portfolio, personal, infrastructure, library).
+
+### Changed
+
+- **The Codex / Content**: Migrated all wiki section directories from flat `content/` into `content/codex/` — all Codex articles now served under `/codex/**` URL namespace.
+- **The Codex / Content**: Updated `content/_meta.js` to three-pillar navigation: `index` (Home), `tabularium`, `codex`; Home and Tabularium entries carry `theme: { sidebar: false, toc: false }` to suppress wiki chrome.
+- **The Codex / Content**: Replaced `content/index.mdx` Codex wiki landing with a clean Home stub for TASK-2 styling.
+- **The Codex / Infrastructure**: Updated `.lighthouserc.js` from `staticDistDir` to URL-based LHCI collection with `startServerCommand: 'npm run start'`; added explicit assertion targets for `/`, `/tabularium`, and `/codex/fundamentals`.
+- **The Codex / Tests**: Updated `tests/mobile-screenshot.spec.ts` URL fixture from stale `/finance/black-scholes` to `/codex/fundamentals/mathematics`; renamed snapshot to `fundamentals-mathematics-mobile.png`.
+
 ## [0.0.3] - 2026-05-13
 
 ### Added

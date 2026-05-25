@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test'
 
 test.describe('mobile LaTeX overflow regression', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/finance/black-scholes')
+    await page.goto('/codex/fundamentals/mathematics')
     await page.waitForLoadState('networkidle')
   })
 
@@ -28,7 +28,7 @@ test.describe('mobile LaTeX overflow regression', () => {
   test('visual snapshot — Black-Scholes page at 375 px', async ({ page }) => {
     // Baseline snapshots are generated on Linux CI via the update-snapshots job.
     // macOS dev runs will show expected diff warnings — this is acceptable.
-    await expect(page).toHaveScreenshot('black-scholes-mobile.png', {
+    await expect(page).toHaveScreenshot('fundamentals-mathematics-mobile.png', {
       fullPage: true,
     })
   })

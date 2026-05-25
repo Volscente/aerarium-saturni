@@ -2,7 +2,14 @@
 module.exports = {
   ci: {
     collect: {
-      staticDistDir: '.next',
+      startServerCommand: 'npm run start',
+      startServerReadyPattern: 'Ready on',
+      startServerReadyTimeout: 30000,
+      url: [
+        'http://localhost:3000/',
+        'http://localhost:3000/tabularium',
+        'http://localhost:3000/codex/fundamentals',
+      ],
     },
     assert: {
       assertions: {

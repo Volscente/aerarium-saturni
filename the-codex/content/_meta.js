@@ -1,9 +1,13 @@
 export default {
-  index: 'Introduction',
-  fundamentals: 'Fundamentals',
-  instruments: 'Instruments',
-  portfolio: 'Portfolio',
-  personal: 'Personal',
-  infrastructure: 'Infrastructure',
-  library: 'Library',
+  index: {
+    title: 'Home',
+    theme: { sidebar: false, toc: false },
+  },
+  tabularium: {
+    title: 'Tabularium',
+    theme: { sidebar: false, toc: false },
+  },
+  codex: {
+    title: 'Codex',
+  },
 }

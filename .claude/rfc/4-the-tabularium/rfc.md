@@ -125,13 +125,13 @@ With the routing contract in place, this milestone delivers the Home page conten
 
 ## Effort Estimations {#effort-estimations}
 
-Total estimated effort: **3 sessions**.
+Total estimated effort: **2 sessions**.
 
 | Milestone | Description                                                                 | Est. effort | GitHub Issue |
 | :-------- | :-------------------------------------------------------------------------- | :---------- | :----------- |
-| M1        | Content tree restructure, `_meta.js` nav mapping, cross-link audit          | 1 session   | #{issue}     |
-| M2        | Home page layout and Playwright baseline capture                            | 1 session   | #{issue}     |
-| M3        | Tabularium placeholder layout and Lighthouse/Playwright coverage extension  | 1 session   | #{issue}     |
+| M1        | Content tree restructure, `_meta.js` nav mapping, cross-link audit          | 1.0 session   | #9{issue}     |
+| M2        | Home page layout and Playwright baseline capture                            | 0.5 session   | #10{issue}     |
+| M3        | Tabularium placeholder layout and Lighthouse/Playwright coverage extension  | 0.5 session   | #11{issue}     |
 
 ### Recommended Order
 

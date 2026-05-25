@@ -24,7 +24,7 @@ TASK-1 establishes the routing contract that TASK-2 and TASK-3 depend on. TASK-2
 
 ## TASK-1 — Root Structural Tree Layout Rearrangement and Universal Page Meta Mapping
 
-**GitHub Issue:** #{issue}
+**GitHub Issue:** #9
 **Effort estimate:** 1.0 FTE-days
 
 ### Scope
@@ -53,7 +53,7 @@ The migration pivots on Nextra 4's file-system routing: top-level entries in `co
 
 ## TASK-2 — Home Welcome Area Layout Deployment
 
-**GitHub Issue:** #{issue}
+**GitHub Issue:** #10
 **Effort estimate:** 0.5 FTE-days
 
 ### Scope
@@ -78,7 +78,7 @@ The page renders as a raw, full-width surface because the `_meta.js` theme overr
 
 ## TASK-3 — Tabularium Section View Initialization
 
-**GitHub Issue:** #{issue}
+**GitHub Issue:** #11
 **Effort estimate:** 0.5 FTE-days
 
 ### Scope

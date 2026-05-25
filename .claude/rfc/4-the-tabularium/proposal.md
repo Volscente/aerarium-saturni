@@ -1,61 +1,64 @@
 ---
-title: ""               # Short RFC title
-project: ""             # Project or repo name
+title: "Multi-Pillar Architecture: Introducing Tabularium and Welcome Layout"
+project: "Aerarium Saturni"
 author: "Simone Porreca"
-deadline: ""            # YYYY-MM-DD; leave blank to default to 14 days from today
-notion-page: ""         # URL of the Notion initiative page; omit row in RFC if blank
-github-repo: ""         # owner/repo (e.g. simone/recipe-app); omit row in RFC if blank
-milestone: ""           # GitHub Milestone name; omit row in RFC if blank
+deadline: "2026-06-07"
+notion-page: "https://www.notion.so/4-The-Tabularium-3685cc6c0f078031b25bfeb9085d7a2b"
+github-repo: "https://github.com/Volscente/aerarium-saturni"
+milestone: [4-the-tabularium](https://github.com/Volscente/aerarium-saturni/milestone/2)
 tech-stack:
-  - ""                  # e.g. Python, Flask, whoosh
+  - "Next.js 15"
+  - "Nextra 4"
+  - "Tailwind CSS"
+  - "Lucide React"
 scope-in:
-  - ""                  # Each line is one in-scope capability
+  - "Refactoring root-level routing layout to serve a universal, clean welcome interface at `/`"
+  - "Integrating a global top navigation bar with 3 entries: Home, Codex, and Tabularium"
+  - "Scaffolding a dedicated, sidebar-free placeholder landing spot for `/tabularium` displaying the title 'Tabularium'"
+  - "Restructuring the content tree layout to isolate the financial wiki under a distinct workspace layer"
 scope-out:
-  - ""                  # Format: "Item: reason" (e.g. "Fuzzy matching: future phase")
+  - "Functional portfolio management layer utility utilities (inputs, charts, analysis computations): future phase"
+  - "Database connectivity or state preservation layers for live portfolio inputs: out of scope"
 milestones:
-  - ""                  # Ordered milestone names; each maps to a GitHub Issue
+  - "Root structural tree layout rearrangement and universal page meta mapping"
+  - "Home welcome area layout deployment"
+  - "Tabularium section view initialization"
 context-paths:
-  - ""                  # Optional: paths to module README.md files Claude should read for design context.
-                        # Paths are relative to the root of the target project repo.
-                        # E.g. "src/auth/README.md", "src/api/README.md"
+  - "the-codex/README.md"
 ---
 
 ## Problem
 
-<!-- Required. Describe the technical gap or pain point driving this initiative.
-     Write as much as needed — one sentence or several paragraphs.
-     No personal motivation here — that lives in the Notion page above. -->
+The Aerarium Saturni platform is currently configured entirely as an isolated financial theory wiki. While it provides an exceptional structural environment for mathematical rendering and documentation, it lacks the broader application shell, architectural landing ground, and core entry infrastructure necessary to introduce live portfolio management utilities. To launch the next operational layer of the application—**Tabularium**—the project layout must be refactored from a single-purpose knowledge base into a cohesive multi-pillar navigation system.
 
 ## Approach direction
 
-<!-- Optional. Your initial idea or preferred high-level approach.
-     Leave blank if you want Claude to propose the approach freely. -->
+Leverage the native top-level page tab layout architecture provided by Nextra 4. The root structure of the `the-codex/content/` workspace directory will be re-arranged to host global main views at the top layer (`content/index.mdx` for Home, and `content/tabularium.mdx` for the placeholder). The existing documentation layout directories will be neatly nested inside a dedicated `content/codex/` directory.
+
+A root `content/_meta.js` will define the primary navigation entries mapping (**Home**, **Codex**, **Tabularium**) to populate a clean global top header. Custom page configurations will be introduced inside the metadata object to deactivate the documentation sidebar and Table of Contents panels for the Home and Tabularium components, establishing zero visual overhead on non-wiki landing zones.
 
 ## Success criteria
 
-<!-- Optional. How will you know this initiative is done?
-     List measurable outcomes (e.g. "users can search by ingredient name in < 300 ms").
-     Used to generate the Objectives section in the RFC. -->
+- **Universal Navigation Mapping:** The top global layout bar displays interactive active highlights tracking routing choices for Home, Codex, and Tabularium seamlessly.
+- **Root URL Experience:** Navigating to `/` displays a clean, generic, centered welcome interface with wiki sidebars entirely hidden.
+- **Codex Integrity:** All historical financial theory notes, mathematical expressions, and Roman system assets remain accessible and structurally pristine.
+- **FlexSearch Stability:** The production automated text indexing system continues to crawl and execute search logic across both the restructured wiki assets and newly introduced layers under 200ms response latencies.
+- **Tabularium Placeholder Groundwork:** Navigating to `/tabularium` serves a clear page structure presenting solely the layout header title "Tabularium".
 
 ## Constraints
 
-<!-- Optional. Hard requirements the solution must satisfy.
-     Examples: SLA targets, banned technologies, budget caps, compliance rules.
-     Claude will not relax these when designing the approach. -->
+- **Theme Cohesion:** All fresh shell structures must seamlessly inherit the repository's custom Tailwind color palette primitives (`obsidian`, `parchment`, `terracotta`, `gold`, `stone`) and global style sheets without leaking raw defaults.
+- **Lighthouse performance Score:** Production performance configurations must continuously enforce scores $\ge 90$ upon pipeline evaluation steps.
+- **Build Cap Ceiling:** Build compilation pipelines must terminate execution completely in less than 3 minutes inside the automated multi-stage GitHub Actions matrix.
 
 ## Desired tech
 
-<!-- Optional. Technologies you want to experiment with or strongly prefer.
-     Separate from the tech-stack YAML field (which lists the existing stack);
-     this is for new tools you want to try — include your reasoning if useful. -->
+No external utilities or dependencies are requested for this foundational phase. The implementation details will rely exclusively on native Next.js 15 routing mechanics and declarative Nextra 4 page layouts to maintain a highly optimized, zero-overhead bundle footprint.
 
 ## Integration context
 
-<!-- Optional. How should the solution integrate with the current system?
-     E.g. "must reuse the existing auth middleware", "expose a REST endpoint consumed by the mobile app".
-     Used to shape integration subsections in the RFC. -->
+The restructured content tree directory layout must comfortably preserve the configuration guarantees of the multi-stage `Dockerfile` standalone bundle schema and align beautifully with the automated Playwright mobile visual testing assertions.
 
 ## Known risks / concerns
 
-<!-- Optional. Doubts about your approach or technical uncertainties.
-     Used to seed the Risks & Open Questions table in the RFC. -->
+- **Relative Page Link Breaking:** Shifting existing wiki paths down into a sub-folder layer alters their destination paths. An analysis must verify that cross-linked references inside the MDX document inventory do not throw broken route errors; any explicit root links found must be updated to target the new routing layout cleanly.

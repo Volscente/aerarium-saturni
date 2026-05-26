@@ -8,7 +8,7 @@ The Codex is the standalone documentation service for the Aerarium Saturni platf
 
 - **`next.config.mjs`** — Nextra wrapper with the remark-math → rehype-katex plugin chain and standalone output mode
 - **`content/_meta.js`** — Root navigation config: three-pillar layout (Home, Tabularium, Codex); per-page `theme: { sidebar: false, toc: false }` for Home and Tabularium
-- **`content/index.mdx`** — Home page stub (sidebar-free, ToC-free); styled content added in TASK-2
+- **`content/index.mdx`** — Home page welcome composition (sidebar-free, ToC-free); centered layout with platform heading, tagline, and Lucide icon anchors styled with roman-* Tailwind tokens
 - **`content/tabularium.mdx`** — Tabularium placeholder (sidebar-free, ToC-free); styled content added in TASK-3
 - **`content/codex/`** — MDX content tree for the Codex pillar: `_meta.js` subtree nav + six section directories (fundamentals, instruments, portfolio, personal, infrastructure, library)
 - **`app/layout.tsx`** — Root Next.js App Router layout; wires Nextra `<Layout>` with custom Navbar and Footer
@@ -82,6 +82,11 @@ docker compose up --build -d
 ---
 
 ### Changelog
+
+#### 2026-05-26
+
+- Implemented Home page welcome composition in `content/index.mdx`: centered layout with `BookOpen` Lucide icon, platform heading, tagline, and pillar icon anchors using Tailwind `roman-*` tokens
+- Added `Home page visual regression` Playwright `test.describe` block to `tests/mobile-screenshot.spec.ts`; captures `home-mobile.png` fullPage snapshot at 375 px
 
 #### 2026-05-25
 

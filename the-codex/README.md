@@ -7,20 +7,30 @@ The Codex is the standalone documentation service for the Aerarium Saturni platf
 ## Key components
 
 - **`next.config.mjs`** — Nextra wrapper with the remark-math → rehype-katex plugin chain and standalone output mode
-- **`pages/`** — MDX content tree: `index.mdx` (landing), `finance/black-scholes.mdx` (sample financial article)
+- **`content/_meta.js`** — Root navigation config: three-pillar layout (Home, Tabularium, Codex); per-page `theme: { sidebar: false, toc: false }` for Home and Tabularium
+- **`content/index.mdx`** — Home page stub (sidebar-free, ToC-free); styled content added in TASK-2
+- **`content/tabularium.mdx`** — Tabularium placeholder (sidebar-free, ToC-free); styled content added in TASK-3
+- **`content/codex/`** — MDX content tree for the Codex pillar: `_meta.js` subtree nav + six section directories (fundamentals, instruments, portfolio, personal, infrastructure, library)
+- **`app/layout.tsx`** — Root Next.js App Router layout; wires Nextra `<Layout>` with custom Navbar and Footer
 - **`theme/config.tsx`** — Nextra theme configuration (logo, project link, footer, dark mode toggle)
-- **`theme/index.tsx`** — Custom theme entry point stub; will become the full Roman-aesthetic override in TASK-2
-- **`styles/globals.css`** — Global stylesheet including the KaTeX CSS import
+- **`styles/globals.css`** — Global stylesheet: Tailwind directives, Roman CSS custom properties, `@layer base` overrides
 - **`Dockerfile`** — Multi-stage Docker build: builder stage produces `.next/standalone`; runner stage is minimal
 - **`docker-compose.yml`** — Service orchestration: `codex` container + `nginx` with health-checked dependency
 - **`nginx/subdomain.conf`** — Nginx server block for subdomain routing (primary topology)
 - **`nginx/path-based.conf`** — Nginx server block for `/wiki` path-based routing (secondary topology)
-- **`.lighthouserc.js`** — Lighthouse CI assertion: performance score ≥ 0.9
+- **`.lighthouserc.js`** — Lighthouse CI: starts Next.js server and asserts performance score ≥ 0.9 for `/`, `/tabularium`, and `/codex/fundamentals`
 
 ## Public interfaces
 
-- `GET /` — Documentation landing page
-- `GET /finance/black-scholes` — Black-Scholes model article with inline and block LaTeX
+- `GET /` — Home page (sidebar-free welcome interface)
+- `GET /tabularium` — Tabularium placeholder (sidebar-free; portfolio management pillar stub)
+- `GET /codex` — Codex section landing (financial theory wiki)
+- `GET /codex/fundamentals/**` — Fundamentals articles (mechanics, money & inflation, mathematics)
+- `GET /codex/instruments/**` — Instruments articles (equities, fixed income, commodities, crypto, pooled funds)
+- `GET /codex/portfolio/**` — Portfolio articles (models, diversification, selection rules)
+- `GET /codex/personal/**` — Personal finance articles (net worth, pensions, FIRE)
+- `GET /codex/infrastructure/**` — Infrastructure articles (brokers, costs & fees, taxation)
+- `GET /codex/library/**` — Library articles (education, media, reading list)
 - `GET /_next/static/**` — Static assets (JS, CSS, images) served directly by Next.js standalone output
 
 ## External dependencies
@@ -72,6 +82,16 @@ docker compose up --build -d
 ---
 
 ### Changelog
+
+#### 2026-05-25
+
+- Migrated content tree from flat `content/` to three-pillar layout: Home (`/`), Tabularium (`/tabularium`), Codex (`/codex/**`)
+- Moved all six wiki section directories (fundamentals, instruments, portfolio, personal, infrastructure, library) under `content/codex/`
+- Created `content/codex/_meta.js` for Codex subtree navigation
+- Replaced root `content/_meta.js` with three-pillar nav; Home and Tabularium entries carry `theme: { sidebar: false, toc: false }`
+- Updated `content/index.mdx` to Home stub; `content/tabularium.mdx` created as Tabularium stub
+- Updated `.lighthouserc.js` to URL-based LHCI targeting `/`, `/tabularium`, and `/codex/fundamentals`
+- Updated Playwright test URL from `/finance/black-scholes` to `/codex/fundamentals/mathematics`
 
 #### 2026-05-14
 

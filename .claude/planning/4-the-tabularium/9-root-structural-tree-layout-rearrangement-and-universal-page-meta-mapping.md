@@ -49,10 +49,13 @@ the-codex/                                the-codex/
 
 _meta.js root entry structure:
   {
-    index:       { title: 'Home',       theme: { sidebar: false, toc: false } }  → /
-    tabularium:  { title: 'Tabularium', theme: { sidebar: false, toc: false } }  → /tabularium
-    codex:       { title: 'Codex' }                                               → /codex/**
+    index:       { title: 'Home',       type: 'page', theme: { sidebar: false, toc: false } }  → /
+    tabularium:  { title: 'Tabularium', type: 'page', theme: { sidebar: false, toc: false } }  → /tabularium
+    codex:       { title: 'Codex',      type: 'page' }                                         → /codex/**
   }
+  NOTE: type: 'page' is required on all three entries. Nextra 4's normalizePagesResult only
+  adds entries to topLevelNavbarItems when type === 'page' | 'menu'. Without it, entries
+  default to type: 'doc' and are routed into the sidebar instead of the top nav bar.
 ```
 
 ### Why `content/` over `pages/`
@@ -73,7 +76,7 @@ No new packages required.
 
 | File                                                          | Action | Description                                                                                           |
 | ------------------------------------------------------------- | ------ | ----------------------------------------------------------------------------------------------------- |
-| `the-codex/content/_meta.js`                                  | Create | Root Nextra nav config: `index`, `tabularium`, `codex` entries; `index` and `tabularium` carry `theme: { sidebar: false, toc: false }` |
+| `the-codex/content/_meta.js`                                  | Create | Root Nextra nav config: `index`, `tabularium`, `codex` entries; all three carry `type: 'page'` (required for top navbar); `index` and `tabularium` additionally carry `theme: { sidebar: false, toc: false }` |
 | `the-codex/content/index.mdx`                                 | Create | Home stub — empty body, minimal frontmatter; styled content added in TASK-2                          |
 | `the-codex/content/tabularium.mdx`                            | Create | Tabularium stub — empty body, minimal frontmatter; styled content added in TASK-3                    |
 | `the-codex/content/codex/_meta.js`                            | Create | Codex subtree nav — mirrors existing `pages/` `_meta.js` structure                                   |
@@ -89,18 +92,23 @@ No new packages required.
 ```js
 // the-codex/content/_meta.js
 // Root navigation contract for the three-pillar layout.
-// index and tabularium suppress sidebar/ToC; codex inherits the standard doc layout.
+// type: 'page' is required on all entries — without it Nextra 4 defaults to type: 'doc',
+// which routes entries into the sidebar instead of topLevelNavbarItems (the top nav tabs).
+// index and tabularium additionally suppress sidebar/ToC; codex inherits the standard doc layout.
 export default {
   index: {
     title: 'Home',
+    type: 'page',
     theme: { sidebar: false, toc: false },
   },
   tabularium: {
     title: 'Tabularium',
+    type: 'page',
     theme: { sidebar: false, toc: false },
   },
   codex: {
     title: 'Codex',
+    type: 'page',
   },
 }
 ```

@@ -106,7 +106,7 @@ content/
       black-scholes.mdx  ← relocated from pages/finance/
 ```
 
-The root `_meta.js` defines three entries. The `Home` and `Tabularium` entries carry `theme: { sidebar: false, toc: false }` to suppress all wiki chrome. The `Codex` entry points to the `codex/` subtree and inherits the standard documentation layout. Absolute cross-links inside any MDX file are audited and updated to target the new `/codex/**` paths. The build pipeline and CI checks are run to confirm no compilation errors and no Lighthouse regressions.
+The root `_meta.js` defines three entries. All three entries carry `type: 'page'` so that Nextra 4's `normalizePagesResult` routes them into `topLevelNavbarItems` rather than the sidebar — without this field, entries default to `type: 'doc'` and appear in the sidebar only. The `Home` and `Tabularium` entries additionally carry `theme: { sidebar: false, toc: false }` to suppress all wiki chrome. The `Codex` entry points to the `codex/` subtree and inherits the standard documentation layout. Absolute cross-links inside any MDX file are audited and updated to target the new `/codex/**` paths. The build pipeline and CI checks are run to confirm no compilation errors and no Lighthouse regressions.
 
 ## M2 — Home Welcome Area Layout Deployment {#m2}
 

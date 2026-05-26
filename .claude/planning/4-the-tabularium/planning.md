@@ -37,7 +37,7 @@ Establish the validated routing contract and navigation structure so that the bu
 
 ### Deliverables
 
-- `content/_meta.js` — root navigation config; entries: `index` (Home), `tabularium`, `codex`; `index` and `tabularium` entries carry `theme: { sidebar: false, toc: false }`
+- `content/_meta.js` — root navigation config; entries: `index` (Home), `tabularium`, `codex`; all three entries carry `type: 'page'` (required for Nextra 4 to include them in `topLevelNavbarItems`); `index` and `tabularium` additionally carry `theme: { sidebar: false, toc: false }`
 - `content/index.mdx` — Home stub (empty body, correct frontmatter)
 - `content/tabularium.mdx` — Tabularium stub (empty body, correct frontmatter)
 - `content/codex/_meta.js` — Codex subtree navigation preserving existing structure
@@ -47,7 +47,7 @@ Establish the validated routing contract and navigation structure so that the bu
 
 ### Technical Overview
 
-The migration pivots on Nextra 4's file-system routing: top-level entries in `content/` map directly to URL segments. The root `_meta.js` must declare `index`, `tabularium`, and `codex` as its three keys. `index` and `tabularium` receive `theme: { sidebar: false, toc: false }` to suppress all wiki chrome; `codex` inherits the standard documentation layout. If the `_meta.js` theme API does not suppress the panels as documented for the pinned Nextra version, the fallback is a minimal custom layout component using Next.js's `getLayout` pattern. All MDX files must be audited for absolute hrefs beginning with `/finance/` and rewritten to `/codex/finance/`. A FlexSearch smoke test after the clean build confirms that search result hrefs resolve under `/codex/**`. The Dockerfile and Nginx configs require no changes.
+The migration pivots on Nextra 4's file-system routing: top-level entries in `content/` map directly to URL segments. The root `_meta.js` must declare `index`, `tabularium`, and `codex` as its three keys. All three keys must carry `type: 'page'` — Nextra 4's `normalizePagesResult` only adds entries to `topLevelNavbarItems` (the top nav tabs) when their type is `"page"` or `"menu"`; entries that omit `type` default to `"doc"` and are routed into the sidebar instead. `index` and `tabularium` additionally receive `theme: { sidebar: false, toc: false }` to suppress all wiki chrome; `codex` inherits the standard documentation layout. If the `_meta.js` theme API does not suppress the panels as documented for the pinned Nextra version, the fallback is a minimal custom layout component using Next.js's `getLayout` pattern. All MDX files must be audited for absolute hrefs beginning with `/finance/` and rewritten to `/codex/finance/`. A FlexSearch smoke test after the clean build confirms that search result hrefs resolve under `/codex/**`. The Dockerfile and Nginx configs require no changes.
 
 ---
 

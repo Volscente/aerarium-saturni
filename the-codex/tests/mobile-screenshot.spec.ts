@@ -1,5 +1,18 @@
 import { test, expect } from '@playwright/test'
 
+test.describe('Home page visual regression', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/')
+    await page.waitForLoadState('networkidle')
+  })
+
+  test('visual snapshot — Home page at 375 px', async ({ page }) => {
+    await expect(page).toHaveScreenshot('home-mobile.png', {
+      fullPage: true,
+    })
+  })
+})
+
 test.describe('mobile LaTeX overflow regression', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/codex/fundamentals/mathematics')

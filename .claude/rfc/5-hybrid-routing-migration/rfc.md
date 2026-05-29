@@ -53,14 +53,17 @@ The Aerarium Saturni platform is built on a Next.js 15 + Nextra 4 application (`
 
 **In-Scope:**
 
+- Rename `the-codex/` workspace directory to `frontend/` to align with mono-repo naming convention
 - Move Nextra `<Layout>` from `app/layout.tsx` to `app/[[...slug]]/layout.tsx`
 - Create `app/(tabularium)/tabularium/layout.tsx` and `page.tsx`
-- Refactor `CustomNavbar` to use hard-coded Next.js `<Link>` + `usePathname()` active state
+- Refactor `CustomNavbar` to use hard-coded Next.js `<Link>` + `usePathname()` active state; design for extensibility to a future Providentia pillar
 - Delete `content/tabularium.mdx` and remove the `tabularium` entry from `content/_meta.js`
 - Scaffold sub-route directories for portfolio and transactions (empty `page.tsx` placeholders)
-- Create `backend/` UV workspace with FastAPI project structure (`pyproject.toml`, `src/` layout, `/health` endpoint)
+- Create `backend/` UV workspace with FastAPI project structure (`pyproject.toml`, `src/backend/` layout, `/health` endpoint)
 - Configure CORS in FastAPI to allow requests from the Next.js dev and prod origins
-- Add backend startup script to `justfile`
+- Configure SQLAlchemy async engine and session factory in the backend workspace (no models yet)
+- Add root-level `docker-compose.yml` orchestrating `frontend`, `backend`, and `database` (PostgreSQL) services
+- Refactor `justfile` to use `frontend/` paths, rename `codex-*` recipes to `frontend-*`, and add `backend-dev` recipe
 
 **Out-of-Scope:**
 
@@ -82,13 +85,15 @@ The Aerarium Saturni platform is built on a Next.js 15 + Nextra 4 application (`
 
 ## Approach Overview {#approach-overview}
 
-The approach adopts the author's stated direction in full: move the Nextra `<Layout>` wrapper out of the root layout, introduce a dedicated App Router route group for the Tabularium, refactor `CustomNavbar` to be framework-agnostic, and scaffold the Python backend workspace. No alternative direction was considered — the stated approach is both technically correct and internally consistent.
+The approach adopts the author's stated direction in full: rename the `the-codex/` workspace to `frontend/`, move the Nextra `<Layout>` wrapper out of the root layout, introduce a dedicated App Router route group for the Tabularium, refactor `CustomNavbar` to be framework-agnostic, and scaffold the Python backend workspace with its data layer. No alternative direction was considered — the stated approach is both technically correct and internally consistent.
 
-The core insight is that Next.js 15 App Router — which Nextra already runs on top of — provides all the primitives the Tabularium needs natively: Server Components, route groups, co-located layouts, and Server Actions. Using it directly for the Tabularium removes Nextra's documentation chrome (sidebar, ToC, prose wrapper, page-map-driven nav) while leaving the Codex entirely on Nextra. The two routing paths coexist in a single deployment: `app/[[...slug]]` continues to serve Nextra-compiled MDX for Home and Codex; `app/(tabularium)/` serves the dashboard shell via standard App Router layouts. The Python FastAPI service runs as a separate UV workspace in the same repository, called over HTTP from Tabularium Server Components — no client-side API calls for sensitive financial data.
+The core insight is that Next.js 15 App Router — which Nextra already runs on top of — provides all the primitives the Tabularium needs natively: Server Components, route groups, co-located layouts, and Server Actions. Using it directly for the Tabularium removes Nextra's documentation chrome (sidebar, ToC, prose wrapper, page-map-driven nav) while leaving the Codex entirely on Nextra. The two routing paths coexist in a single deployment: `app/[[...slug]]` continues to serve Nextra-compiled MDX for Home and Codex; `app/(tabularium)/` serves the dashboard shell via standard App Router layouts. The Python FastAPI service runs as a separate UV workspace (`backend/`) in the same repository, called over HTTP from Tabularium Server Components — no client-side API calls for sensitive financial data.
+
+Aerarium Saturni is organised around three application pillars — **Tabularium** (portfolio dashboard), **Codex** (financial theory wiki), and **Providentia** (ML simulations and predictions, planned future RFC) — plus a Home landing page. The `CustomNavbar` refactor must be designed with this four-entry nav in mind: the three pillar links and a Home anchor. Providentia is out of scope for this RFC but the navbar data structure must not require revisiting when it is added.
 
 ### Integration
 
-The migration touches four existing files and adds five new ones within `the-codex/`, plus creates the `backend/` workspace. The Codex content tree (`content/codex/`), Nginx configuration, Docker setup, and Lighthouse CI config require no changes — the `/tabularium` URL continues to exist and the performance assertion remains valid. The `CustomNavbar` and `CustomFooter` components in `theme/components/` are reused without visual modification in both the Nextra `[[...slug]]` layout and the new Tabularium layout, making them the visual continuity anchor across the hybrid architecture.
+The migration touches four existing files and adds five new ones within `frontend/` (the renamed `the-codex/` workspace), plus creates the `backend/` workspace and a root-level `docker-compose.yml`. The Codex content tree (`content/codex/`), Nginx configuration, and Lighthouse CI config require no changes — the `/tabularium` URL continues to exist and the performance assertion remains valid. The `CustomNavbar` and `CustomFooter` components in `theme/components/` are reused without visual modification in both the Nextra `[[...slug]]` layout and the new Tabularium layout, making them the visual continuity anchor across the hybrid architecture. All `justfile` recipes that reference `the-codex/` paths are updated to `frontend/`, and `codex-*` recipe names become `frontend-*`.
 
 ## Frontend Routing Migration {#frontend-routing-migration}
 
@@ -101,21 +106,24 @@ The Nextra `<Layout>` wrapper is moved from `app/layout.tsx` into a new `app/[[.
 `app/(tabularium)/tabularium/layout.tsx` renders `CustomNavbar` and `CustomFooter` directly with a full-width content area and no Nextra chrome. `app/(tabularium)/tabularium/page.tsx` provides the landing page. Empty `page.tsx` placeholders are created at `app/(tabularium)/tabularium/portfolio/page.tsx` and `app/(tabularium)/tabularium/transactions/page.tsx` to establish the sub-route structure. The route group wrapper `(tabularium)` is invisible to the URL router, avoiding any slug conflict with the Nextra catch-all.
 
 **Step 3 — Decouple the Navbar.**
-`content/tabularium.mdx` is deleted and its entry removed from `content/_meta.js` **first**, before the route group page is created, to prevent a routing conflict where both Nextra and the App Router claim `/tabularium`. `CustomNavbar` is then refactored to a `'use client'` component: three explicit `<Link>` components for Home (`/`), Codex (`/codex`), and Tabularium (`/tabularium`), with `usePathname()` supplying active-state logic via prefix matching. Visual output must be identical to the current navbar; only the implementation changes. After this step `CustomNavbar` is framework-agnostic and reusable in both layouts.
+`content/tabularium.mdx` is deleted and its entry removed from `content/_meta.js` **first**, before the route group page is created, to prevent a routing conflict where both Nextra and the App Router claim `/tabularium`. `CustomNavbar` is then refactored to a `'use client'` component: the nav links are declared as a typed array of `{ label, href }` entries (Home, Tabularium, Codex, with a Providentia placeholder commented out), iterated to render `<Link>` components, and `usePathname()` supplies active-state logic via prefix matching. This data-driven structure means adding Providentia in a future RFC requires only appending one entry to the array, not touching layout logic. Visual output must be identical to the current navbar; only the implementation changes. After this step `CustomNavbar` is framework-agnostic and reusable in both layouts.
 
 **File change summary:**
 
 | File | Change |
 | :--- | :----- |
-| `app/layout.tsx` | Stripped to minimal shell; Nextra `<Layout>` removed |
-| `app/[[...slug]]/layout.tsx` | New file; receives Nextra `<Layout>` |
-| `app/(tabularium)/tabularium/layout.tsx` | New file; `CustomNavbar` + `CustomFooter`, no Nextra |
-| `app/(tabularium)/tabularium/page.tsx` | New file; Tabularium landing page |
-| `app/(tabularium)/tabularium/portfolio/page.tsx` | New file; empty placeholder |
-| `app/(tabularium)/tabularium/transactions/page.tsx` | New file; empty placeholder |
-| `theme/components/Navbar.tsx` | Refactored; Nextra `<Navbar>` removed, hard-coded links added |
-| `content/_meta.js` | `tabularium` entry removed |
-| `content/tabularium.mdx` | Deleted |
+| `the-codex/` → `frontend/` | Directory renamed; all internal paths unchanged |
+| `frontend/app/layout.tsx` | Stripped to minimal shell; Nextra `<Layout>` removed |
+| `frontend/app/[[...slug]]/layout.tsx` | New file; receives Nextra `<Layout>` |
+| `frontend/app/(tabularium)/tabularium/layout.tsx` | New file; `CustomNavbar` + `CustomFooter`, no Nextra |
+| `frontend/app/(tabularium)/tabularium/page.tsx` | New file; Tabularium landing page |
+| `frontend/app/(tabularium)/tabularium/portfolio/page.tsx` | New file; empty placeholder |
+| `frontend/app/(tabularium)/tabularium/transactions/page.tsx` | New file; empty placeholder |
+| `frontend/theme/components/Navbar.tsx` | Refactored; data-driven link array replaces Nextra `<Navbar>` |
+| `frontend/content/_meta.js` | `tabularium` entry removed |
+| `frontend/content/tabularium.mdx` | Deleted |
+| `justfile` | `codex-*` recipes renamed `frontend-*`; paths updated to `frontend/`; `backend-dev` recipe added |
+| `docker-compose.yml` (root, new) | Orchestrates `frontend`, `backend`, and `database` services |
 
 ## Python Backend Workspace Scaffold {#python-backend-workspace-scaffold}
 
@@ -123,45 +131,63 @@ The root `pyproject.toml` already declares `members = ["backend"]` in the UV wor
 
 **Directory structure:**
 
-```
+```text
 backend/
-  pyproject.toml              ← UV workspace member; FastAPI + uvicorn dependencies
+  pyproject.toml              ← UV workspace member; FastAPI + uvicorn + SQLAlchemy + psycopg2 deps
   src/
-    aerarium_backend/
+    backend/
       __init__.py
       main.py                 ← FastAPI app: CORS middleware + GET /health endpoint
+      db.py                   ← SQLAlchemy async engine + session factory (no models yet)
 ```
 
-**CORS configuration:** `CORSMiddleware` is configured to allow requests from `http://localhost:3000` (Next.js dev server) and the production origin supplied via a `FRONTEND_ORIGIN` environment variable. All API responses include the appropriate `Access-Control-Allow-Origin` header.
+**CORS configuration:** `CORSMiddleware` is configured to allow requests from `http://localhost:3000` (Next.js dev server) and the production origin supplied via a `FRONTEND_ORIGIN` environment variable.
 
 **Health endpoint:** `GET /health` returns `{"status": "ok"}` with no database dependency, enabling CI and load-balancer liveness checks before any business logic is implemented.
 
-**justfile integration:** A `backend-dev` recipe is added to the root `justfile`:
+**Database layer (scaffold only):** `db.py` configures an async SQLAlchemy engine pointed at the PostgreSQL connection URL from a `DATABASE_URL` environment variable, and exposes a `get_session` async generator for future dependency injection. No ORM models or migrations are created in this RFC — those belong to the initiative that implements the first data-backed endpoint.
+
+**Root docker-compose.yml:** A new `docker-compose.yml` at the repository root orchestrates three services:
+
+| Service | Image / Build | Port |
+| :------ | :------------ | :--- |
+| `database` | `postgres:17-alpine` | 5432 |
+| `backend` | `backend/Dockerfile` (to be added) | 8000 |
+| `frontend` | `frontend/Dockerfile` (existing, renamed) | 3000 |
+
+The `backend` and `frontend` services depend on `database`. The PostgreSQL `DATABASE_URL` is injected into the `backend` service via `.env`. The existing `frontend/docker-compose.yml` is retained for frontend-only development.
+
+**justfile refactor:** `codex-rebuild` and `codex-dev` are renamed `frontend-rebuild` and `frontend-dev`; all `the-codex/` paths become `frontend/`. A new `backend-dev` recipe is added:
 
 ```makefile
 backend-dev:
-    cd backend && uv run uvicorn aerarium_backend.main:app --reload --port 8000
+    cd backend && uv run uvicorn backend.main:app --reload --port 8000
 ```
 
 **Future data flow** (post-RFC, for context):
 
-```
+```text
 Browser → GET /tabularium/portfolio
-  → app/(tabularium)/tabularium/layout.tsx   (Navbar + Footer shell)
-  → app/(tabularium)/tabularium/portfolio/page.tsx   (Server Component)
+  → frontend/app/(tabularium)/tabularium/layout.tsx   (Navbar + Footer shell)
+  → frontend/app/(tabularium)/tabularium/portfolio/page.tsx   (Server Component)
        └── fetch("http://localhost:8000/portfolio")
-              → backend/src/aerarium_backend/routers/portfolio.py   (future)
+              → backend/src/backend/routers/portfolio.py   (future)
+                   └── SQLAlchemy session → PostgreSQL
 ```
 
 ## Tech Stack {#tech-stack}
 
-- **Next.js 15**: Already the runtime for `the-codex/`; App Router route groups, Server Components, and co-located layouts are used directly for the Tabularium without introducing any new dependency — the framework overhead is removed, not added.
+- **Next.js 15**: Already the runtime for `frontend/` (renamed from `the-codex/`); App Router route groups, Server Components, and co-located layouts are used directly for the Tabularium without introducing any new dependency — the framework overhead is removed, not added.
 - **Nextra 4**: Retained in full for the Codex and Home pillars; scoped to `app/[[...slug]]/` after the migration so its MDX compilation, sidebar, FlexSearch, and KaTeX pipeline continue to function unmodified.
 - **Tailwind CSS**: Shared design token system including `roman-*` custom properties defined in `styles/globals.css`; the Tabularium layout shell reuses the same tokens to maintain visual unity.
 - **Lucide React**: Icon library used in `CustomNavbar` and `CustomFooter`; reused unchanged in both the Nextra and Tabularium layouts.
 - **Python 3.13**: Runtime for the backend service; required by the existing `.python-version` pin and UV workspace configuration; enables access to the Python financial ecosystem (pandas, financial libraries) unavailable in the Node.js runtime.
 - **FastAPI**: Async Python web framework; chosen for native OpenAPI schema generation (API contract source of truth for frontend type derivation), async request handling, and built-in `CORSMiddleware`.
+- **Pydantic**: Data validation library; a core FastAPI dependency used for request body and response model validation; called out explicitly because all API schemas (investment entries, portfolio summaries, simulation inputs) will be Pydantic models.
+- **SQLAlchemy (async ORM)**: Python ORM layer configured against PostgreSQL; the async engine and session factory are scaffolded in this RFC; ORM models and migrations are deferred to the first data-backed endpoint initiative.
+- **PostgreSQL**: Relational database for financial data (investments, transactions, portfolio snapshots); runs as a Docker service (`postgres:17-alpine`); connection URL injected via `DATABASE_URL` environment variable.
 - **UV**: Python project and dependency manager; already configured at root as a workspace manager via `pyproject.toml`; the `backend/` workspace member is declared and ready to materialise.
+- **Docker Compose**: Container orchestration; a new root-level `docker-compose.yml` replaces the frontend-only compose in `frontend/` for full-stack development, co-locating the `frontend`, `backend`, and `database` services.
 
 **Desired / experimental:**
 
@@ -210,6 +236,9 @@ A:
 - **Server Component** → A React component rendered exclusively on the server; can call internal APIs directly without exposing data to the client bundle.
 - **UV** → Astral's Python package and project manager; used here as a workspace manager hosting both root-level config and `backend/` as a member workspace.
 - **CORS** → Cross-Origin Resource Sharing; browser security policy requiring the FastAPI service to explicitly allowlist the Next.js origin before browser-initiated requests succeed.
+- **Tabularium** → Portfolio management pillar; dashboard area of Aerarium Saturni.
+- **Codex** → Financial theory wiki pillar; documentation area of Aerarium Saturni.
+- **Providentia** → Planned future pillar for ML-based portfolio simulations and predictions; out of scope for this RFC but accounted for in the navbar data structure.
 
 ---
 

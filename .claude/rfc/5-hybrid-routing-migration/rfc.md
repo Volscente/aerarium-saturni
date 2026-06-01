@@ -199,8 +199,8 @@ Total estimated effort: **4 sessions**.
 
 | Milestone                       | Description                                                                                                                                           | Est. effort | GitHub Issue |
 | :------------------------------ | :---------------------------------------------------------------------------------------------------------------------------------------------------- | :---------- | :----------- |
-| M1 — Frontend Routing Migration | Lift Nextra Layout, create Tabularium route group and placeholders, refactor CustomNavbar, delete `tabularium.mdx`, update `_meta.js`, verify CI green | 3 sessions  | #{issue}     |
-| M2 — Python Backend Scaffold    | Create `backend/` UV workspace, FastAPI app with CORS and `/health`, `justfile` recipe, smoke-test from Next.js dev server                            | 1 session   | #{issue}     |
+| M1 — Frontend Routing Migration | Lift Nextra Layout, create Tabularium route group and placeholders, refactor CustomNavbar, delete `tabularium.mdx`, update `_meta.js`, verify CI green | 3 sessions  | #16     |
+| M2 — Python Backend Scaffold    | Create `backend/` UV workspace, FastAPI app with CORS and `/health`, `justfile` recipe, smoke-test from Next.js dev server                            | 1 session   | #17     |
 
 ### Recommended Order
 

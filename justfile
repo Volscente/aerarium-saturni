@@ -19,10 +19,10 @@ help:
         exit 1; \
     fi
 
-# Full rebuild of The Codex (clears cache and regenerates search index)
-codex-rebuild: check_root
+# Full rebuild of the Frontend (clears cache and regenerates search index)
+frontend-rebuild: check_root
     #!/usr/bin/env bash
-    cd "{{ ROOT_DIR }}/the-codex"
+    cd "{{ ROOT_DIR }}/frontend"
     if [ ! -d node_modules ]; then
         npm install
     fi
@@ -30,9 +30,9 @@ codex-rebuild: check_root
     npm run build
     npx pagefind --site .next/server/app --output-path public/_pagefind
 
-# Start The Codex dev server and open it in the browser
-codex-dev: check_root codex-rebuild
+# Start the Frontend dev server and open it in the browser
+frontend-dev: check_root frontend-rebuild
     #!/usr/bin/env bash
-    cd "{{ ROOT_DIR }}/the-codex"
+    cd "{{ ROOT_DIR }}/frontend"
     open http://localhost:3000 &
     npm run start

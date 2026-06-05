@@ -11,12 +11,12 @@ The Frontend is the Next.js 15 + Nextra 4 application for the Aerarium Saturni p
 - **`content/index.mdx`** — Home page welcome composition (sidebar-free, ToC-free); centered layout with platform heading, tagline, and Lucide icon anchors styled with roman-* Tailwind tokens
 - **`content/codex/`** — MDX content tree for the Codex pillar: `_meta.js` subtree nav + six section directories (fundamentals, instruments, portfolio, personal, infrastructure, library)
 - **`app/layout.tsx`** — Root Next.js App Router layout; minimal shell (`<html>`, `<body>`, `ThemeProvider`, global CSS)
-- **`app/[[...slug]]/layout.tsx`** — Nextra `<Layout>` wrapper scoped to Home and Codex catch-all routes
+- **`app/[[...slug]]/layout.tsx`** — Nextra `<Layout>` wrapper scoped to Home and Codex catch-all routes; passes `navbar={<CustomNavbar><Search /></CustomNavbar>}` so the Pagefind search bar appears inside the custom nav (see [Search integration](#search-integration))
 - **`app/(tabularium)/tabularium/layout.tsx`** — Tabularium layout shell: `CustomNavbar` + `CustomFooter`, no Nextra chrome, full-width content area
 - **`app/(tabularium)/tabularium/page.tsx`** — Tabularium landing page
 - **`app/(tabularium)/tabularium/portfolio/page.tsx`** — Portfolio sub-route placeholder
 - **`app/(tabularium)/tabularium/transactions/page.tsx`** — Transactions sub-route placeholder
-- **`theme/components/Navbar.tsx`** — Framework-agnostic `CustomNavbar`; data-driven `NavLink[]` array; `usePathname()` active state with prefix matching; reused in both layouts
+- **`theme/components/Navbar.tsx`** — Framework-agnostic `CustomNavbar`; data-driven `NavLink[]` array; `usePathname()` active state with prefix matching; accepts optional `children?: ReactNode` rendered at the trailing end of the right-side flex container; reused in both layouts
 - **`theme/components/Footer.tsx`** — `CustomFooter`; Scale icon + year auto-fill; reused in both layouts
 - **`styles/globals.css`** — Global stylesheet: Tailwind directives, Roman CSS custom properties, `@layer base` overrides
 - **`Dockerfile`** — Multi-stage Docker build: builder stage produces `.next/standalone`; runner stage is minimal
@@ -42,7 +42,7 @@ The Frontend is the Next.js 15 + Nextra 4 application for the Aerarium Saturni p
 
 ## External dependencies
 
-- **Nextra** — Documentation framework on Next.js; handles MDX compilation, sidebar/navbar generation, and FlexSearch integration; scoped to `[[...slug]]` routes only
+- **Nextra** — Documentation framework on Next.js; handles MDX compilation, sidebar/navbar generation, and Pagefind search integration; scoped to `[[...slug]]` routes only
 - **remark-math / rehype-katex** — Unified pipeline plugins that parse and render LaTeX delimiters at build time; no client-side KaTeX JS bundle is shipped
 - **KaTeX** — LaTeX renderer; only its CSS (`katex.min.css`) is loaded at runtime
 - **next-themes** — Theme provider (`ThemeProvider`) in root layout; `useTheme()` consumed by `CustomNavbar` for dark/light toggle
@@ -55,9 +55,47 @@ The Frontend is the Next.js 15 + Nextra 4 application for the Aerarium Saturni p
 - Builds must complete within 3 minutes; enforced by `timeout-minutes: 3` on the CI build step.
 - All LaTeX is pre-rendered at build time — no KaTeX JS bundle is shipped to the browser.
 - No standard Nextra styling may be visible in the final site.
-- Search requires a minimum of 2 characters before querying the index; supports full substring matching via `tokenize: 'full'`.
-- The search index file is fetched from `/_next/static/chunks/nextra-data-en-US.json`; the locale key `en-US` matches Nextra's `DEFAULT_LOCALE` used when no i18n config is present.
+- Search uses Pagefind (Nextra 4 default); the index is built from compiled `.html` files by `next build` and served from `/_pagefind/pagefind.js`. Search is intentionally disabled in `next dev` — run `next build && next start` to test it locally.
+- The `<Search />` component (from `nextra/components`) must be passed as `children` to `CustomNavbar` in the `[[...slug]]` layout's `navbar` prop. **Do not remove it or break this chain** — see [Search integration](#search-integration).
 - `content/tabularium.mdx` must not be re-created; its absence is what allows the App Router route group to own `/tabularium` without Nextra shadowing it.
+
+## Search integration
+
+### How it works
+
+Nextra 4 ships `<Search />` from `nextra/components`. This component drives Pagefind: on first keystroke it lazy-loads `/_pagefind/pagefind.js` (built during `next build`) and queries the static HTML index.
+
+Nextra's own `<Layout>` expects to render search through its internal `ClientNavbar`, which reads `themeConfig.search` via `useThemeConfig()`. **Because this project passes a custom `navbar` prop, `ClientNavbar` is never mounted** — so `themeConfig.search` never reaches the header regardless of what the `search` prop is set to.
+
+The fix: `<Search />` is injected directly into `CustomNavbar` via its `children` prop, so it appears in the right-side flex container of every Codex and Home page header.
+
+```tsx
+// frontend/app/[[...slug]]/layout.tsx
+import { Search } from 'nextra/components'
+import { CustomNavbar } from '../../theme/components/Navbar'
+
+<Layout
+  navbar={<CustomNavbar><Search /></CustomNavbar>}
+  ...
+>
+```
+
+### Invariants to preserve
+
+| Rule | Why |
+|------|-----|
+| Always pass `<Search />` as `children` to `CustomNavbar` in `app/[[...slug]]/layout.tsx` | Nextra's `search` prop only reaches the header via `ClientNavbar`; once a custom `navbar` is used, that channel is bypassed |
+| Never set `search={false}` or `search={null}` on `<Layout>` without a compensating render elsewhere | The sidebar also reads `themeConfig.search` to show search on mobile; suppressing it removes mobile search |
+| `CustomNavbar` must remain free of Nextra-specific imports | It is reused in the Tabularium layout, which has no Nextra context |
+
+### Symptom: search bar disappears
+
+If search disappears from Codex pages, check in order:
+
+1. **`app/[[...slug]]/layout.tsx` — `navbar` prop** — confirm it is `<CustomNavbar><Search /></CustomNavbar>`, not bare `<CustomNavbar />`.
+2. **`theme/components/Navbar.tsx` — `children` rendering** — confirm `{children}` is rendered inside the right-side `<div className="flex items-center gap-6">` flex container.
+3. **`nextra/components` export** — confirm `Search` is still exported: `grep "Search" node_modules/nextra/dist/client/components/index.js`. If it moves, update the import path; do **not** try to import it from `nextra-theme-docs` (it is not exported there).
+4. **Pagefind index missing** — if the search widget renders but returns no results, the Pagefind index was not built. Run `next build`; the index is absent in `next dev` by design.
 
 ## Out of scope
 
@@ -94,6 +132,12 @@ just frontend-dev       # rebuild then start server
 ---
 
 ### Changelog
+
+#### 2026-06-05
+
+- Restored Pagefind search bar in Codex routes: `CustomNavbar` now accepts optional `children?: ReactNode`; `app/[[...slug]]/layout.tsx` passes `<Search />` as children via `navbar={<CustomNavbar><Search /></CustomNavbar>}`
+- Corrected outdated FlexSearch references to Pagefind throughout docs (Nextra 4 changed search engines)
+- Added Search integration section documenting the invariant and a step-by-step recovery guide
 
 #### 2026-06-01
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, type ReactNode } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { BookOpen, Github, Sun, Moon } from 'lucide-react'
@@ -51,7 +51,7 @@ function isActive(pathname: string, href: string): boolean {
  *   A <nav> element containing three <Link> entries (Home, Tabularium, Codex).
  *   A commented-out Providentia entry is present for future extension.
  */
-export function CustomNavbar() {
+export function CustomNavbar({ children }: { children?: ReactNode }) {
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   const pathname = usePathname()
@@ -101,6 +101,8 @@ export function CustomNavbar() {
             {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
           </button>
         )}
+
+        {children}
       </div>
     </nav>
   )

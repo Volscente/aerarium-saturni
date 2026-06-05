@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { Layout } from 'nextra-theme-docs'
+import { Search } from 'nextra/components'
 import { getPageMap } from 'nextra/page-map'
 import { CustomNavbar } from '../../theme/components/Navbar'
 import { CustomFooter } from '../../theme/components/Footer'
@@ -26,7 +27,7 @@ export default async function NextraLayout({ children }: { children: ReactNode }
     <Layout
       pageMap={pageMap}
       docsRepositoryBase="https://github.com/Volscente/aerarium-saturni/tree/main/frontend"
-      navbar={<CustomNavbar />}
+      navbar={<CustomNavbar><Search /></CustomNavbar>}
       footer={<CustomFooter />}
       darkMode
       sidebar={{ defaultMenuCollapseLevel: 1, toggleButton: true }}

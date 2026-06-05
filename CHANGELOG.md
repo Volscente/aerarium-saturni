@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.3] - 2026-06-05
+
+### Fixed
+
+- **Search**: Restored FlexSearch search bar in Codex routes (`/codex/**`). The `<Layout>` component was receiving a custom `navbar` prop that replaced the entire default Nextra navbar — including its embedded `<Search />` component. Fix imports `Search` from `nextra/components` and passes it explicitly as the `search` prop to `<Layout>`, keeping `CustomNavbar` framework-agnostic.
+
 ## [0.1.0] - 2026-06-01
 
 ### Added

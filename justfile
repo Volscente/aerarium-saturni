@@ -56,9 +56,9 @@ stop_backend: check_root
 
 # Run only database
 run_database: check_root
-    docker-compose up -d db
+    docker-compose up -d database
 
 stop_database: check_root
-    docker-compose stop db
+    docker-compose stop database
 
 # ----------------------------------------

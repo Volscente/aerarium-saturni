@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.2] - 2026-06-06
+
+### Added
+
+- **Backend**: New `backend/` UV workspace member materialised from the `members = ["backend"]` declaration in the root `pyproject.toml`.
+- **Backend**: `backend/src/backend/main.py` — FastAPI application with `CORSMiddleware` allowing `http://localhost:3000` and the `FRONTEND_ORIGIN` environment variable; `GET /health` liveness endpoint returning `{"status": "ok"}` with no database dependency.
+- **Backend**: `backend/src/backend/db.py` — Async SQLAlchemy engine (`psycopg[binary]` / psycopg3 driver, `postgresql+psycopg://` prefix); `get_session` async generator for FastAPI dependency injection; no ORM models.
+- **Backend**: `backend/pyproject.toml` — UV workspace member; FastAPI, uvicorn[standard], sqlalchemy[asyncio], psycopg[binary], and pydantic dependencies declared.
+- **Backend**: `backend/Dockerfile` — Minimal container image stub using `python:3.13-slim`; installs UV, syncs dependencies, exposes port 8000.
+- **Infrastructure**: Root `docker-compose.yml` — Orchestrates `database` (`postgres:17-alpine`, port 5432), `backend` (port 8000), and `frontend` (port 3000); `backend` and `frontend` depend on `database` via health check; `DATABASE_URL` and `FRONTEND_ORIGIN` injected via `.env`.
+- **Infrastructure**: `justfile` — `backend-dev` recipe added: starts uvicorn with hot-reload at port 8000.
+
 ## [0.1.1] - 2026-06-05
 
 ### Fixed

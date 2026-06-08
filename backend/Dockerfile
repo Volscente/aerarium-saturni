@@ -4,9 +4,10 @@ WORKDIR /app
 RUN pip install --no-cache-dir uv
 
 COPY pyproject.toml uv.lock ./
-RUN uv sync --frozen --no-cache
+COPY backend/pyproject.toml ./backend/
+RUN uv sync --frozen --no-cache --package backend
 
-COPY src/ ./src/
+COPY backend/src/ ./src/
 
 EXPOSE 8000
 

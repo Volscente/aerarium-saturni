@@ -19,6 +19,8 @@ help:
         exit 1; \
     fi
 
+# ---------------- Frontend ----------------
+
 # Full rebuild of the Frontend (clears cache and regenerates search index)
 frontend-rebuild: check_root
     #!/usr/bin/env bash
@@ -36,3 +38,27 @@ frontend-dev: check_root frontend-rebuild
     cd "{{ ROOT_DIR }}/frontend"
     open http://localhost:3000 &
     npm run start
+
+# ----------------------------------------
+# ---------------- Backend ----------------
+
+# Docker-compose build -> Create the docker-compose stack
+run_backend: check_root
+    docker-compose up --build
+
+# Docker-compose build (recreate)
+run_backend_recreate: check_root
+    docker-compose up --build --force-recreate
+
+# Stop backend docker-compose stack
+stop_backend: check_root
+    docker-compose stop
+
+# Run only database
+run_database: check_root
+    docker-compose up -d db
+
+stop_database: check_root
+    docker-compose stop db
+
+# ----------------------------------------

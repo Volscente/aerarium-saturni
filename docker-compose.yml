@@ -1,0 +1,43 @@
+services:
+  database:
+    image: postgres:17-alpine
+    container_name: aerarium_database
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - aerarium_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST_DOCKER}:${POSTGRES_PORT}/${POSTGRES_DB}
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-}
+    depends_on:
+      database:
+        condition: service_healthy
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+    depends_on:
+      database:
+        condition: service_healthy
+
+volumes:
+  aerarium_postgres_data:

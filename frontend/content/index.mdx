@@ -1,0 +1,33 @@
+import { BookOpen, TrendingUp } from "lucide-react";
+
+<div className="flex flex-col items-center justify-center w-full min-h-[60vh] text-center px-6 gap-6">
+
+<div className="text-roman-gold">
+  <BookOpen size={48} strokeWidth={1.5} />
+</div>
+
+<h1 className="font-roman text-5xl text-roman-gold tracking-wide">
+  Aerarium Saturni
+</h1>
+
+<p className="text-roman-stone text-lg max-w-xl leading-relaxed">
+  A personal platform for financial theory, portfolio analysis, and long-term
+  wealth architecture.
+</p>
+
+<div className="flex gap-8 mt-2 text-roman-stone text-sm">
+  <a
+    href="/codex/fundamentals"
+    className="flex items-center gap-2 hover:text-roman-gold transition-colors"
+  >
+    <BookOpen size={16} strokeWidth={1.5} /> Codex
+  </a>
+  <a
+    href="/tabularium"
+    className="flex items-center gap-2 hover:text-roman-gold transition-colors"
+  >
+    <TrendingUp size={16} strokeWidth={1.5} /> Tabularium
+  </a>
+</div>
+
+</div>

@@ -5,6 +5,65 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.2] - 2026-06-06
+
+### Added
+
+- **Backend**: New `backend/` UV workspace member materialised from the `members = ["backend"]` declaration in the root `pyproject.toml`.
+- **Backend**: `backend/src/backend/main.py` — FastAPI application with `CORSMiddleware` allowing `http://localhost:3000` and the `FRONTEND_ORIGIN` environment variable; `GET /health` liveness endpoint returning `{"status": "ok"}` with no database dependency.
+- **Backend**: `backend/src/backend/db.py` — Async SQLAlchemy engine (`psycopg[binary]` / psycopg3 driver, `postgresql+psycopg://` prefix); `get_session` async generator for FastAPI dependency injection; no ORM models.
+- **Backend**: `backend/pyproject.toml` — UV workspace member; FastAPI, uvicorn[standard], sqlalchemy[asyncio], psycopg[binary], and pydantic dependencies declared.
+- **Backend**: `backend/Dockerfile` — Minimal container image stub using `python:3.13-slim`; installs UV, syncs dependencies, exposes port 8000.
+- **Infrastructure**: Root `docker-compose.yml` — Orchestrates `database` (`postgres:17-alpine`, port 5432), `backend` (port 8000), and `frontend` (port 3000); `backend` and `frontend` depend on `database` via health check; `DATABASE_URL` and `FRONTEND_ORIGIN` injected via `.env`.
+- **Infrastructure**: `justfile` — `backend-dev` recipe added: starts uvicorn with hot-reload at port 8000.
+
+## [0.1.1] - 2026-06-05
+
+### Fixed
+
+- **Search**: Restored FlexSearch search bar in Codex routes (`/codex/**`). The `<Layout>` component was receiving a custom `navbar` prop that replaced the entire default Nextra navbar — including its embedded `<Search />` component. Fix imports `Search` from `nextra/components` and passes it explicitly as the `search` prop to `<Layout>`, keeping `CustomNavbar` framework-agnostic.
+
+## [0.1.0] - 2026-06-01
+
+### Added
+
+- **Frontend**: New `app/(tabularium)/tabularium/layout.tsx` — Tabularium layout shell with `CustomNavbar` + `CustomFooter`, full-width content area, no Nextra chrome.
+- **Frontend**: New `app/(tabularium)/tabularium/page.tsx` — Tabularium landing page using `roman-*` Tailwind tokens.
+- **Frontend**: New `app/(tabularium)/tabularium/portfolio/page.tsx` — empty placeholder establishing `/tabularium/portfolio` sub-route.
+- **Frontend**: New `app/(tabularium)/tabularium/transactions/page.tsx` — empty placeholder establishing `/tabularium/transactions` sub-route.
+- **Frontend**: New `app/[[...slug]]/layout.tsx` — Nextra `<Layout>` wrapper scoped exclusively to Home and Codex catch-all routes.
+
+### Changed
+
+- **Infrastructure**: Renamed workspace directory from `the-codex/` to `frontend/`; all internal paths unchanged.
+- **Frontend**: `app/layout.tsx` stripped to minimal shell — `<html>`, `<body>`, `ThemeProvider` (`next-themes`, `defaultTheme=dark`), global CSS; Nextra `<Layout>` moved to `app/[[...slug]]/layout.tsx`.
+- **Frontend**: `theme/components/Navbar.tsx` refactored to framework-agnostic `'use client'` component — data-driven `NavLink[]` array (Home, Tabularium, Codex); `usePathname()` prefix-matching active state; Nextra `<Navbar>` wrapper removed; Providentia placeholder commented out for future extension.
+- **Frontend**: `content/_meta.js` — `tabularium` entry removed; Nextra page map now drives only Home and Codex tabs.
+- **Frontend**: `content/tabularium.mdx` — deleted; removes Nextra's claim on `/tabularium`.
+- **Infrastructure**: `justfile` — renamed `codex-rebuild` → `frontend-rebuild`, `codex-dev` → `frontend-dev`; updated all `the-codex/` path references to `frontend/`.
+
+## [0.0.5] - 2026-05-26
+
+### Added
+
+- **The Codex / Content**: `content/index.mdx` — Home page welcome composition; centered layout with `BookOpen` Lucide icon anchor, platform heading ("Aerarium Saturni"), tagline, and Codex / Tabularium pillar icon anchors, styled exclusively with Tailwind `roman-*` tokens.
+- **The Codex / Tests**: `tests/mobile-screenshot.spec.ts` — `Home page visual regression` test block capturing `home-mobile.png` fullPage screenshot at 375 px viewport.
+
+## [0.0.4] - 2026-05-25
+
+### Added
+
+- **The Codex / Content**: `content/tabularium.mdx` — Tabularium section stub; sidebar-free, ToC-free placeholder establishing the `/tabularium` routing slot for the future portfolio management pillar.
+- **The Codex / Content**: `content/codex/_meta.js` — Codex subtree navigation config mapping the six wiki section directories (fundamentals, instruments, portfolio, personal, infrastructure, library).
+
+### Changed
+
+- **The Codex / Content**: Migrated all wiki section directories from flat `content/` into `content/codex/` — all Codex articles now served under `/codex/**` URL namespace.
+- **The Codex / Content**: Updated `content/_meta.js` to three-pillar navigation: `index` (Home), `tabularium`, `codex`; Home and Tabularium entries carry `theme: { sidebar: false, toc: false }` to suppress wiki chrome.
+- **The Codex / Content**: Replaced `content/index.mdx` Codex wiki landing with a clean Home stub for TASK-2 styling.
+- **The Codex / Infrastructure**: Updated `.lighthouserc.js` from `staticDistDir` to URL-based LHCI collection with `startServerCommand: 'npm run start'`; added explicit assertion targets for `/`, `/tabularium`, and `/codex/fundamentals`.
+- **The Codex / Tests**: Updated `tests/mobile-screenshot.spec.ts` URL fixture from stale `/finance/black-scholes` to `/codex/fundamentals/mathematics`; renamed snapshot to `fundamentals-mathematics-mobile.png`.
+
 ## [0.0.3] - 2026-05-13
 
 ### Added

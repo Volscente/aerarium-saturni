@@ -1,23 +1,28 @@
 ---
-title: ""               # Short RFC title
-project: ""             # Project or repo name
+title: "Tabularium Transaction Ledger & Input Engine"
+project: "Aerarium Saturni"
 author: "Simone Porreca"
-deadline: ""            # YYYY-MM-DD; leave blank to default to 14 days from today
-notion-page: ""         # URL of the Notion initiative page; omit row in RFC if blank
-github-repo: ""         # owner/repo (e.g. simone/recipe-app); omit row in RFC if blank
-milestone: ""           # GitHub Milestone name; omit row in RFC if blank
+deadline: "2026-06-21"
+notion-page: "https://app.notion.com/p/6-Tabularium-Transaction-Ledger-Input-Engine-37a5cc6c0f0780a8a9d7cb0bd6ef5119"
+github-repo: "https://github.com/Volscente/aerarium-saturni"
+milestone: [6-tabularium-transaction-ledger](https://github.com/Volscente/aerarium-saturni/milestone/4)
 tech-stack:
-  - ""                  # e.g. Python, Flask, whoosh
+  - "Next.js 15"
+  - "Nextra 4"
+  - "Tailwind CSS"
+  - "Lucide React"
+  - "Python 3.13"
+  - "FastAPI"
+  - "UV"
 scope-in:
-  - ""                  # Each line is one in-scope capability
+  - ""
 scope-out:
-  - ""                  # Format: "Item: reason" (e.g. "Fuzzy matching: future phase")
+  - ""
 milestones:
-  - ""                  # Ordered milestone names; each maps to a GitHub Issue
+  - ""
 context-paths:
-  - ""                  # Optional: paths to module README.md files Claude should read for design context.
-                        # Paths are relative to the root of the target project repo.
-                        # E.g. "src/auth/README.md", "src/api/README.md"
+  - "frontend/README.md"
+  - "backend/README.md"
 ---
 
 ## Problem

@@ -13,6 +13,8 @@ tech-stack:
   - "Lucide React"
   - "Python 3.13"
   - "FastAPI"
+  - "Pydantic"
+  - "SQLAlchemy ORM"
   - "UV"
 scope-in:
   - "Dedicated Transaction Ledger view at /tabularium/transactions showing chronological event history"
@@ -22,8 +24,10 @@ scope-in:
   - "Three asset classes: stocks, bonds, ETFs"
   - "Dynamic form fields that adjust based on the selected asset type"
   - "Tabularium sub-navigation: /tabularium/performance, /tabularium/holdings, /tabularium/transactions"
-  - "FastAPI endpoints for transaction creation and retrieval"
-  - "PostgreSQL schema for transactions introduced via Alembic migrations"
+  - "FastAPI endpoints for transaction creation and retrieval with Pydantic models for validation"
+  - "PostgreSQL schema for transactions defined via SQLAlchemy ORM"
+  - "Transaction Owner field to support portfolio management and multi-user tracking"
+  - "Financial security identifiers: Ticker and ISIN (ISO 6166) for precise asset identification"
   - "Fractional share support (up to 4 decimal places) and multi-currency input"
   - "Immediate UI refresh on transaction submission without a full page reload"
 scope-out:
@@ -33,9 +37,9 @@ scope-out:
   - "CSV import or bulk transaction entry: only single manual entry is in scope"
   - "ML simulations: deferred to a dedicated future initiative per backend README"
 milestones:
-  - "Backend schema and API: PostgreSQL transaction model, Alembic migration, and FastAPI CRUD endpoints"
-  - "Transaction Ledger view: read-only chronological list at /tabularium/transactions"
-  - "Transaction input flyout: '+ Add Transaction' trigger and drawer/modal with dynamic fields"
+  - "Backend schema and API: SQLAlchemy ORM transaction model, PostgreSQL schema creation, and FastAPI CRUD endpoints with Pydantic validation"
+  - "Transaction Ledger view: read-only chronological list at /tabularium/transactions with Owner, Ticker, and ISIN display"
+  - "Transaction input flyout: '+ Add Transaction' trigger and drawer/modal with dynamic fields and security identifier inputs"
   - "Sub-navigation and state wiring: Tabularium route restructuring and global state refresh on submission"
 context-paths:
   - "frontend/README.md"
@@ -67,15 +71,16 @@ The preferred direction is a hybrid UX: a chronological Transaction Ledger view 
 
 ## Desired tech
 
-No new technologies beyond the existing stack are required. The initiative explicitly prefers Next.js Server Actions or dedicated API routes for data submission, keeping financial data off client-side fetch calls in line with the backend's stated design principle.
+The initiative uses **SQLAlchemy ORM** for database schema definition and **Pydantic** for request/response validation in FastAPI endpoints. Both are industry-standard patterns for modern Python backends and integrate seamlessly with FastAPI. The initiative explicitly prefers Next.js Server Actions or dedicated API routes for data submission, keeping financial data off client-side fetch calls in line with the backend's stated design principle.
 
 ## Integration context
 
-On the frontend, the solution extends the existing `app/(tabularium)/tabularium/` App Router route group, converting the `/tabularium/transactions` placeholder page into a functional ledger and adding the Tabularium sub-navigation layer. On the backend, it introduces the first data-backed FastAPI endpoints by wiring the existing async SQLAlchemy session factory (`src/backend/db.py`) to a new PostgreSQL transaction schema; Next.js Server Components fetch from this service over HTTP, consistent with how the backend README describes its relationship to the frontend.
+On the frontend, the solution extends the existing `app/(tabularium)/tabularium/` App Router route group, converting the `/tabularium/transactions` placeholder page into a functional ledger and adding the Tabularium sub-navigation layer. On the backend, it introduces the first data-backed FastAPI endpoints by wiring the existing async SQLAlchemy session factory (`src/backend/db.py`) to a new PostgreSQL transaction schema defined via SQLAlchemy ORM. Pydantic models provide strict validation for transaction request/response payloads, including Transaction Owner and security identifiers (Ticker, ISIN). Next.js Server Components fetch from this service over HTTP, consistent with how the backend README describes its relationship to the frontend.
 
 ## Known risks / concerns
 
-- ORM models and Alembic migrations have not been configured anywhere in the project yet; this is the first initiative to introduce them, and early schema decisions are load-bearing for all future analytics.
-- The dynamic form (fields varying by asset type) adds non-trivial frontend complexity; edge cases across Buy/Sell/Dividend/Split × stock/bond/ETF combinations need thorough validation.
+- SQLAlchemy ORM models have not been configured anywhere in the project yet; this is the first initiative to introduce them, and early schema decisions are load-bearing for all future analytics. The Transaction Owner field must be designed to support future portfolio-level aggregation and multi-user features.
+- Financial security identifiers (Ticker and ISIN) require careful consideration of uniqueness constraints, null-handling, and future market-data lookup integrations; these should not be constraints that prevent entry, but rather as optional enrichment fields.
+- The dynamic form (fields varying by asset type) adds non-trivial frontend complexity; edge cases across Buy/Sell/Dividend/Split × stock/bond/ETF combinations need thorough validation, especially with Pydantic's strict mode.
 - Global state refresh after submission requires a deliberate choice between React Context, Next.js Server Action invalidation, or router re-validation; the wrong choice risks over-engineering or subtle stale-data bugs.
-- The transaction data model must be designed with future metric calculations (cost basis, P&L, TWR, MWR) in mind; columns or relations omitted now will be expensive to add via migrations later.
+- The transaction data model must be designed with future metric calculations (cost basis, P&L, TWR, MWR) in mind, including proper tracking of owner context and security identifiers for portfolio attribution.

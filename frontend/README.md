@@ -12,10 +12,16 @@ The Frontend is the Next.js 15 + Nextra 4 application for the Aerarium Saturni p
 - **`content/codex/`** — MDX content tree for the Codex pillar: `_meta.js` subtree nav + six section directories (fundamentals, instruments, portfolio, personal, infrastructure, library)
 - **`app/layout.tsx`** — Root Next.js App Router layout; minimal shell (`<html>`, `<body>`, `ThemeProvider`, global CSS)
 - **`app/[[...slug]]/layout.tsx`** — Nextra `<Layout>` wrapper scoped to Home and Codex catch-all routes; passes `navbar={<CustomNavbar><Search /></CustomNavbar>}` so the Pagefind search bar appears inside the custom nav (see [Search integration](#search-integration))
-- **`app/(tabularium)/tabularium/layout.tsx`** — Tabularium layout shell: `CustomNavbar` + `CustomFooter`, no Nextra chrome, full-width content area
+- **`app/(tabularium)/tabularium/layout.tsx`** — Tabularium layout shell: `CustomNavbar` + `AddTransactionButton` action bar + `TabulariumSubNav` + `CustomFooter`, no Nextra chrome, full-width content area
+- **`app/(tabularium)/tabularium/components/TabulariumSubNav.tsx`** — `'use client'` persistent sub-navigation bar; two nav links (`/tabularium/portfolio`, `/tabularium/transactions`) with `usePathname()` prefix-match active state; `roman-*` token styling; no Nextra imports
 - **`app/(tabularium)/tabularium/page.tsx`** — Tabularium landing page
 - **`app/(tabularium)/tabularium/portfolio/page.tsx`** — Portfolio sub-route placeholder
-- **`app/(tabularium)/tabularium/transactions/page.tsx`** — Transactions sub-route placeholder
+- **`app/(tabularium)/tabularium/transactions/page.tsx`** — Transaction Ledger: Next.js Server Component; calls `GET /transactions` with `{ next: { tags: ['transactions'] } }` cache tag; renders a full-width chronological table (11 columns) or an empty-state message
+- **`app/(tabularium)/tabularium/transaction-schema.ts`** — Shared Zod schema (`TransactionFormSchema`, `TransactionFormValues`); no `'use client'`/`'use server'` directive so it is importable by both `actions.ts` (server) and `TransactionForm.tsx` (client)
+- **`app/(tabularium)/tabularium/actions.ts`** — `createTransaction` Server Action: re-validates with Zod, POSTs to `POST /transactions`, calls `revalidateTag('transactions')`, returns `{ success: true } | { error: string }`
+- **`app/(tabularium)/tabularium/components/AddTransactionButton.tsx`** — `'use client'` trigger button; owns `isDrawerOpen` state; always mounted in the Tabularium layout so the button is visible on all three sub-routes
+- **`app/(tabularium)/tabularium/components/TransactionDrawer.tsx`** — `'use client'` fixed right-side slide-in panel (`fixed inset-y-0 right-0 z-50 w-96`); Tailwind `translate-x-full` / `translate-x-0` transition; semi-transparent backdrop overlay; contains `TransactionForm`
+- **`app/(tabularium)/tabularium/components/TransactionForm.tsx`** — `'use client'` dynamic form; field visibility driven by `transactionType` (Buy/Sell: quantity+price+fees; Dividend: price as "Amount per share"+optional quantity; Split: ratio); Zod validation on submit; calls `createTransaction` and invokes `onSuccess()` on HTTP 201
 - **`theme/components/Navbar.tsx`** — Framework-agnostic `CustomNavbar`; data-driven `NavLink[]` array; `usePathname()` active state with prefix matching; accepts optional `children?: ReactNode` rendered at the trailing end of the right-side flex container; reused in both layouts
 - **`theme/components/Footer.tsx`** — `CustomFooter`; Scale icon + year auto-fill; reused in both layouts
 - **`styles/globals.css`** — Global stylesheet: Tailwind directives, Roman CSS custom properties, `@layer base` overrides
@@ -23,14 +29,15 @@ The Frontend is the Next.js 15 + Nextra 4 application for the Aerarium Saturni p
 - **`docker-compose.yml`** — Service orchestration: `frontend` container + `nginx` with health-checked dependency
 - **`nginx/subdomain.conf`** — Nginx server block for subdomain routing (primary topology)
 - **`nginx/path-based.conf`** — Nginx server block for `/wiki` path-based routing (secondary topology)
-- **`.lighthouserc.js`** — Lighthouse CI: starts Next.js server and asserts performance score ≥ 0.9 for `/`, `/tabularium`, and `/codex/fundamentals`
+- **`.lighthouserc.js`** — Lighthouse CI: starts Next.js server and asserts performance score ≥ 0.9 for `/`, `/tabularium`, `/tabularium/transactions`, and `/codex/fundamentals`
+- **`.env.local`** — Local dev environment variables (git-ignored); sets `BACKEND_URL=http://localhost:8000`
 
 ## Public interfaces
 
 - `GET /` — Home page (sidebar-free welcome interface; Nextra `[[...slug]]` route)
 - `GET /tabularium` — Tabularium landing page (App Router route group; no Nextra chrome)
 - `GET /tabularium/portfolio` — Portfolio sub-route placeholder
-- `GET /tabularium/transactions` — Transactions sub-route placeholder
+- `GET /tabularium/transactions` — Transaction Ledger; server-rendered chronological table of all recorded transactions fetched from `GET /transactions` on the FastAPI backend
 - `GET /codex` — Codex section landing (financial theory wiki; Nextra route)
 - `GET /codex/fundamentals/**` — Fundamentals articles (mechanics, money & inflation, mathematics)
 - `GET /codex/instruments/**` — Instruments articles (equities, fixed income, commodities, crypto, pooled funds)
@@ -58,6 +65,8 @@ The Frontend is the Next.js 15 + Nextra 4 application for the Aerarium Saturni p
 - Search uses Pagefind (Nextra 4 default); the index is built from compiled `.html` files by `next build` and served from `/_pagefind/pagefind.js`. Search is intentionally disabled in `next dev` — run `next build && next start` to test it locally.
 - The `<Search />` component (from `nextra/components`) must be passed as `children` to `CustomNavbar` in the `[[...slug]]` layout's `navbar` prop. **Do not remove it or break this chain** — see [Search integration](#search-integration).
 - `content/tabularium.mdx` must not be re-created; its absence is what allows the App Router route group to own `/tabularium` without Nextra shadowing it.
+- The Tabularium has exactly **two sub-routes**: `/tabularium/portfolio` and `/tabularium/transactions`. Do not add a third sub-route (e.g. `/tabularium/holdings`, `/tabularium/performance`) without first consolidating or splitting the existing `portfolio` page. The original RFC proposed three routes, but `portfolio` was intentionally kept as a single rich dashboard covering holdings, allocation, and performance visualisations — the split is only worth making when both sides are data-backed.
+- Any Server Action that writes transaction data must call `revalidateTag('transactions')`. If a future analytics PR makes `/tabularium/portfolio` data-backed from the transactions table, it must also add `revalidateTag` for the portfolio cache tag to `createTransaction` in `actions.ts`.
 
 ## Search integration
 
@@ -132,6 +141,28 @@ just frontend-dev       # rebuild then start server
 ---
 
 ### Changelog
+
+#### 2026-06-11 (v0.2.3)
+
+- Added `app/(tabularium)/tabularium/components/TabulariumSubNav.tsx` — `'use client'` sub-navigation bar with two active-state links (`/tabularium/portfolio`, `/tabularium/transactions`); `usePathname()` prefix-match; `roman-*` Tailwind tokens; no Nextra imports
+- Modified `app/(tabularium)/tabularium/layout.tsx` — `TabulariumSubNav` inserted between the `AddTransactionButton` bar and `<main>`
+
+#### 2026-06-11 (v0.2.2)
+
+- Added `app/(tabularium)/tabularium/transaction-schema.ts` — shared Zod `TransactionFormSchema` (owner, broker_platform, transaction_type, asset_class, currency, transaction_date, optional ticker/ISIN/quantity/price/ratio, fees default 0); `zod ^4.4.3` added as dependency
+- Added `app/(tabularium)/tabularium/actions.ts` — `createTransaction` Server Action; Zod re-validation; `POST /transactions`; `revalidateTag('transactions')`; returns `{ success: true } | { error: string }`
+- Added `app/(tabularium)/tabularium/components/AddTransactionButton.tsx` — `'use client'` trigger button (Lucide `Plus`, roman-* tokens); owns `isDrawerOpen` state; always mounted in the Tabularium layout
+- Added `app/(tabularium)/tabularium/components/TransactionDrawer.tsx` — `'use client'` fixed right-side slide-in panel with Tailwind translate transition and backdrop overlay
+- Added `app/(tabularium)/tabularium/components/TransactionForm.tsx` — `'use client'` dynamic form with field visibility matrix (Buy/Sell: quantity+price+fees; Dividend: price as "Amount per share"; Split: ratio); Zod client-side validation; inline field errors
+- Modified `app/(tabularium)/tabularium/layout.tsx` — mounted `AddTransactionButton` in a right-aligned bar between `CustomNavbar` and `<main>`
+
+#### 2026-06-11 (v0.2.1)
+
+- Converted `app/(tabularium)/tabularium/transactions/page.tsx` from a `return null` placeholder into a Next.js Server Component: calls `GET /transactions` with `{ next: { tags: ['transactions'] } }` cache tag; renders an 11-column chronological ledger table or an empty-state message; null `ticker`/`isin`/`price` cells render as `—`
+- Added `.env.local` (git-ignored) with `BACKEND_URL=http://localhost:8000` for local development
+- Added `BACKEND_URL: http://backend:8000` to the `frontend` service environment in root `docker-compose.yml`
+- Added `/tabularium/transactions` to the Lighthouse CI URL list in `.lighthouserc.js`; performance score ≥ 0.9 now gated on the new route
+- Added `.env.local` to root `.gitignore`
 
 #### 2026-06-05
 

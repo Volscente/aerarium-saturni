@@ -5,6 +5,57 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.3] - 2026-06-11
+
+### Added
+
+- **Frontend**: New `components/TabulariumSubNav.tsx` — `'use client'` persistent sub-navigation bar; two nav links (`/tabularium/portfolio`, `/tabularium/transactions`) with `usePathname()` prefix-match active state; `roman-terracotta` active underline, `roman-stone`/`roman-gold` inactive states; no Nextra imports.
+
+### Changed
+
+- **Frontend**: `app/(tabularium)/tabularium/layout.tsx` — `TabulariumSubNav` inserted between the `AddTransactionButton` action bar and `<main>`.
+
+## [0.2.2] - 2026-06-11
+
+### Added
+
+- **Frontend**: New `transaction-schema.ts` — shared Zod `TransactionFormSchema` (no `'use client'`/`'use server'`) importable by both the Server Action and the form client component; `zod ^4.4.3` added as a dependency.
+- **Frontend**: New `actions.ts` — `createTransaction` Server Action; Zod re-validation server-side; `POST /transactions`; `revalidateTag('transactions')` on success; returns `{ success: true } | { error: string }`.
+- **Frontend**: New `components/AddTransactionButton.tsx` — `'use client'` trigger button (Lucide `Plus`, roman-* tokens); owns `isDrawerOpen` state; mounted in the Tabularium layout so the button is visible on all three sub-routes without prop-drilling.
+- **Frontend**: New `components/TransactionDrawer.tsx` — `'use client'` fixed right-side slide-in panel (`fixed inset-y-0 right-0 z-50 w-96`); Tailwind `translate-x-full` / `translate-x-0` transition; semi-transparent backdrop overlay; `role="dialog"` for accessibility.
+- **Frontend**: New `components/TransactionForm.tsx` — `'use client'` dynamic form with field visibility matrix (Buy/Sell: quantity + price + fees; Dividend: price as "Amount per share" + optional quantity; Split: ratio); Zod client-side validation with inline per-field error messages; calls `createTransaction` via `useTransition`.
+
+### Changed
+
+- **Frontend**: `app/(tabularium)/tabularium/layout.tsx` — mounted `AddTransactionButton` in a right-aligned bar between `CustomNavbar` and `<main>`; import added.
+- **Backend**: `src/backend/models.py` — `quantity` column made nullable (`Mapped[Decimal | None]`); new `ratio: Mapped[str | None] = mapped_column(String(10))` column for Split transaction ratio (e.g. `"4:1"`).
+- **Backend**: `src/backend/schemas/transactions.py` — `TransactionCreate`: `quantity` changed to optional (`Decimal | None`), `ratio: str | None` added; `model_validator(mode="after")` enforces quantity for buy/sell and ratio for split; `TransactionResponse`: `quantity` updated to `Decimal | None`, `ratio: str | None` added.
+- **Tests**: `backend/tests/conftest.py` — `_make_mock_row` extended with `row.ratio = overrides.get("ratio", None)` to keep all 7 backend tests passing after the schema change.
+
+## [0.2.1] - 2026-06-11
+
+### Added
+
+- **Frontend**: `app/(tabularium)/tabularium/transactions/page.tsx` converted from placeholder to Next.js Server Component — calls `GET /transactions` with `{ next: { tags: ['transactions'] } }` cache tag; renders an 11-column chronological ledger (Date, Owner, Broker, Type, Asset Class, Ticker, ISIN, Quantity, Price, Currency, Fees) or an empty-state message; `ticker`, `isin`, and `price` null cells render as `—`.
+- **Frontend**: `.env.local` (git-ignored) — sets `BACKEND_URL=http://localhost:8000` for local Next.js development.
+
+### Changed
+
+- **Infrastructure**: `docker-compose.yml` — added `BACKEND_URL: http://backend:8000` to the `frontend` service environment block so Server Components can reach the backend container by name.
+- **Infrastructure**: `frontend/.lighthouserc.js` — added `http://localhost:3000/tabularium/transactions` to the URL audit list; Lighthouse CI now gates performance score ≥ 0.9 on the new route.
+- **Infrastructure**: `.gitignore` — added `.env.local` pattern to prevent accidental commit of local environment files.
+
+## [0.2.0] - 2026-06-11
+
+### Added
+
+- **Backend**: New `src/backend/models.py` — SQLAlchemy 2.0 `DeclarativeBase` (`Base`) and `Transaction` ORM class with 13 columns (`id`, `owner`, `broker_platform`, `transaction_type`, `asset_class`, `ticker`, `isin`, `quantity`, `price`, `currency`, `fees`, `transaction_date`, `created_at`); `owner` and `broker_platform` columns indexed.
+- **Backend**: New `src/backend/schemas/transactions.py` — `TransactionCreate` Pydantic v2 request model with `str_strip_whitespace`, field constraints (`gt`, `ge`), and ISIN `field_validator` (12 alphanumeric characters); `TransactionResponse` with ORM-mode `from_attributes=True`.
+- **Backend**: New `src/backend/routers/transactions.py` — `POST /transactions` (HTTP 201, persists and returns new row) and `GET /transactions` (optional `?owner=` filter, ordered `transaction_date DESC`) FastAPI route handlers using `Depends(get_session)`.
+- **Backend**: Updated `src/backend/main.py` — Added `lifespan` async context manager that materialises the `transactions` table at startup via `conn.run_sync(Base.metadata.create_all)`; transactions router registered at prefix `/transactions`.
+- **Tests**: New `tests/conftest.py` — Session and engine mocks enabling database-free unit tests; `_make_async_cm` and `_make_mock_row` helpers; `client` and `client_with_rows` pytest fixtures with `dependency_overrides` and `patch("backend.main.engine")`.
+- **Tests**: New `tests/routers/test_transactions.py` — 7 tests covering: valid `POST` returns 201 with UUID, invalid ISIN returns 422, omitted ISIN returns `null`, negative quantity returns 422, `GET` empty returns `[]`, `GET ?owner=` filters by owner, `GET` ordered by date descending.
+
 ## [0.1.2] - 2026-06-06
 
 ### Added

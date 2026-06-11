@@ -47,6 +47,7 @@ def _make_mock_row(**overrides) -> MagicMock:
     row.isin = overrides.get("isin", "US0378331005")
     row.quantity = overrides.get("quantity", Decimal("10.0000"))
     row.price = overrides.get("price", Decimal("175.0000"))
+    row.ratio = overrides.get("ratio", None)
     row.currency = overrides.get("currency", "USD")
     row.fees = overrides.get("fees", Decimal("1.5000"))
     row.transaction_date = overrides.get("transaction_date", date(2026, 6, 11))

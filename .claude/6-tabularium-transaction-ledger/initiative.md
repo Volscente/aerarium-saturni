@@ -25,9 +25,10 @@ Integrating this functionality directly into the Tabularium via a hybrid UX ensu
 
 The Tabularium will feature a local sub-navigation layout to segment data consumption from data management cleanly:
 
-- `/tabularium/performance` – Charts, asset allocation, and macro-metrics.
-- `/tabularium/holdings` – A aggregated list of currently held positions (e.g., "You own 50 shares of AAPL").
+- `/tabularium/portfolio` – Charts, asset allocation, and macro-metrics for all currently held positions.
 - `/tabularium/transactions` – The chronological ledger of all historical events.
+
+> **Note:** The original design proposed three sub-routes (`/tabularium/performance`, `/tabularium/holdings`, `/tabularium/transactions`). These were consolidated into two: `portfolio` serves as a rich dashboard covering both holdings and performance visualisations, and `transactions` covers the ledger. The distinction between a "holdings" list and a "performance" view only becomes meaningful when both are data-backed; merging them avoids splitting placeholder pages prematurely.
 
 1. The Ingestion Mechanics
 

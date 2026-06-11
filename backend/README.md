@@ -8,8 +8,8 @@ The Backend is the Python FastAPI service for Aerarium Saturni. It owns all data
 
 - **`src/backend/main.py`** — FastAPI application entry point; `lifespan` event creates the `transactions` table via `Base.metadata.create_all`; CORS middleware; transactions router registered at `/transactions`; `GET /health` liveness endpoint
 - **`src/backend/db.py`** — Async SQLAlchemy engine and session factory; `get_session` async generator for FastAPI dependency injection
-- **`src/backend/models.py`** — `Base` (declarative base) and `Transaction` ORM class mapping the `transactions` PostgreSQL table (13 columns: `id`, `owner`, `broker_platform`, `transaction_type`, `asset_class`, `ticker`, `isin`, `quantity`, `price`, `currency`, `fees`, `transaction_date`, `created_at`)
-- **`src/backend/schemas/transactions.py`** — `TransactionCreate` Pydantic v2 request model with ISIN format validation; `TransactionResponse` response model with ORM-mode serialization
+- **`src/backend/models.py`** — `Base` (declarative base) and `Transaction` ORM class mapping the `transactions` PostgreSQL table (14 columns: `id`, `owner`, `broker_platform`, `transaction_type`, `asset_class`, `ticker`, `isin`, `quantity` (nullable), `price`, `currency`, `fees`, `ratio` (nullable, for Split), `transaction_date`, `created_at`)
+- **`src/backend/schemas/transactions.py`** — `TransactionCreate` Pydantic v2 request model with ISIN format validation and `model_validator` (quantity required for buy/sell; ratio required for split); `TransactionResponse` response model with ORM-mode serialization
 - **`src/backend/routers/transactions.py`** — `POST /transactions` (HTTP 201) and `GET /transactions` FastAPI route handlers using `Depends(get_session)`
 - **`pyproject.toml`** — UV workspace member; all runtime dependencies declared
 - **`Dockerfile`** — Minimal container image stub; installs UV, syncs dependencies, runs uvicorn
@@ -80,7 +80,13 @@ curl -s -H "Origin: http://localhost:3000" \
 
 ### Changelog
 
-#### 2026-06-11
+#### 2026-06-11 (v0.2.2)
+
+- `src/backend/models.py` — `quantity` column made nullable (`Mapped[Decimal | None]`); added `ratio: Mapped[str | None] = mapped_column(String(10))` for Split transaction ratio storage
+- `src/backend/schemas/transactions.py` — `TransactionCreate`: `quantity` changed to `Decimal | None = Field(default=None, gt=0)`; added `ratio: str | None = None`; added `model_validator(mode="after")` enforcing quantity for buy/sell and ratio for split; `TransactionResponse`: `quantity` updated to `Decimal | None`, `ratio: str | None` added
+- `tests/conftest.py` — `_make_mock_row` extended with `row.ratio = overrides.get("ratio", None)` to prevent Pydantic validation errors from un-set MagicMock attributes
+
+#### 2026-06-11 (v0.2.0)
 
 - `src/backend/models.py` — Added `Base` (SQLAlchemy 2.0 `DeclarativeBase`) and `Transaction` ORM class mapping the `transactions` table (13 columns; `owner` and `broker_platform` indexed; `ticker`, `isin`, `price` nullable)
 - `src/backend/schemas/transactions.py` — Added `TransactionCreate` Pydantic v2 model with `str_strip_whitespace`, `gt`/`ge` field constraints, and ISIN `field_validator`; added `TransactionResponse` with `from_attributes=True` ORM-mode serialization

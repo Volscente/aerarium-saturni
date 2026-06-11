@@ -54,6 +54,10 @@ run_backend_recreate: check_root
 stop_backend: check_root
     docker-compose stop
 
+# Run backend unit tests
+backend-test: check_root
+    cd "{{ ROOT_DIR }}/backend" && uv run pytest -v
+
 # Run only database
 run_database: check_root
     docker-compose up -d database

@@ -1,6 +1,6 @@
 import os
 
-os.environ.setdefault("DATABASE_URL", "postgresql+psycopg://test:test@localhost/test")
+os.environ["DATABASE_URL"] = "postgresql+psycopg://test:test@localhost/test"
 
 from datetime import date, datetime, timezone
 from decimal import Decimal

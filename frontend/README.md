@@ -64,6 +64,8 @@ The Frontend is the Next.js 15 + Nextra 4 application for the Aerarium Saturni p
 - Search uses Pagefind (Nextra 4 default); the index is built from compiled `.html` files by `next build` and served from `/_pagefind/pagefind.js`. Search is intentionally disabled in `next dev` — run `next build && next start` to test it locally.
 - The `<Search />` component (from `nextra/components`) must be passed as `children` to `CustomNavbar` in the `[[...slug]]` layout's `navbar` prop. **Do not remove it or break this chain** — see [Search integration](#search-integration).
 - `content/tabularium.mdx` must not be re-created; its absence is what allows the App Router route group to own `/tabularium` without Nextra shadowing it.
+- The Tabularium has exactly **two sub-routes**: `/tabularium/portfolio` and `/tabularium/transactions`. Do not add a third sub-route (e.g. `/tabularium/holdings`, `/tabularium/performance`) without first consolidating or splitting the existing `portfolio` page. The original RFC proposed three routes, but `portfolio` was intentionally kept as a single rich dashboard covering holdings, allocation, and performance visualisations — the split is only worth making when both sides are data-backed.
+- Any Server Action that writes transaction data must call `revalidateTag('transactions')`. If a future analytics PR makes `/tabularium/portfolio` data-backed from the transactions table, it must also add `revalidateTag` for the portfolio cache tag to `createTransaction` in `actions.ts`.
 
 ## Search integration
 

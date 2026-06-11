@@ -47,7 +47,7 @@ The Tabularium currently provides only a static layout shell and route placehold
 - **Expose a validated CRUD API**: Deliver FastAPI endpoints for transaction creation and retrieval, with Pydantic v2 models providing strict request/response validation; Next.js Server Components fetch from this service over HTTP only.
 - **Build the Transaction Ledger view**: Render a chronological, read-only ledger at `/tabularium/transactions` displaying Owner, Broker Platform, Ticker, ISIN, transaction type, asset class, quantity, price, currency, and date — refreshed without full page reload after each new entry.
 - **Implement the transaction input UX**: Deliver a `+ Add Transaction` trigger accessible from all Tabularium sub-routes, opening a right-side drawer with dynamic, context-sensitive form fields driven by the selected transaction type and asset class.
-- **Extend Tabularium sub-navigation**: Add a persistent sub-navigation bar covering `/tabularium/performance`, `/tabularium/holdings`, and `/tabularium/transactions` within the shared Tabularium layout shell.
+- **Extend Tabularium sub-navigation**: Add a persistent sub-navigation bar covering `/tabularium/portfolio` and `/tabularium/transactions` within the shared Tabularium layout shell.
 
 ## Scope {#scope}
 
@@ -60,7 +60,7 @@ The Tabularium currently provides only a static layout shell and route placehold
 - Two broker platforms: IBKR and N26
 - Three asset classes: stocks, bonds, ETFs
 - Dynamic form fields that adjust based on the selected transaction type and asset class
-- Tabularium sub-navigation: `/tabularium/performance`, `/tabularium/holdings`, `/tabularium/transactions`
+- Tabularium sub-navigation: `/tabularium/portfolio`, `/tabularium/transactions`
 - FastAPI endpoints for transaction creation and retrieval with Pydantic v2 models for validation
 - PostgreSQL schema for transactions defined via SQLAlchemy ORM
 - Transaction Owner field to support portfolio management and multi-user tracking
@@ -232,7 +232,7 @@ A:
 | Early ORM schema decisions are load-bearing for all future analytics. Columns omitted now (fees, owner index) require manual DDL or Alembic introduction later, potentially affecting historical data integrity. | Medium | Include `fees`, indexed `owner`, and nullable `ticker`/`isin` from day one. Document the `transactions` table as the canonical financial record; any future analytics PR must extend it via a tracked migration and must not rely on re-creating the table. |
 | Ticker and ISIN data quality may degrade over time if users omit them consistently, reducing the value of future market-data lookup integrations. | Low | Pydantic validates ISIN format when provided. The form UI surfaces both fields prominently with inline hints. An optional future initiative can introduce a security lookup API to pre-fill these from a ticker search, but that integration must not be blocked on this field being required. |
 | Dynamic form complexity: 4 transaction types × 3 asset classes = 12 combinations, and some are semantically ambiguous (e.g. Split on a bond, Dividend on an ETF). Edge cases need explicit handling. | Medium | Define the full field visibility matrix before implementing `TransactionForm` (see M3 table). Pydantic `model_validator` enforces cross-field rules server-side; Zod mirrors this on the Next.js side for immediate feedback. Ambiguous combinations (e.g. Split + bond) are permitted but the form should not hide required fields. |
-| `revalidatePath('/tabularium/transactions')` only invalidates the ledger route. When `/tabularium/holdings` and `/tabularium/performance` become data-backed, stale transaction data may persist on those pages. | Low | Acceptable for this initiative since both pages are still placeholders. Document in `actions.ts` that future data-backed sub-routes must add their own `revalidatePath` calls to `createTransaction`. |
+| `revalidateTag('transactions')` only invalidates the ledger route. When `/tabularium/portfolio` becomes data-backed, stale transaction data may persist on that page. | Low | Acceptable for this initiative since `/tabularium/portfolio` is still a placeholder. Future analytics PRs that back `/tabularium/portfolio` with transaction data must add a `revalidateTag` call to `createTransaction` in `actions.ts`. |
 
 ## References {#references}
 

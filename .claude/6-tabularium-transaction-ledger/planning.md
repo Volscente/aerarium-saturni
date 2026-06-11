@@ -131,20 +131,20 @@ The Zod schema mirrors Pydantic `TransactionCreate` validation (ISIN format, req
 
 ### Scope
 
-Add the Tabularium sub-navigation component to the shared layout and perform end-to-end verification that the full submission → cache invalidation → ledger refresh cycle works correctly across all three sub-routes.
+Add the Tabularium sub-navigation component to the shared layout and perform end-to-end verification that the full submission → cache invalidation → ledger refresh cycle works correctly across both sub-routes.
 
 ### Goal
 
-Deliver a persistent sub-navigation bar covering the three Tabularium sub-routes and confirm the complete user journey — submitting a transaction from any sub-route immediately updates the ledger.
+Deliver a persistent sub-navigation bar covering the two Tabularium sub-routes and confirm the complete user journey — submitting a transaction from any sub-route immediately updates the ledger.
 
 ### Deliverables
 
-- `app/(tabularium)/tabularium/components/TabulariumSubNav.tsx` — `'use client'` component; three nav links with `usePathname()` active-state prefix matching; uses `roman-*` Tailwind tokens; no Nextra imports
+- `app/(tabularium)/tabularium/components/TabulariumSubNav.tsx` — `'use client'` component; two nav links (`/tabularium/portfolio`, `/tabularium/transactions`) with `usePathname()` active-state prefix matching; uses `roman-*` Tailwind tokens; no Nextra imports
 - Updated `app/(tabularium)/tabularium/layout.tsx` — `TabulariumSubNav` inserted between `CustomNavbar` and `{children}`; `AddTransactionButton` also mounted here
 
 ### Technical Overview
 
-`TabulariumSubNav` follows the same `usePathname()` prefix-matching pattern as `CustomNavbar` and must remain free of Nextra-specific imports (the Tabularium layout has no Nextra context). End-to-end verification: navigate to `/tabularium/holdings`, open the drawer, submit a transaction, navigate to `/tabularium/transactions` — the new row must appear without a full page reload. Future data-backed sub-routes that depend on transaction data must add a corresponding `revalidateTag` call to `createTransaction` in `actions.ts`.
+`TabulariumSubNav` follows the same `usePathname()` prefix-matching pattern as `CustomNavbar` and must remain free of Nextra-specific imports (the Tabularium layout has no Nextra context). End-to-end verification: navigate to `/tabularium/portfolio`, open the drawer, submit a transaction, navigate to `/tabularium/transactions` — the new row must appear without a full page reload. Future analytics PRs that back `/tabularium/portfolio` with transaction data must add a corresponding `revalidateTag` call to `createTransaction` in `actions.ts`.
 
 ---
 
@@ -222,14 +222,14 @@ A user can log a new transaction in fewer than 4 clicks from any Tabularium view
 
 #### Scope
 
-Add the Tabularium sub-navigation component to the shared layout and run end-to-end verification of the full transaction submission → cache invalidation → ledger refresh cycle across all sub-routes.
+Add the Tabularium sub-navigation component to the shared layout and run end-to-end verification of the full transaction submission → cache invalidation → ledger refresh cycle across both sub-routes.
 
 #### Goal
 
-All three Tabularium sub-routes are linked via a persistent sub-nav bar, and the complete submission-to-refresh journey is verified working in the running application.
+Both Tabularium sub-routes are linked via a persistent sub-nav bar, and the complete submission-to-refresh journey is verified working in the running application.
 
 #### Deliverables
 
-- `TabulariumSubNav.tsx` client component with three active-state nav links (no Nextra imports)
+- `TabulariumSubNav.tsx` client component with two active-state nav links (`/tabularium/portfolio`, `/tabularium/transactions`) and no Nextra imports
 - Updated `app/(tabularium)/tabularium/layout.tsx` with sub-nav and `AddTransactionButton` mounted
-- End-to-end verification confirmed: new transaction submitted from `/tabularium/holdings` appears in `/tabularium/transactions` without page reload
+- End-to-end verification confirmed: new transaction submitted from `/tabularium/portfolio` appears in `/tabularium/transactions` without page reload

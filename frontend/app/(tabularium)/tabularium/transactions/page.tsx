@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 interface TransactionResponse {
   id: string
   owner: string
@@ -15,9 +17,7 @@ interface TransactionResponse {
 }
 
 async function fetchTransactions(): Promise<TransactionResponse[]> {
-  const res = await fetch(`${process.env.BACKEND_URL}/transactions`, {
-    next: { tags: ['transactions'] },
-  })
+  const res = await fetch(`${process.env.BACKEND_URL}/transactions`)
   if (!res.ok) throw new Error(`Failed to fetch transactions: ${res.status}`)
   return res.json()
 }

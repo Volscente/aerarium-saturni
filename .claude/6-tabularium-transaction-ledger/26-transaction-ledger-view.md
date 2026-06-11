@@ -48,9 +48,11 @@ Browser → GET /tabularium/transactions
        <empty-state> paragraph — "No transactions recorded yet."
 ```
 
-### Why Server Component with cache tag
+### Why `force-dynamic`
 
-The page is a Server Component so financial data never reaches the browser as a fetch call. `{ next: { tags: ['transactions'] } }` enables `revalidateTag('transactions')` in the `createTransaction` Server Action (TASK-3) to invalidate only this route's cached data without touching other routes. This is the selective invalidation pattern specified in the planning doc; `revalidatePath` is intentionally not used here.
+The page exports `export const dynamic = 'force-dynamic'` so Next.js never attempts to statically prerender it at build time. Without this, `next build` inside Docker tries to fetch from the backend container — which is not running during the build step — and fails with `ECONNREFUSED`. `force-dynamic` ensures the page is always server-rendered on request, which is also the correct semantic for a live financial ledger.
+
+Consequence for TASK-3: because the route is never statically cached, `revalidateTag('transactions')` has no effect here. The `createTransaction` Server Action must use `revalidatePath('/tabularium/transactions')` instead.
 
 ---
 

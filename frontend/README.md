@@ -15,7 +15,7 @@ The Frontend is the Next.js 15 + Nextra 4 application for the Aerarium Saturni p
 - **`app/(tabularium)/tabularium/layout.tsx`** — Tabularium layout shell: `CustomNavbar` + `CustomFooter`, no Nextra chrome, full-width content area
 - **`app/(tabularium)/tabularium/page.tsx`** — Tabularium landing page
 - **`app/(tabularium)/tabularium/portfolio/page.tsx`** — Portfolio sub-route placeholder
-- **`app/(tabularium)/tabularium/transactions/page.tsx`** — Transactions sub-route placeholder
+- **`app/(tabularium)/tabularium/transactions/page.tsx`** — Transaction Ledger: Next.js Server Component; calls `GET /transactions` with `{ next: { tags: ['transactions'] } }` cache tag; renders a full-width chronological table (11 columns) or an empty-state message
 - **`theme/components/Navbar.tsx`** — Framework-agnostic `CustomNavbar`; data-driven `NavLink[]` array; `usePathname()` active state with prefix matching; accepts optional `children?: ReactNode` rendered at the trailing end of the right-side flex container; reused in both layouts
 - **`theme/components/Footer.tsx`** — `CustomFooter`; Scale icon + year auto-fill; reused in both layouts
 - **`styles/globals.css`** — Global stylesheet: Tailwind directives, Roman CSS custom properties, `@layer base` overrides
@@ -23,14 +23,15 @@ The Frontend is the Next.js 15 + Nextra 4 application for the Aerarium Saturni p
 - **`docker-compose.yml`** — Service orchestration: `frontend` container + `nginx` with health-checked dependency
 - **`nginx/subdomain.conf`** — Nginx server block for subdomain routing (primary topology)
 - **`nginx/path-based.conf`** — Nginx server block for `/wiki` path-based routing (secondary topology)
-- **`.lighthouserc.js`** — Lighthouse CI: starts Next.js server and asserts performance score ≥ 0.9 for `/`, `/tabularium`, and `/codex/fundamentals`
+- **`.lighthouserc.js`** — Lighthouse CI: starts Next.js server and asserts performance score ≥ 0.9 for `/`, `/tabularium`, `/tabularium/transactions`, and `/codex/fundamentals`
+- **`.env.local`** — Local dev environment variables (git-ignored); sets `BACKEND_URL=http://localhost:8000`
 
 ## Public interfaces
 
 - `GET /` — Home page (sidebar-free welcome interface; Nextra `[[...slug]]` route)
 - `GET /tabularium` — Tabularium landing page (App Router route group; no Nextra chrome)
 - `GET /tabularium/portfolio` — Portfolio sub-route placeholder
-- `GET /tabularium/transactions` — Transactions sub-route placeholder
+- `GET /tabularium/transactions` — Transaction Ledger; server-rendered chronological table of all recorded transactions fetched from `GET /transactions` on the FastAPI backend
 - `GET /codex` — Codex section landing (financial theory wiki; Nextra route)
 - `GET /codex/fundamentals/**` — Fundamentals articles (mechanics, money & inflation, mathematics)
 - `GET /codex/instruments/**` — Instruments articles (equities, fixed income, commodities, crypto, pooled funds)
@@ -132,6 +133,14 @@ just frontend-dev       # rebuild then start server
 ---
 
 ### Changelog
+
+#### 2026-06-11
+
+- Converted `app/(tabularium)/tabularium/transactions/page.tsx` from a `return null` placeholder into a Next.js Server Component: calls `GET /transactions` with `{ next: { tags: ['transactions'] } }` cache tag; renders an 11-column chronological ledger table or an empty-state message; null `ticker`/`isin`/`price` cells render as `—`
+- Added `.env.local` (git-ignored) with `BACKEND_URL=http://localhost:8000` for local development
+- Added `BACKEND_URL: http://backend:8000` to the `frontend` service environment in root `docker-compose.yml`
+- Added `/tabularium/transactions` to the Lighthouse CI URL list in `.lighthouserc.js`; performance score ≥ 0.9 now gated on the new route
+- Added `.env.local` to root `.gitignore`
 
 #### 2026-06-05
 

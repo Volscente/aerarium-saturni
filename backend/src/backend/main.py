@@ -1,9 +1,22 @@
 import os
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-app = FastAPI(title="Aerarium Saturni Backend")
+from backend.db import engine
+from backend.models import Base
+from backend.routers import transactions
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    yield
+
+
+app = FastAPI(title="Aerarium Saturni Backend", lifespan=lifespan)
 
 _origins = ["http://localhost:3000"]
 _frontend_origin = os.getenv("FRONTEND_ORIGIN")
@@ -17,6 +30,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(transactions.router, prefix="/transactions")
 
 
 @app.get("/health")

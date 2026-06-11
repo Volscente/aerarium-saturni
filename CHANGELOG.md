@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.2] - 2026-06-11
+
+### Added
+
+- **Frontend**: New `transaction-schema.ts` — shared Zod `TransactionFormSchema` (no `'use client'`/`'use server'`) importable by both the Server Action and the form client component; `zod ^4.4.3` added as a dependency.
+- **Frontend**: New `actions.ts` — `createTransaction` Server Action; Zod re-validation server-side; `POST /transactions`; `revalidateTag('transactions')` on success; returns `{ success: true } | { error: string }`.
+- **Frontend**: New `components/AddTransactionButton.tsx` — `'use client'` trigger button (Lucide `Plus`, roman-* tokens); owns `isDrawerOpen` state; mounted in the Tabularium layout so the button is visible on all three sub-routes without prop-drilling.
+- **Frontend**: New `components/TransactionDrawer.tsx` — `'use client'` fixed right-side slide-in panel (`fixed inset-y-0 right-0 z-50 w-96`); Tailwind `translate-x-full` / `translate-x-0` transition; semi-transparent backdrop overlay; `role="dialog"` for accessibility.
+- **Frontend**: New `components/TransactionForm.tsx` — `'use client'` dynamic form with field visibility matrix (Buy/Sell: quantity + price + fees; Dividend: price as "Amount per share" + optional quantity; Split: ratio); Zod client-side validation with inline per-field error messages; calls `createTransaction` via `useTransition`.
+
+### Changed
+
+- **Frontend**: `app/(tabularium)/tabularium/layout.tsx` — mounted `AddTransactionButton` in a right-aligned bar between `CustomNavbar` and `<main>`; import added.
+- **Backend**: `src/backend/models.py` — `quantity` column made nullable (`Mapped[Decimal | None]`); new `ratio: Mapped[str | None] = mapped_column(String(10))` column for Split transaction ratio (e.g. `"4:1"`).
+- **Backend**: `src/backend/schemas/transactions.py` — `TransactionCreate`: `quantity` changed to optional (`Decimal | None`), `ratio: str | None` added; `model_validator(mode="after")` enforces quantity for buy/sell and ratio for split; `TransactionResponse`: `quantity` updated to `Decimal | None`, `ratio: str | None` added.
+- **Tests**: `backend/tests/conftest.py` — `_make_mock_row` extended with `row.ratio = overrides.get("ratio", None)` to keep all 7 backend tests passing after the schema change.
+
 ## [0.2.1] - 2026-06-11
 
 ### Added

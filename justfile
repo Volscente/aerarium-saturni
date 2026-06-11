@@ -40,9 +40,9 @@ frontend-dev: check_root frontend-rebuild
     npm run start
 
 # ----------------------------------------
-# ---------------- Backend ----------------
+# ---------------- Backend & Database ----------------
 
-# Docker-compose build -> Create the docker-compose stack
+# Docker-compose build -> Create the docker-compose stack (Backend + Frontend)
 run_backend: check_root
     docker-compose up --build
 

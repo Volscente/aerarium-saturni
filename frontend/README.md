@@ -12,7 +12,8 @@ The Frontend is the Next.js 15 + Nextra 4 application for the Aerarium Saturni p
 - **`content/codex/`** — MDX content tree for the Codex pillar: `_meta.js` subtree nav + six section directories (fundamentals, instruments, portfolio, personal, infrastructure, library)
 - **`app/layout.tsx`** — Root Next.js App Router layout; minimal shell (`<html>`, `<body>`, `ThemeProvider`, global CSS)
 - **`app/[[...slug]]/layout.tsx`** — Nextra `<Layout>` wrapper scoped to Home and Codex catch-all routes; passes `navbar={<CustomNavbar><Search /></CustomNavbar>}` so the Pagefind search bar appears inside the custom nav (see [Search integration](#search-integration))
-- **`app/(tabularium)/tabularium/layout.tsx`** — Tabularium layout shell: `CustomNavbar` + `CustomFooter`, no Nextra chrome, full-width content area
+- **`app/(tabularium)/tabularium/layout.tsx`** — Tabularium layout shell: `CustomNavbar` + `AddTransactionButton` action bar + `TabulariumSubNav` + `CustomFooter`, no Nextra chrome, full-width content area
+- **`app/(tabularium)/tabularium/components/TabulariumSubNav.tsx`** — `'use client'` persistent sub-navigation bar; two nav links (`/tabularium/portfolio`, `/tabularium/transactions`) with `usePathname()` prefix-match active state; `roman-*` token styling; no Nextra imports
 - **`app/(tabularium)/tabularium/page.tsx`** — Tabularium landing page
 - **`app/(tabularium)/tabularium/portfolio/page.tsx`** — Portfolio sub-route placeholder
 - **`app/(tabularium)/tabularium/transactions/page.tsx`** — Transaction Ledger: Next.js Server Component; calls `GET /transactions` with `{ next: { tags: ['transactions'] } }` cache tag; renders a full-width chronological table (11 columns) or an empty-state message
@@ -140,6 +141,11 @@ just frontend-dev       # rebuild then start server
 ---
 
 ### Changelog
+
+#### 2026-06-11 (v0.2.3)
+
+- Added `app/(tabularium)/tabularium/components/TabulariumSubNav.tsx` — `'use client'` sub-navigation bar with two active-state links (`/tabularium/portfolio`, `/tabularium/transactions`); `usePathname()` prefix-match; `roman-*` Tailwind tokens; no Nextra imports
+- Modified `app/(tabularium)/tabularium/layout.tsx` — `TabulariumSubNav` inserted between the `AddTransactionButton` bar and `<main>`
 
 #### 2026-06-11 (v0.2.2)
 

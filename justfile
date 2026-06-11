@@ -46,9 +46,14 @@ frontend-dev: check_root frontend-rebuild
 run_backend: check_root
     docker-compose up --build
 
-# Docker-compose build (recreate)
+# Docker-compose build (recreate) -> No clean database
 run_backend_recreate: check_root
     docker-compose up --build --force-recreate
+
+# Docker-compose down + remove volumes, then rebuild (use when schema changes require a clean database)
+run_backend_fresh: check_root
+    docker-compose down -v
+    docker-compose up --build
 
 # Stop backend docker-compose stack
 stop_backend: check_root

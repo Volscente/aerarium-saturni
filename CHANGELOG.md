@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2026-06-11
+
+### Added
+
+- **Frontend**: `app/(tabularium)/tabularium/transactions/page.tsx` converted from placeholder to Next.js Server Component — calls `GET /transactions` with `{ next: { tags: ['transactions'] } }` cache tag; renders an 11-column chronological ledger (Date, Owner, Broker, Type, Asset Class, Ticker, ISIN, Quantity, Price, Currency, Fees) or an empty-state message; `ticker`, `isin`, and `price` null cells render as `—`.
+- **Frontend**: `.env.local` (git-ignored) — sets `BACKEND_URL=http://localhost:8000` for local Next.js development.
+
+### Changed
+
+- **Infrastructure**: `docker-compose.yml` — added `BACKEND_URL: http://backend:8000` to the `frontend` service environment block so Server Components can reach the backend container by name.
+- **Infrastructure**: `frontend/.lighthouserc.js` — added `http://localhost:3000/tabularium/transactions` to the URL audit list; Lighthouse CI now gates performance score ≥ 0.9 on the new route.
+- **Infrastructure**: `.gitignore` — added `.env.local` pattern to prevent accidental commit of local environment files.
+
 ## [0.2.0] - 2026-06-11
 
 ### Added

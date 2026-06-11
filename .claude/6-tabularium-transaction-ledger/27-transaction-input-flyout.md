@@ -20,7 +20,7 @@
 
 **Out of scope:**
 
-- Sub-navigation component (`TabulaariumSubNav`) — TASK-4
+- Sub-navigation component (`TabulariumSubNav`) — TASK-4
 - Ledger page (`transactions/page.tsx`) — TASK-2 (delivered; no changes needed)
 - Authentication or multi-user access control
 - Bulk or CSV transaction import

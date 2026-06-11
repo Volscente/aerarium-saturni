@@ -100,7 +100,7 @@ The proposal's approach direction referenced Alembic migrations; this design del
 
 On the backend, the new `src/backend/models.py` introduces `Base = declarative_base()` and the `Transaction` ORM class, wired to the existing async engine in `src/backend/db.py`. A startup event in `src/backend/main.py` synchronously calls `Base.metadata.create_all()` to materialise the schema if it does not exist. A new `src/backend/routers/transactions.py` module registers `POST /transactions` and `GET /transactions` on the existing FastAPI app using the `get_session` dependency already in `db.py`. Pydantic schemas live in `src/backend/schemas/transactions.py`.
 
-On the frontend, `app/(tabularium)/tabularium/layout.tsx` is extended with two additions: a `TabulaariumSubNav` client component rendering three sub-route links using the `usePathname()` active-state pattern already established in `CustomNavbar`, and an `AddTransactionButton` client component. The button renders a `TransactionDrawer` — a right-side slide-in panel. The dynamic form lives in `app/(tabularium)/tabularium/components/TransactionForm.tsx`; it conditionally renders fields based on `transactionType` and `assetClass` state. Form submission calls a Server Action in `app/(tabularium)/tabularium/actions.ts` that validates the payload, POSTs to the FastAPI backend, and on success closes the drawer and calls `revalidatePath('/tabularium/transactions')`.
+On the frontend, `app/(tabularium)/tabularium/layout.tsx` is extended with two additions: a `TabulariumSubNav` client component rendering three sub-route links using the `usePathname()` active-state pattern already established in `CustomNavbar`, and an `AddTransactionButton` client component. The button renders a `TransactionDrawer` — a right-side slide-in panel. The dynamic form lives in `app/(tabularium)/tabularium/components/TransactionForm.tsx`; it conditionally renders fields based on `transactionType` and `assetClass` state. Form submission calls a Server Action in `app/(tabularium)/tabularium/actions.ts` that validates the payload, POSTs to the FastAPI backend, and on success closes the drawer and calls `revalidatePath('/tabularium/transactions')`.
 
 ## Milestone 1 — Backend Schema and API {#milestone-1-backend-schema-and-api}
 
@@ -158,7 +158,7 @@ Form submission calls the `createTransaction` Server Action in `actions.ts`. The
 
 ## Milestone 4 — Sub-navigation and State Wiring {#milestone-4-sub-navigation-and-state-wiring}
 
-`TabulaariumSubNav` is added to `app/(tabularium)/tabularium/layout.tsx` between `CustomNavbar` and the page `{children}`. It renders three links using `usePathname()` prefix-matching (the same pattern in `CustomNavbar`) styled with the existing Tailwind `roman-*` tokens.
+`TabulariumSubNav` is added to `app/(tabularium)/tabularium/layout.tsx` between `CustomNavbar` and the page `{children}`. It renders three links using `usePathname()` prefix-matching (the same pattern in `CustomNavbar`) styled with the existing Tailwind `roman-*` tokens.
 
 End-to-end verification: submitting a transaction from any Tabularium sub-route must close the drawer and cause the ledger at `/tabularium/transactions` to display the new row without a full page reload. This is confirmed manually before marking the milestone complete. The `CustomNavbar` invariant — remaining free of Nextra-specific imports — must be preserved in the sub-nav component as well, since both share the Tabularium layout.
 

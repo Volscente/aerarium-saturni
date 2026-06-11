@@ -139,12 +139,12 @@ Deliver a persistent sub-navigation bar covering the three Tabularium sub-routes
 
 ### Deliverables
 
-- `app/(tabularium)/tabularium/components/TabulaariumSubNav.tsx` — `'use client'` component; three nav links with `usePathname()` active-state prefix matching; uses `roman-*` Tailwind tokens; no Nextra imports
-- Updated `app/(tabularium)/tabularium/layout.tsx` — `TabulaariumSubNav` inserted between `CustomNavbar` and `{children}`; `AddTransactionButton` also mounted here
+- `app/(tabularium)/tabularium/components/TabulariumSubNav.tsx` — `'use client'` component; three nav links with `usePathname()` active-state prefix matching; uses `roman-*` Tailwind tokens; no Nextra imports
+- Updated `app/(tabularium)/tabularium/layout.tsx` — `TabulariumSubNav` inserted between `CustomNavbar` and `{children}`; `AddTransactionButton` also mounted here
 
 ### Technical Overview
 
-`TabulaariumSubNav` follows the same `usePathname()` prefix-matching pattern as `CustomNavbar` and must remain free of Nextra-specific imports (the Tabularium layout has no Nextra context). End-to-end verification: navigate to `/tabularium/holdings`, open the drawer, submit a transaction, navigate to `/tabularium/transactions` — the new row must appear without a full page reload. Future data-backed sub-routes that depend on transaction data must add a corresponding `revalidateTag` call to `createTransaction` in `actions.ts`.
+`TabulariumSubNav` follows the same `usePathname()` prefix-matching pattern as `CustomNavbar` and must remain free of Nextra-specific imports (the Tabularium layout has no Nextra context). End-to-end verification: navigate to `/tabularium/holdings`, open the drawer, submit a transaction, navigate to `/tabularium/transactions` — the new row must appear without a full page reload. Future data-backed sub-routes that depend on transaction data must add a corresponding `revalidateTag` call to `createTransaction` in `actions.ts`.
 
 ---
 
@@ -230,6 +230,6 @@ All three Tabularium sub-routes are linked via a persistent sub-nav bar, and the
 
 #### Deliverables
 
-- `TabulaariumSubNav.tsx` client component with three active-state nav links (no Nextra imports)
+- `TabulariumSubNav.tsx` client component with three active-state nav links (no Nextra imports)
 - Updated `app/(tabularium)/tabularium/layout.tsx` with sub-nav and `AddTransactionButton` mounted
 - End-to-end verification confirmed: new transaction submitted from `/tabularium/holdings` appears in `/tabularium/transactions` without page reload

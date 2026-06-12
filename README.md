@@ -37,3 +37,38 @@ To move from a basic transaction ledger to the ultimate investment platform, the
 - **Stochastic Monte Carlo Engine:** Build an accumulation simulator executing multi-thousand iteration path models across a 30-year horizon, adapting dynamically to changing variables like evolving monthly contributions.
 - **Behavioral Stress-Testing Engine:** Design a module that lets users purposefully inject historical macro-shocks (e.g., Dot-Com crash, 2008 GFC, 1970s Stagflation) into their 30-year curves to visualize potential real-world behavioral changes.
 - **Decumulation Plan Simulator:** Implement advanced drawdown calculators modeling safe withdrawal paths based on Variable Percentage Withdrawal (VPW) rules and Guyton-Klinger spending guardrails.
+
+##  Roadmap
+
+###  Milestone 1: Tabularium Core Analytics (v0.3.0)
+
+**Objective:** Transform the platform from a raw transaction ledger into a functional portfolio dashboard, unblocking the currently empty `/tabularium/portfolio` view.
+
+- **Holding Aggregation Engine (Backend):** Write the calculation logic to process raw ledger transactions (Buy, Sell, Split) into real-time share balances, current values, and weighted cost-basises.
+- **Manual Asset Characteristics Ledger:** Build a basic database schema and frontend UI to allow manual input of geographic and sector weights for your core 5–6 ETFs.
+- **Portfolio X-Ray Dashboard:** Implement client-side charts on the portfolio page to visualize aggregate geographical and asset-class asset distributions
+- **Asset Comparison Playground:** Introduce a module to evaluate and compare tracking parameters between core funds (e.g., EUNL vs. VWCE).  
+
+### Milestone 2: Passive Portfolio Optimization (v0.4.0)
+
+**Objective:** Provide actionable insights that help the passive investor optimize asset allocations and risk management without triggering tax events.
+
+- **Overlap & Cluster Risk Matrix:** Build a diagnostic tool mapping top underlying holdings across separate ETFs to flag hidden stock concentration risks.
+- **Smart Rebalancing & Cash Router:** Implement the automated calculator that takes a monthly cash contribution input and routes it precisely across funds to fix drift passively.
+
+### Milestone 3: German Tax Integration (v0.5.0)
+
+**Objective:** Ground the portfolio metrics in domestic tax realities to provide hyper-localized financial alpha.
+
+- **Sparer-Pauschbetrag Tracker:** Add tracking for the annual €1,000 / €2,000 tax-free allowance alongside a tax-harvesting turnover simulator
+- **Vorabpauschale Automation:** Build backend calculation logic for accumulating funds (Thesaurierend) based on the official German base interest rate framework.
+- **Teilfreistellung Accounting:** Integrate the 30% partial tax exemption rules directly into cost-basis and capital gains ledger analytics.
+
+### Milestone 4: Providentia Foresight Engine (v1.0.0)
+
+**Objective:** Unlock the forecasting pillar, turning the platform into a predictive playground for multi-decade statistical modeling.  
+
+- **Statistical Infrastructure:** Add math and data-science library dependencies (NumPy/SciPy) to the FastAPI backend.
+- **Stochastic Monte Carlo Simulator:** Launch the 30-year accumulation path model capable of adapting to variable monthly contributions over time.
+- **Behavioral Stress-Testing Sandbox:** Allow users to simulate how their portfolio curves survive historically simulated macro-crises (e.g., 2008 GFC).
+- **Decumulation Plan Simulator:** Implement drawdown models incorporating Variable Percentage Withdrawal (VPW) rules and dynamic safety guardrails.

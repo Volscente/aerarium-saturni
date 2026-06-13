@@ -1,0 +1,75 @@
+# ETF Data Provider Comparison Matrix
+
+When building personal finance pipelines for the European market (specifically targeting UCITS ETFs tradeable via German brokers), data requirements quickly collide with geographical constraints. Below is a structural breakdown comparing **yfinance**, **justetf-scraping**, and **EOD Historical Data (EODHD)**.
+
+---
+
+## 1. Feature Coverage Matrix
+
+| Metric / Feature        | yfinance (Free)                      | justetf-scraping (Free)          | EODHD (Paid Tier Required)          |
+| :---------------------- | :----------------------------------- | :------------------------------- | :---------------------------------- |
+| **Data Cost**           | **100% Free** (Open-Source)          | **100% Free** (Open-Source)      | Paid (~$20 - $60/month)             |
+| **API Architecture**    | Python Library (Scraper)             | Python Library (Scraper)         | Official REST API                   |
+| **Rate Limits**         | Soft limits (~2,000 requests/hr)     | Web-level throttling risk        | Tiered (20 calls/day on Free)       |
+| **1) Price**            | Real-time & Historical (Decades)     | EOD & Historical Chart Arrays    | Real-time & Historical (30+ Years)  |
+| **2) Stock Exchange**   | Yes (Via ticker suffixes like `.DE`) | Yes (European Exchange listings) | Yes (Full Xetra/Frankfurt mappings) |
+| **3) Performance**      | **Manual Calculation** (via history) | **Pre-calculated** (1Y, 3Y, 5Y)  | **Pre-calculated** trailing fields  |
+| **4) Holdings**         | Yes (Top 10 via `.funds_data`)       | Yes (Top constituents)           | Yes (Deep structural breakdown)     |
+| **5) Geo Distribution** | Often missing for European UCITS     | Excellent (Regional strings)     | Excellent (`world_regions` object)  |
+| **6) Volatility**       | **Manual Calculation** (via history) | **Pre-calculated** (1Y, 3Y, 5Y)  | **Pre-calculated** risk metrics     |
+| **7) Sectors**          | Incomplete for European funds        | Excellent (Full allocations)     | Excellent (`sector_weights` object) |
+
+---
+
+## 2. Provider Deep Dives
+
+### yfinance
+
+An open-source interface querying Yahoo Finance. It targets specific stock exchanges via suffix strings (e.g., `EUNL.DE` for the iShares Core MSCI World ETF on Xetra).
+
+- **Pros:** Complete historical price vectors. Excellent for calculations requiring `pandas` and `numpy`.
+- **Cons:** Fundamental metrics (like sector breakdown and geographic distribution) are heavily US-centric and frequently return `None` or incomplete structures when hitting European-domiciled UCITS ETFs.
+- **Best Used For:** High-frequency price fetching and running customized quantitative models (e.g., rolling portfolio covariance, custom drawdowns).
+
+### justetf-scraping
+
+A community-driven library designed to query the backend screener of **justETF**, the benchmark reference platform for German ETF investors.
+
+- **Pros:** Native alignment with European/German regulatory structures. Seamlessly handles WKN and ISIN codes. Directly outputs localized metrics (like dividend distribution type: _Ausschüttend_ vs. _Thesaurierend_).
+- **Cons:** It relies on scraping HTML/JSON arrays meant for web rendering. Structural updates to the justETF interface can temporarily break code stability until a community patch is deployed.
+- **Best Used For:** Getting a comprehensive structural snapshot of an ETF's metadata (Holdings, Sectors, Country exposure) for European funds.
+
+### EOD Historical Data (EODHD)
+
+An institutional-grade REST data service offering clean documentation, wrappers across multiple languages, and dedicated customer support.
+
+- **Pros:** Highly stable API infrastructure with zero maintenance overhead. Deep database containing comprehensive historical ETF configurations.
+- **Cons:** Financial data gates. The Free tier restricts lookbacks to 1 year and locks out the Fundamentals API module entirely. Accessing the ETF sector, asset, and holding details requires upgrading to a premium tier.
+- **Best Used For:** Production environments or large-scale automation where library breakage cannot be tolerated and a structural budget exists.
+
+---
+
+## 3. Data Science Implementation Strategies
+
+### The Hybrid Pipeline Architecture
+
+For a personal, budget-friendly project, the most effective strategy leverages a hybrid pipeline. By using **justetf-scraping** to gather fundamental characteristics and **yfinance** to pull long-term numerical arrays, you capture comprehensive data without infrastructure fees.
+
+```python
+# Conceptual Hybrid Workflow
+import yfinance as yf
+import justetf_scraping as jt
+
+def get_complete_etf_data(isin, yahoo_ticker):
+    # 1. Fetch deep structural metadata natively for European markets
+    etf_metadata = jt.load_overview(index=isin, enrich=True)
+
+    # 2. Fetch extensive historical time-series data for analysis
+    ticker_engine = yf.Ticker(yahoo_ticker)
+    price_history = ticker_engine.history(period="10y")
+
+    return {
+        "metadata": etf_metadata, # Contains Sectors, Geography, TER
+        "time_series": price_history # Used to calculate custom Volatility & Returns
+    }
+```

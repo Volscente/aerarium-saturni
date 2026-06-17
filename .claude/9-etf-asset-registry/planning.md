@@ -22,7 +22,7 @@ TASK-1 ──► TASK-2 ──► TASK-3
 
 ## TASK-1 — Database Schema and Alembic Migrations
 
-**GitHub Issue:** #{issue}
+**GitHub Issue:** #39
 **Effort estimate:** 1.0 FTE-day
 
 ### Scope
@@ -49,7 +49,7 @@ Alembic's `env.py` is configured to use a synchronous connection (psycopg3's syn
 
 ## TASK-2 — Backend CRUD Service Layer
 
-**GitHub Issue:** #{issue}
+**GitHub Issue:** #40
 **Effort estimate:** 1.5 FTE-days
 
 ### Scope
@@ -77,7 +77,7 @@ The CSV upload handler (`POST /etfs/{id}/holdings/upload`) accepts a `multipart/
 
 ## TASK-3 — Administrative Management UI
 
-**GitHub Issue:** #{issue}
+**GitHub Issue:** #41
 **Effort estimate:** 2.0 FTE-days
 
 ### Scope

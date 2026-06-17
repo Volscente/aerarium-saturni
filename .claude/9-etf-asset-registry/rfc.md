@@ -146,9 +146,9 @@ Total estimated effort: **8 sessions**.
 
 | Milestone | Description | Est. effort | GitHub Issue |
 | :-------- | :---------- | :---------- | :----------- |
-| M1 — Database schema and Alembic migrations | Initialize Alembic; write first revision creating `etfs`, `etf_holdings`, `etf_price_history` with constraints and indexes; verify idempotency | 2 sessions | #{issue} |
-| M2 — Backend CRUD service layer | ORM models, Pydantic v2 schemas, `/etfs` router (CRUD + price + CSV upload endpoints), unit tests | 3 sessions | #{issue} |
-| M3 — Administrative management UI | `portfolio/page.tsx` Server Component, `EtfRegistryTable`, `EtfForm`/`EtfDrawer`, `PriceUpdateButton`, `HoldingsUpload`, `etf-actions.ts`, `etf-schema.ts` | 3 sessions | #{issue} |
+| M1 — Database schema and Alembic migrations | Initialize Alembic; write first revision creating `etfs`, `etf_holdings`, `etf_price_history` with constraints and indexes; verify idempotency | 1.0 | #39 |
+| M2 — Backend CRUD service layer | ORM models, Pydantic v2 schemas, `/etfs` router (CRUD + price + CSV upload endpoints), unit tests | 1.5 | #40 |
+| M3 — Administrative management UI | `portfolio/page.tsx` Server Component, `EtfRegistryTable`, `EtfForm`/`EtfDrawer`, `PriceUpdateButton`, `HoldingsUpload`, `etf-actions.ts`, `etf-schema.ts` | 2.0 | #41 |
 
 ### Recommended Order
 

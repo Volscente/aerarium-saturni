@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-06-19
+
+### Added
+
+- **Backend**: New `Etf`, `EtfHolding`, and `EtfPriceHistory` SQLAlchemy ORM models in `src/backend/models.py` — three-table ETF asset registry schema with UUID PKs, UNIQUE constraints on ticker/isin, four JSONB distribution columns (geographical, sector, bond maturities, bond credit scores), FK cascades from child to parent, GIN index declarations on JSONB columns, and a composite B-Tree index on `(etf_id, timestamp DESC)` for O(1) latest-price lookups.
+- **Backend**: Alembic initialized at `backend/alembic/` — `alembic.ini` root config, `env.py` migration runner using synchronous psycopg3 `create_engine` with `NullPool`, and `script.py.mako` template.
+- **Backend**: First Alembic migration `001_create_etf_tables.py` — creates `etfs`, `etf_holdings`, and `etf_price_history` tables with all constraints, FK cascades, GIN indexes on JSONB columns, and composite index on `(etf_id, timestamp DESC)`.
+- **Backend**: `alembic>=1.13` added to runtime dependencies in `backend/pyproject.toml`.
+
 ## [0.2.3] - 2026-06-11
 
 ### Added

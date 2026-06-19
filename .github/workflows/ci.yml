@@ -18,21 +18,21 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
           cache: "npm"
-          cache-dependency-path: the-codex/package-lock.json
+          cache-dependency-path: frontend/package-lock.json
 
       - name: Install dependencies
-        working-directory: the-codex
+        working-directory: frontend
         run: npm ci
 
       - name: Build Codex
-        working-directory: the-codex
+        working-directory: frontend
         timeout-minutes: 3
         run: npm run build
 
       - name: Lighthouse CI
-        working-directory: the-codex
+        working-directory: frontend
         run: |
           npm install -g @lhci/cli
           lhci autorun
@@ -51,25 +51,25 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
           cache: "npm"
-          cache-dependency-path: the-codex/package-lock.json
+          cache-dependency-path: frontend/package-lock.json
 
       - name: Install dependencies
-        working-directory: the-codex
+        working-directory: frontend
         run: npm ci
 
       - name: Install Playwright browsers
-        working-directory: the-codex
+        working-directory: frontend
         run: npx playwright install --with-deps chromium
 
       - name: Build Codex
-        working-directory: the-codex
+        working-directory: frontend
         timeout-minutes: 3
         run: npm run build
 
       - name: Run Playwright tests
-        working-directory: the-codex
+        working-directory: frontend
         run: npx playwright test
         env:
           CI: true
@@ -79,7 +79,7 @@ jobs:
         if: always()
         with:
           name: playwright-report
-          path: the-codex/playwright-report/
+          path: frontend/playwright-report/
           retention-days: 7
 
   update-snapshots:
@@ -94,25 +94,25 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
           cache: "npm"
-          cache-dependency-path: the-codex/package-lock.json
+          cache-dependency-path: frontend/package-lock.json
 
       - name: Install dependencies
-        working-directory: the-codex
+        working-directory: frontend
         run: npm ci
 
       - name: Install Playwright browsers
-        working-directory: the-codex
+        working-directory: frontend
         run: npx playwright install --with-deps chromium
 
       - name: Build Codex
-        working-directory: the-codex
+        working-directory: frontend
         timeout-minutes: 3
         run: npm run build
 
       - name: Update snapshots
-        working-directory: the-codex
+        working-directory: frontend
         run: npx playwright test --update-snapshots
         env:
           CI: true
@@ -121,6 +121,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add the-codex/tests/
+          git add frontend/tests/
           git diff --cached --quiet || git commit -m "chore: update Playwright baseline snapshots [skip ci]"
           git push

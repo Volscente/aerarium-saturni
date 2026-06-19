@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] - 2026-06-19
+
+### Added
+
+- **Backend**: New `src/backend/schemas/etfs.py` — `EtfCreate` (ISIN `field_validator`; `model_validator` enforcing bond distribution maps when `asset_class = Bonds`), `EtfUpdate` (all fields optional for partial updates), `EtfResponse` (ORM-mode, 24 fields), `EtfPriceCreate`, `EtfPriceResponse`, `EtfHoldingRow` (CSV row parsing) Pydantic v2 models.
+- **Backend**: New `src/backend/routers/etfs.py` — Six FastAPI route handlers at `/etfs`: `POST /etfs` (201), `GET /etfs` (ILIKE filters on ticker and issuer; exact match on asset_class), `PUT /etfs/{id}` (partial update), `DELETE /etfs/{id}` (204, cascades to holdings and price history), `POST /etfs/{id}/price` (manual price snapshot, 201), `POST /etfs/{id}/holdings/upload` (atomic CSV replace — delete-then-insert within one transaction; 422 with row number on any validation failure).
+- **Backend**: `python-multipart>=0.0.9` added to `backend/pyproject.toml` runtime dependencies (required for `UploadFile` multipart parsing).
+- **Tests**: `tests/conftest.py` extended with `VALID_ETF_PAYLOAD`, `_make_mock_etf_row`, `mock_session_with_etfs`, `mock_session_etf_not_found`, `client_with_etfs`, and `client_etf_not_found` fixtures.
+- **Tests**: New `tests/routers/test_etfs.py` — 10 unit tests covering valid ETF creation, invalid ISIN (422), bonds without distribution maps (422), empty list, list with rows, update/delete 404, price creation, CSV upload success, and CSV upload invalid row.
+
+### Changed
+
+- **Backend**: `src/backend/main.py` — `etfs` router registered at prefix `/etfs`.
+
 ## [0.3.0] - 2026-06-19
 
 ### Added

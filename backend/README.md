@@ -13,7 +13,9 @@ The Backend is the Python FastAPI service for Aerarium Saturni. It owns all data
 - **`backend/alembic/env.py`** — Migration runner; imports `Base.metadata`; synchronous psycopg3 `create_engine` with `NullPool`; `run_migrations_online()` entry point
 - **`backend/alembic/versions/001_create_etf_tables.py`** — First migration: `etfs`, `etf_holdings`, `etf_price_history` tables with FK cascades, UNIQUE constraints, GIN indexes on JSONB columns, and composite B-Tree index on `(etf_id, timestamp DESC)`
 - **`src/backend/schemas/transactions.py`** — `TransactionCreate` Pydantic v2 request model with ISIN format validation and `model_validator` (quantity required for buy/sell; ratio required for split); `TransactionResponse` response model with ORM-mode serialization
+- **`src/backend/schemas/etfs.py`** — `EtfCreate` (ISIN `field_validator`; `model_validator` requiring bond distribution maps when `asset_class = Bonds`); `EtfUpdate` (all fields optional for partial updates); `EtfResponse` (ORM-mode); `EtfPriceCreate`; `EtfPriceResponse`; `EtfHoldingRow` (used for CSV row parsing)
 - **`src/backend/routers/transactions.py`** — `POST /transactions` (HTTP 201) and `GET /transactions` FastAPI route handlers using `Depends(get_session)`
+- **`src/backend/routers/etfs.py`** — Six FastAPI route handlers for ETF CRUD, manual price logging, and atomic CSV holdings upload; uses `Depends(get_session)` and `python-multipart` `UploadFile` for file handling
 - **`pyproject.toml`** — UV workspace member; all runtime dependencies declared
 - **`Dockerfile`** — Minimal container image stub; installs UV, syncs dependencies, runs uvicorn
 
@@ -22,6 +24,12 @@ The Backend is the Python FastAPI service for Aerarium Saturni. It owns all data
 - `GET /health` — Liveness check; returns `{"status": "ok"}`; no database dependency; used by Docker Compose health checks and CI smoke tests
 - `POST /transactions` — Create a transaction; accepts `TransactionCreate` JSON body; returns `TransactionResponse` (HTTP 201)
 - `GET /transactions` — List all transactions ordered by `transaction_date DESC`; optional `?owner=` query parameter filters by portfolio owner; returns `list[TransactionResponse]`
+- `POST /etfs` — Create an ETF; validates ISIN format and asset-class-conditional fields; returns `EtfResponse` (HTTP 201)
+- `GET /etfs` — List all ETFs; optional `?ticker=`, `?asset_class=`, `?issuer=` query parameters; returns `list[EtfResponse]`
+- `PUT /etfs/{id}` — Partial update of an ETF's scalar or JSONB fields; returns updated `EtfResponse` (HTTP 200); 404 if not found
+- `DELETE /etfs/{id}` — Delete an ETF and cascade to holdings and price history (HTTP 204); 404 if not found
+- `POST /etfs/{id}/price` — Append a manual price snapshot; accepts `EtfPriceCreate`; returns `EtfPriceResponse` (HTTP 201)
+- `POST /etfs/{id}/holdings/upload` — Atomically replace all holdings for an ETF from a `multipart/form-data` CSV upload; returns `{"inserted_rows": n}` (HTTP 200); rolls back entirely on any row validation error
 
 ## External dependencies
 
@@ -32,6 +40,7 @@ The Backend is the Python FastAPI service for Aerarium Saturni. It owns all data
 - **Pydantic** — Core FastAPI dependency; all future API request and response schemas use Pydantic v2 models
 - **PostgreSQL** — Relational database for financial data; connection URL injected via `DATABASE_URL` environment variable
 - **Alembic** — Schema migration tool; `alembic upgrade head` applies all pending migrations; `env.py` uses synchronous psycopg3 `create_engine` alongside the async engine in `db.py`
+- **python-multipart** — Required by FastAPI's `UploadFile` for `multipart/form-data` parsing; used by the CSV holdings upload endpoint
 
 ## Constraints / invariants
 
@@ -84,6 +93,15 @@ curl -s -H "Origin: http://localhost:3000" \
 ---
 
 ### Changelog
+
+#### 2026-06-19 (v0.3.1)
+
+- `src/backend/schemas/etfs.py` — New Pydantic v2 schemas: `EtfCreate` (ISIN `field_validator`; `model_validator` enforcing bond distribution maps when `asset_class = Bonds`); `EtfUpdate` (all fields optional); `EtfResponse` (ORM-mode, 24 fields); `EtfPriceCreate`; `EtfPriceResponse`; `EtfHoldingRow` (CSV row parsing)
+- `src/backend/routers/etfs.py` — New `/etfs` router: `POST /etfs` (201), `GET /etfs` (ILIKE filters on ticker/issuer, exact match on asset_class), `PUT /etfs/{id}` (partial update via setattr loop), `DELETE /etfs/{id}` (204), `POST /etfs/{id}/price` (201), `POST /etfs/{id}/holdings/upload` (atomic delete-then-insert from CSV; 422 with row number on validation failure)
+- `src/backend/main.py` — `etfs` router registered at prefix `/etfs`
+- `backend/pyproject.toml` — `python-multipart>=0.0.9` added to runtime dependencies
+- `tests/conftest.py` — Added `VALID_ETF_PAYLOAD`, `_make_mock_etf_row`, `mock_session_with_etfs`, `mock_session_etf_not_found`, `client_with_etfs`, `client_etf_not_found` fixtures
+- `tests/routers/test_etfs.py` — 10 new unit tests covering all six endpoints: valid create, invalid ISIN, bonds validation, empty list, list with rows, update/delete 404, price creation, CSV upload success, CSV upload invalid row
 
 #### 2026-06-19 (v0.3.0)
 

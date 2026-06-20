@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.2] - 2026-06-19
+
+### Added
+
+- **Frontend**: `app/(tabularium)/tabularium/portfolio/page.tsx` promoted from `return null` placeholder to a live Next.js Server Component — fetches `GET /etfs` with `{ next: { tags: ['etfs'] } }` cache tag; renders `AddEtfButton` (create drawer) + `EtfRegistryTable` or an empty-state message.
+- **Frontend**: New `etf-schema.ts` — Zod `EtfFormSchema` with ISIN regex and JSON-parseability refinements on required JSONB distribution fields; `EtfFormValues` type exported; no directive so it is importable by both server and client.
+- **Frontend**: New `etf-actions.ts` — `'use server'` — `createEtf`, `updateEtf`, `deleteEtf`, `addPriceSnapshot` Server Actions; each calls `revalidateTag('etfs')` after a successful backend write; parse JSONB string fields to `Record<string, number>` before sending to the backend.
+- **Frontend**: New `components/EtfRegistryTable.tsx` — `'use client'` filterable table with client-side ticker-prefix, asset-class, and issuer filters; per-row Edit, Delete (with `window.confirm` guard), `PriceUpdateButton`, and `HoldingsUpload` actions; `editingEtf` state drives the edit drawer.
+- **Frontend**: New `components/AddEtfButton.tsx` — `'use client'` trigger button; owns `isDrawerOpen` state; mounted inside `portfolio/page.tsx` (not the layout) so it appears only on the ETF registry view.
+- **Frontend**: New `components/EtfDrawer.tsx` — `'use client'` fixed right-side slide-in panel mirroring `TransactionDrawer`; title toggles "Add ETF" / "Edit ETF" based on `etf` prop.
+- **Frontend**: New `components/EtfForm.tsx` — `'use client'` create/edit form; single `formState` object state; asset-class-conditional field visibility (bonds JSONB fields for `asset_class === 'Bonds'`, equity metrics for `asset_class === 'Equities'`); exports the `EtfResponse` TypeScript interface.
+- **Frontend**: New `components/PriceUpdateButton.tsx` — `'use client'` per-row toggle; expands to an inline price/currency/date form and calls `addPriceSnapshot` Server Action.
+- **Frontend**: New `components/HoldingsUpload.tsx` — `'use client'` CSV file input; POSTs `FormData` to `/api/etfs/{id}/holdings/upload`; renders row-count confirmation or structured error.
+- **Frontend**: New `app/api/etfs/[id]/holdings/upload/route.ts` — Next.js App Router POST route handler; proxies multipart CSV uploads from the browser to `${BACKEND_URL}/etfs/{id}/holdings/upload` (necessary because `BACKEND_URL` is server-side only).
+
+### Changed
+
+- **Infrastructure**: `frontend/.lighthouserc.js` — added `http://localhost:3000/tabularium/portfolio` to the Lighthouse CI URL audit list; performance score ≥ 0.9 now gated on the live ETF registry route.
+
 ## [0.3.1] - 2026-06-19
 
 ### Added

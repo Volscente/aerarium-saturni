@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from backend.db import engine
 from backend.models import Base
-from backend.routers import transactions
+from backend.routers import etfs, transactions
 
 
 @asynccontextmanager
@@ -32,6 +32,7 @@ app.add_middleware(
 )
 
 app.include_router(transactions.router, prefix="/transactions")
+app.include_router(etfs.router, prefix="/etfs")
 
 
 @app.get("/health")

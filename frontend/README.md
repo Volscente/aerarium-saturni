@@ -15,7 +15,16 @@ The Frontend is the Next.js 15 + Nextra 4 application for the Aerarium Saturni p
 - **`app/(tabularium)/tabularium/layout.tsx`** — Tabularium layout shell: `CustomNavbar` + `AddTransactionButton` action bar + `TabulariumSubNav` + `CustomFooter`, no Nextra chrome, full-width content area
 - **`app/(tabularium)/tabularium/components/TabulariumSubNav.tsx`** — `'use client'` persistent sub-navigation bar; two nav links (`/tabularium/portfolio`, `/tabularium/transactions`) with `usePathname()` prefix-match active state; `roman-*` token styling; no Nextra imports
 - **`app/(tabularium)/tabularium/page.tsx`** — Tabularium landing page
-- **`app/(tabularium)/tabularium/portfolio/page.tsx`** — Portfolio sub-route placeholder
+- **`app/(tabularium)/tabularium/portfolio/page.tsx`** — ETF Registry: Next.js Server Component; calls `GET /etfs` with `{ next: { tags: ['etfs'] } }` cache tag; renders `AddEtfButton` + `EtfRegistryTable` or an empty-state message
+- **`app/(tabularium)/tabularium/etf-schema.ts`** — Shared Zod schema (`EtfFormSchema`, `EtfFormValues`); no directive; JSONB distribution fields validated as JSON strings; importable by `etf-actions.ts` (server) and `EtfForm.tsx` (client)
+- **`app/(tabularium)/tabularium/etf-actions.ts`** — `createEtf`, `updateEtf`, `deleteEtf`, `addPriceSnapshot` Server Actions; parse JSONB string fields to `Record<string, number>` before backend call; each calls `revalidateTag('etfs')` on success; return `{ success: true } | { error: string }`
+- **`app/(tabularium)/tabularium/components/EtfRegistryTable.tsx`** — `'use client'` filterable table; owns ticker/asset-class/issuer filter state and `editingEtf` state; per-row Edit, Delete (with `window.confirm`), `PriceUpdateButton`, `HoldingsUpload` actions
+- **`app/(tabularium)/tabularium/components/AddEtfButton.tsx`** — `'use client'` trigger button; owns `isDrawerOpen` state; mounted inside `portfolio/page.tsx` (not in the layout) so it appears only on the ETF registry view
+- **`app/(tabularium)/tabularium/components/EtfDrawer.tsx`** — `'use client'` fixed right-side slide-in panel (`fixed inset-y-0 right-0 z-50 w-[28rem]`); mirrors `TransactionDrawer`; title toggles "Add ETF" / "Edit ETF" based on `etf` prop
+- **`app/(tabularium)/tabularium/components/EtfForm.tsx`** — `'use client'` create/edit form; single `formState` object state; field visibility matrix: bonds JSONB fields shown when `asset_class === 'Bonds'`, equity metric fields when `asset_class === 'Equities'`; `EtfResponse` interface exported from here and re-used by table/drawer
+- **`app/(tabularium)/tabularium/components/PriceUpdateButton.tsx`** — `'use client'` per-row toggle that expands to an inline price/currency/date form; calls `addPriceSnapshot` Server Action
+- **`app/(tabularium)/tabularium/components/HoldingsUpload.tsx`** — `'use client'` CSV file input; POSTs to `/api/etfs/{id}/holdings/upload` (Next.js route handler proxy); shows "Inserted N rows" or structured error
+- **`app/api/etfs/[id]/holdings/upload/route.ts`** — Next.js App Router POST route handler; proxies multipart CSV uploads from the browser to `${BACKEND_URL}/etfs/{id}/holdings/upload` (needed because `BACKEND_URL` is server-side only)
 - **`app/(tabularium)/tabularium/transactions/page.tsx`** — Transaction Ledger: Next.js Server Component; calls `GET /transactions` with `{ next: { tags: ['transactions'] } }` cache tag; renders a full-width chronological table (11 columns) or an empty-state message
 - **`app/(tabularium)/tabularium/transaction-schema.ts`** — Shared Zod schema (`TransactionFormSchema`, `TransactionFormValues`); no `'use client'`/`'use server'` directive so it is importable by both `actions.ts` (server) and `TransactionForm.tsx` (client)
 - **`app/(tabularium)/tabularium/actions.ts`** — `createTransaction` Server Action: re-validates with Zod, POSTs to `POST /transactions`, calls `revalidateTag('transactions')`, returns `{ success: true } | { error: string }`
@@ -29,14 +38,15 @@ The Frontend is the Next.js 15 + Nextra 4 application for the Aerarium Saturni p
 - **`docker-compose.yml`** — Service orchestration: `frontend` container + `nginx` with health-checked dependency
 - **`nginx/subdomain.conf`** — Nginx server block for subdomain routing (primary topology)
 - **`nginx/path-based.conf`** — Nginx server block for `/wiki` path-based routing (secondary topology)
-- **`.lighthouserc.js`** — Lighthouse CI: starts Next.js server and asserts performance score ≥ 0.9 for `/`, `/tabularium`, `/tabularium/transactions`, and `/codex/fundamentals`
+- **`.lighthouserc.js`** — Lighthouse CI: starts Next.js server and asserts performance score ≥ 0.9 for `/`, `/tabularium`, `/tabularium/transactions`, `/tabularium/portfolio`, and `/codex/fundamentals`
 - **`.env.local`** — Local dev environment variables (git-ignored); sets `BACKEND_URL=http://localhost:8000`
 
 ## Public interfaces
 
 - `GET /` — Home page (sidebar-free welcome interface; Nextra `[[...slug]]` route)
 - `GET /tabularium` — Tabularium landing page (App Router route group; no Nextra chrome)
-- `GET /tabularium/portfolio` — Portfolio sub-route placeholder
+- `GET /tabularium/portfolio` — ETF Registry: live filterable table of all registered ETFs with create, edit, delete, price logging, and CSV holdings upload actions
+- `POST /api/etfs/{id}/holdings/upload` — Internal Next.js route handler; proxies CSV multipart upload from the browser to the FastAPI backend
 - `GET /tabularium/transactions` — Transaction Ledger; server-rendered chronological table of all recorded transactions fetched from `GET /transactions` on the FastAPI backend
 - `GET /codex` — Codex section landing (financial theory wiki; Nextra route)
 - `GET /codex/fundamentals/**` — Fundamentals articles (mechanics, money & inflation, mathematics)
@@ -141,6 +151,20 @@ just frontend-dev       # rebuild then start server
 ---
 
 ### Changelog
+
+#### 2026-06-19 (v0.3.2)
+
+- Promoted `app/(tabularium)/tabularium/portfolio/page.tsx` from `return null` placeholder to a live Next.js Server Component fetching `GET /etfs` with the `etfs` cache tag
+- Added `app/(tabularium)/tabularium/etf-schema.ts` — Zod `EtfFormSchema` with JSON-parseability refine on JSONB distribution fields
+- Added `app/(tabularium)/tabularium/etf-actions.ts` — `createEtf`, `updateEtf`, `deleteEtf`, `addPriceSnapshot` Server Actions; all call `revalidateTag('etfs')`
+- Added `app/(tabularium)/tabularium/components/EtfRegistryTable.tsx` — filterable client table with per-row edit/delete/price/holdings actions
+- Added `app/(tabularium)/tabularium/components/AddEtfButton.tsx` — create-mode ETF drawer trigger; mounted in `portfolio/page.tsx` (not the layout)
+- Added `app/(tabularium)/tabularium/components/EtfDrawer.tsx` — right-side slide-in panel; mirrors `TransactionDrawer`; supports create and edit modes
+- Added `app/(tabularium)/tabularium/components/EtfForm.tsx` — create/edit form with asset-class-conditional field visibility and single `formState` object state; exports `EtfResponse` interface
+- Added `app/(tabularium)/tabularium/components/PriceUpdateButton.tsx` — per-row inline price snapshot form calling `addPriceSnapshot`
+- Added `app/(tabularium)/tabularium/components/HoldingsUpload.tsx` — CSV file input POSTing to `/api/etfs/{id}/holdings/upload` route handler proxy
+- Added `app/api/etfs/[id]/holdings/upload/route.ts` — Next.js App Router POST route handler proxying multipart CSV uploads to the backend
+- Modified `frontend/.lighthouserc.js` — added `/tabularium/portfolio` to the Lighthouse CI URL audit list
 
 #### 2026-06-11 (v0.2.3)
 

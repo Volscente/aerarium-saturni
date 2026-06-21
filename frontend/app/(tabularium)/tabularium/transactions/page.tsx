@@ -17,9 +17,13 @@ interface TransactionResponse {
 }
 
 async function fetchTransactions(): Promise<TransactionResponse[]> {
-  const res = await fetch(`${process.env.BACKEND_URL}/transactions`)
-  if (!res.ok) throw new Error(`Failed to fetch transactions: ${res.status}`)
-  return res.json()
+  try {
+    const res = await fetch(`${process.env.BACKEND_URL}/transactions`)
+    if (!res.ok) return []
+    return res.json()
+  } catch {
+    return []
+  }
 }
 
 export default async function TransactionsPage() {

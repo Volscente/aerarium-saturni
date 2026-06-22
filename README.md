@@ -1,6 +1,6 @@
 # Aerarium Saturni
 
-A self-hosted financial management platform for the long-term passive investor — combining a transaction ledger, ETF registry, and a financial theory wiki.
+A financial cognitive ecosystem platform for the long-term passive investor — combining a transaction ledger, ETF registry, and a financial theory wiki.
 
 ---
 

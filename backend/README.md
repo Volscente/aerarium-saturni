@@ -8,9 +8,14 @@ The Backend is the Python FastAPI service for Aerarium Saturni. It owns all data
 
 - **`src/backend/main.py`** — FastAPI application entry point; `lifespan` event creates the `transactions` table via `Base.metadata.create_all`; CORS middleware; transactions router registered at `/transactions`; `GET /health` liveness endpoint
 - **`src/backend/db.py`** — Async SQLAlchemy engine and session factory; `get_session` async generator for FastAPI dependency injection
-- **`src/backend/models.py`** — `Base` (declarative base) and `Transaction` ORM class mapping the `transactions` PostgreSQL table (14 columns: `id`, `owner`, `broker_platform`, `transaction_type`, `asset_class`, `ticker`, `isin`, `quantity` (nullable), `price`, `currency`, `fees`, `ratio` (nullable, for Split), `transaction_date`, `created_at`)
+- **`src/backend/models.py`** — `Base` (declarative base); `Transaction` ORM class (14 columns); `Etf` ORM class (25 columns including four JSONB distribution columns); `EtfHolding` and `EtfPriceHistory` child classes with FK cascades and composite index
+- **`backend/alembic.ini`** — Alembic root config; `script_location = alembic`; sqlalchemy.url overridden at runtime from `DATABASE_URL`
+- **`backend/alembic/env.py`** — Migration runner; imports `Base.metadata`; synchronous psycopg3 `create_engine` with `NullPool`; `run_migrations_online()` entry point
+- **`backend/alembic/versions/001_create_etf_tables.py`** — First migration: `etfs`, `etf_holdings`, `etf_price_history` tables with FK cascades, UNIQUE constraints, GIN indexes on JSONB columns, and composite B-Tree index on `(etf_id, timestamp DESC)`
 - **`src/backend/schemas/transactions.py`** — `TransactionCreate` Pydantic v2 request model with ISIN format validation and `model_validator` (quantity required for buy/sell; ratio required for split); `TransactionResponse` response model with ORM-mode serialization
+- **`src/backend/schemas/etfs.py`** — `EtfCreate` (ISIN `field_validator`; `model_validator` requiring bond distribution maps when `asset_class = Bonds`); `EtfUpdate` (all fields optional for partial updates); `EtfResponse` (ORM-mode); `EtfPriceCreate`; `EtfPriceResponse`; `EtfHoldingRow` (used for CSV row parsing)
 - **`src/backend/routers/transactions.py`** — `POST /transactions` (HTTP 201) and `GET /transactions` FastAPI route handlers using `Depends(get_session)`
+- **`src/backend/routers/etfs.py`** — Six FastAPI route handlers for ETF CRUD, manual price logging, and atomic CSV holdings upload; uses `Depends(get_session)` and `python-multipart` `UploadFile` for file handling
 - **`pyproject.toml`** — UV workspace member; all runtime dependencies declared
 - **`Dockerfile`** — Minimal container image stub; installs UV, syncs dependencies, runs uvicorn
 
@@ -19,6 +24,12 @@ The Backend is the Python FastAPI service for Aerarium Saturni. It owns all data
 - `GET /health` — Liveness check; returns `{"status": "ok"}`; no database dependency; used by Docker Compose health checks and CI smoke tests
 - `POST /transactions` — Create a transaction; accepts `TransactionCreate` JSON body; returns `TransactionResponse` (HTTP 201)
 - `GET /transactions` — List all transactions ordered by `transaction_date DESC`; optional `?owner=` query parameter filters by portfolio owner; returns `list[TransactionResponse]`
+- `POST /etfs` — Create an ETF; validates ISIN format and asset-class-conditional fields; returns `EtfResponse` (HTTP 201)
+- `GET /etfs` — List all ETFs; optional `?ticker=`, `?asset_class=`, `?issuer=` query parameters; returns `list[EtfResponse]`
+- `PUT /etfs/{id}` — Partial update of an ETF's scalar or JSONB fields; returns updated `EtfResponse` (HTTP 200); 404 if not found
+- `DELETE /etfs/{id}` — Delete an ETF and cascade to holdings and price history (HTTP 204); 404 if not found
+- `POST /etfs/{id}/price` — Append a manual price snapshot; accepts `EtfPriceCreate`; returns `EtfPriceResponse` (HTTP 201)
+- `POST /etfs/{id}/holdings/upload` — Atomically replace all holdings for an ETF from a `multipart/form-data` CSV upload; returns `{"inserted_rows": n}` (HTTP 200); rolls back entirely on any row validation error
 
 ## External dependencies
 
@@ -28,6 +39,8 @@ The Backend is the Python FastAPI service for Aerarium Saturni. It owns all data
 - **psycopg (binary)** — PostgreSQL driver (psycopg3); supports both async and sync modes — Alembic migration runner works without `asyncio.run()` wrappers; connection string prefix: `postgresql+psycopg://`
 - **Pydantic** — Core FastAPI dependency; all future API request and response schemas use Pydantic v2 models
 - **PostgreSQL** — Relational database for financial data; connection URL injected via `DATABASE_URL` environment variable
+- **Alembic** — Schema migration tool; `alembic upgrade head` applies all pending migrations; `env.py` uses synchronous psycopg3 `create_engine` alongside the async engine in `db.py`
+- **python-multipart** — Required by FastAPI's `UploadFile` for `multipart/form-data` parsing; used by the CSV holdings upload endpoint
 
 ## Constraints / invariants
 
@@ -35,12 +48,13 @@ The Backend is the Python FastAPI service for Aerarium Saturni. It owns all data
 - `DATABASE_URL` must be set in the environment before the backend starts; the engine is created at module import time and raises `KeyError` immediately if the variable is absent.
 - CORS must allowlist `http://localhost:3000` unconditionally; the production origin is controlled by the `FRONTEND_ORIGIN` environment variable and is only added to the allow list when explicitly set.
 - The `psycopg[binary]` driver (psycopg3) must be used — not `psycopg2` — because `create_async_engine` requires an async-capable adapter.
-- `Base.metadata.create_all()` is called at startup via `engine.begin() → conn.run_sync(Base.metadata.create_all)`. This is idempotent — it is a no-op when the table already exists. Future schema changes require Alembic adoption or manual DDL.
-- The `transactions` table is the canonical financial record for all future analytics. Schema extensions must be made via tracked migrations and must not rely on re-creating the table.
+- `Base.metadata.create_all()` is called at startup for the `transactions` table only; it remains for backwards compatibility while a baseline Alembic migration for `transactions` is deferred to a follow-up milestone. All new tables must be introduced via Alembic migrations.
+- All new schema changes must go through Alembic (`alembic upgrade head`), not `create_all()`. The `transactions` table is the sole exception pending a baseline migration.
+- `alembic downgrade base` removes only the ETF tables; the `transactions` table is unaffected (managed by `create_all`, not Alembic). This asymmetry is intentional.
 
 ## Out of scope
 
-- **Alembic migrations** — Deferred to the first schema-change initiative; `create_all()` handles initial schema creation only.
+- **Alembic baseline migration for `transactions`** — The existing `transactions` table is still created via `create_all()` at startup; a dedicated migration to baseline it is deferred to a follow-up milestone.
 - **Portfolio metric calculations** — Cost basis, P&L, TWR, MWR — future analytics initiative.
 - **Authentication** — The service is unauthenticated at this stage.
 - **CSV import or bulk transaction entry** — Only single-record creation via `POST /transactions` is supported.
@@ -79,6 +93,24 @@ curl -s -H "Origin: http://localhost:3000" \
 ---
 
 ### Changelog
+
+#### 2026-06-19 (v0.3.1)
+
+- `src/backend/schemas/etfs.py` — New Pydantic v2 schemas: `EtfCreate` (ISIN `field_validator`; `model_validator` enforcing bond distribution maps when `asset_class = Bonds`); `EtfUpdate` (all fields optional); `EtfResponse` (ORM-mode, 24 fields); `EtfPriceCreate`; `EtfPriceResponse`; `EtfHoldingRow` (CSV row parsing)
+- `src/backend/routers/etfs.py` — New `/etfs` router: `POST /etfs` (201), `GET /etfs` (ILIKE filters on ticker/issuer, exact match on asset_class), `PUT /etfs/{id}` (partial update via setattr loop), `DELETE /etfs/{id}` (204), `POST /etfs/{id}/price` (201), `POST /etfs/{id}/holdings/upload` (atomic delete-then-insert from CSV; 422 with row number on validation failure)
+- `src/backend/main.py` — `etfs` router registered at prefix `/etfs`
+- `backend/pyproject.toml` — `python-multipart>=0.0.9` added to runtime dependencies
+- `tests/conftest.py` — Added `VALID_ETF_PAYLOAD`, `_make_mock_etf_row`, `mock_session_with_etfs`, `mock_session_etf_not_found`, `client_with_etfs`, `client_etf_not_found` fixtures
+- `tests/routers/test_etfs.py` — 10 new unit tests covering all six endpoints: valid create, invalid ISIN, bonds validation, empty list, list with rows, update/delete 404, price creation, CSV upload success, CSV upload invalid row
+
+#### 2026-06-19 (v0.3.0)
+
+- `src/backend/models.py` — Added `Etf` ORM class (25 columns: UUID PK, UNIQUE ticker/isin, scalar ETF metadata, four JSONB distribution columns with GIN index declarations in `__table_args__`); `EtfHolding` child class (8 columns, FK `etf_id → etfs.id` ON DELETE CASCADE); `EtfPriceHistory` child class (5 columns, FK cascade, composite B-Tree index on `(etf_id, timestamp DESC)`); imported `Boolean`, `ForeignKey`, `Index`, `Text`, `JSONB`, `relationship`
+- `backend/alembic.ini` — New Alembic root config; `script_location = alembic`; `sqlalchemy.url` placeholder overridden at runtime
+- `backend/alembic/env.py` — New migration runner; imports `Base.metadata`; synchronous psycopg3 `create_engine` with `NullPool`; `run_migrations_online()` function
+- `backend/alembic/script.py.mako` — Standard Alembic migration template
+- `backend/alembic/versions/001_create_etf_tables.py` — First migration creating `etfs`, `etf_holdings`, and `etf_price_history` with all constraints, FK cascades, GIN indexes on JSONB columns, and composite B-Tree index on `(etf_id, timestamp DESC)` using `sa.text()`
+- `backend/pyproject.toml` — Added `alembic>=1.13` to runtime dependencies
 
 #### 2026-06-11 (v0.2.2)
 

@@ -1,6 +1,6 @@
 # Aerarium Saturni
 
-A financial cognitive ecosystem platform for the long-term passive investor — combining a transaction ledger, ETF registry, and a financial theory wiki.
+A platform for the long-term passive investor. The vision is to build a comprehensive cognitive ecosystem of financial instruments—including asset comparison tools, portfolio forecasting, FIRE simulations, multi-portfolio management, and a financial wiki. Today, the platform provides a transaction ledger, ETF registry, and financial theory wiki to establish the foundation.
 
 ---
 
@@ -8,7 +8,7 @@ A financial cognitive ecosystem platform for the long-term passive investor — 
 
 Aerarium Saturni is a personal investment platform designed explicitly for the long-term passive investor. Rather than targeting active traders, it focuses on the three disciplines that matter for multi-decade wealth accumulation: structured knowledge, rigorous portfolio analytics, and long-horizon forecasting.
 
-The platform is fully self-hosted and unauthenticated — no cloud accounts, no shared data. All financial records, portfolio metrics, and analytical outputs remain local. The stack is deliberately minimal: a Next.js frontend consuming a FastAPI backend over HTTP, with PostgreSQL as the single source of truth for all financial data.
+The stack is deliberately minimal: a Next.js frontend consuming a FastAPI backend over HTTP, with PostgreSQL as the single source of truth for all financial data.
 
 ---
 

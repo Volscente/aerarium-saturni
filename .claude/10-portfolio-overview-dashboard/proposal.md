@@ -1,11 +1,11 @@
 ---
-title: ""               # Short RFC title
-project: ""             # Project or repo name
+title: "Portfolio Overview Dashboard"
+project: "Aerarium Saturni"
 author: "Simone Porreca"
-deadline: ""            # YYYY-MM-DD; leave blank to default to 14 days from today
-notion-page: ""         # URL of the Notion initiative page; omit row in RFC if blank
-github-repo: ""         # owner/repo (e.g. simone/recipe-app); omit row in RFC if blank
-milestone: ""           # GitHub Milestone name; omit row in RFC if blank
+deadline: "2026-06-30"
+notion-page: "https://app.notion.com/p/10-Portfolio-Overview-Dashboard-3865cc6c0f078033920ad103c2d83d9a"
+github-repo: "https://github.com/Volscente/aerarium-saturni"
+milestone: [10-portfolio-overview-dashboard](https://github.com/Volscente/aerarium-saturni/milestone/8)
 tech-stack:
   - ""                  # e.g. Python, Flask, whoosh
 scope-in:
@@ -15,9 +15,8 @@ scope-out:
 milestones:
   - ""                  # Ordered milestone names; each maps to a GitHub Issue
 context-paths:
-  - ""                  # Optional: paths to module README.md files Claude should read for design context.
-                        # Paths are relative to the root of the target project repo.
-                        # E.g. "src/auth/README.md", "src/api/README.md"
+  - "frontend/README.md"
+  - "backend/README.md"
 ---
 
 ## Problem

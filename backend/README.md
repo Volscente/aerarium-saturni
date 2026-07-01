@@ -16,6 +16,8 @@ The Backend is the Python FastAPI service for Aerarium Saturni. It owns all data
 - **`src/backend/schemas/etfs.py`** — `EtfCreate` (ISIN `field_validator`; `model_validator` requiring bond distribution maps when `asset_class = Bonds`); `EtfUpdate` (all fields optional for partial updates); `EtfResponse` (ORM-mode); `EtfPriceCreate`; `EtfPriceResponse`; `EtfHoldingRow` (used for CSV row parsing)
 - **`src/backend/routers/transactions.py`** — `POST /transactions` (HTTP 201) and `GET /transactions` FastAPI route handlers using `Depends(get_session)`
 - **`src/backend/routers/etfs.py`** — Six FastAPI route handlers for ETF CRUD, manual price logging, and atomic CSV holdings upload; uses `Depends(get_session)` and `python-multipart` `UploadFile` for file handling
+- **`src/backend/schemas/portfolio.py`** — `PortfolioRowResponse` (six fields: owner, broker_platform, total_invested, current_value, performance_abs, performance_pct — performance fields nullable when price data absent); `PortfolioOverviewResponse` wrapping a list of rows
+- **`src/backend/routers/portfolio.py`** — `GET /portfolio/overview` handler; two-phase SQLAlchemy async query (CTE for net holdings per ISIN, correlated subquery for latest price); Python-side grouping and null propagation; `_build_portfolio_query` and `_to_row_response` helpers
 - **`pyproject.toml`** — UV workspace member; all runtime dependencies declared
 - **`Dockerfile`** — Minimal container image stub; installs UV, syncs dependencies, runs uvicorn
 
@@ -30,6 +32,7 @@ The Backend is the Python FastAPI service for Aerarium Saturni. It owns all data
 - `DELETE /etfs/{id}` — Delete an ETF and cascade to holdings and price history (HTTP 204); 404 if not found
 - `POST /etfs/{id}/price` — Append a manual price snapshot; accepts `EtfPriceCreate`; returns `EtfPriceResponse` (HTTP 201)
 - `POST /etfs/{id}/holdings/upload` — Atomically replace all holdings for an ETF from a `multipart/form-data` CSV upload; returns `{"inserted_rows": n}` (HTTP 200); rolls back entirely on any row validation error
+- `GET /portfolio/overview` — Aggregate all buy/sell transactions by `(owner, broker_platform)`; returns `PortfolioOverviewResponse` with `total_invested`, `current_value` (nullable), `performance_abs` (nullable), `performance_pct` (nullable) per group; `current_value` is `null` for any group where at least one held ISIN has no price record in `etf_price_history`
 
 ## External dependencies
 
@@ -93,6 +96,14 @@ curl -s -H "Origin: http://localhost:3000" \
 ---
 
 ### Changelog
+
+#### 2026-07-01 (v0.3.3)
+
+- `src/backend/schemas/portfolio.py` — New `PortfolioRowResponse` and `PortfolioOverviewResponse` Pydantic v2 schemas; performance fields (`current_value`, `performance_abs`, `performance_pct`) are nullable when price data is absent for any held ISIN
+- `src/backend/routers/portfolio.py` — New `GET /portfolio/overview` handler; `_build_portfolio_query` builds a holdings CTE (Phase 1) joined with a correlated latest-price subquery on `etf_price_history` (Phase 2); `_to_row_response` computes `performance_abs`/`performance_pct` in Python; `(owner, broker_platform)` grouping and null propagation handled in Python
+- `src/backend/main.py` — `portfolio` router registered at prefix `/portfolio`
+- `tests/conftest.py` — Added `_make_portfolio_row`, five `mock_session_portfolio_*` fixtures, and five `client_portfolio_*` fixtures
+- `tests/routers/test_portfolio.py` — 5 unit tests: empty result, single row with price, multiple rows, null current_value when no price, mixed null/non-null groups
 
 #### 2026-06-19 (v0.3.1)
 

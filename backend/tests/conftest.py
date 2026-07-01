@@ -239,6 +239,219 @@ def client_with_etfs(mock_session_with_etfs):
     app.dependency_overrides.clear()
 
 
+def _make_portfolio_row(**overrides) -> MagicMock:
+    row = MagicMock()
+    row.owner = overrides.get("owner", "simone")
+    row.broker_platform = overrides.get("broker_platform", "ibkr")
+    row.isin = overrides.get("isin", "IE00B3RBWM25")
+    row.total_invested = overrides.get("total_invested", Decimal("1000.0000"))
+    row.net_quantity = overrides.get("net_quantity", Decimal("10.0000"))
+    row.latest_price = overrides.get("latest_price", Decimal("120.0000"))
+    return row
+
+
+@pytest.fixture
+def mock_session_portfolio_empty():
+    """Async session returning an empty result for the portfolio overview query."""
+    session = AsyncMock()
+    result = MagicMock()
+    result.all.return_value = []
+    session.execute = AsyncMock(return_value=result)
+    return session
+
+
+@pytest.fixture
+def mock_session_portfolio_single_row():
+    """Async session returning one ISIN row with a known price."""
+    session = AsyncMock()
+    result = MagicMock()
+    result.all.return_value = [
+        _make_portfolio_row(
+            owner="simone",
+            broker_platform="ibkr",
+            isin="IE00B3RBWM25",
+            total_invested=Decimal("1000.0000"),
+            net_quantity=Decimal("10.0000"),
+            latest_price=Decimal("120.0000"),
+        )
+    ]
+    session.execute = AsyncMock(return_value=result)
+    return session
+
+
+@pytest.fixture
+def mock_session_portfolio_multiple_rows():
+    """Async session returning two ISIN rows for different (owner, broker_platform) groups."""
+    session = AsyncMock()
+    result = MagicMock()
+    result.all.return_value = [
+        _make_portfolio_row(
+            owner="simone",
+            broker_platform="ibkr",
+            isin="IE00B3RBWM25",
+            total_invested=Decimal("1000.0000"),
+            net_quantity=Decimal("10.0000"),
+            latest_price=Decimal("120.0000"),
+        ),
+        _make_portfolio_row(
+            owner="sarah",
+            broker_platform="n26",
+            isin="IE00B5BMR087",
+            total_invested=Decimal("500.0000"),
+            net_quantity=Decimal("5.0000"),
+            latest_price=Decimal("110.0000"),
+        ),
+    ]
+    session.execute = AsyncMock(return_value=result)
+    return session
+
+
+@pytest.fixture
+def mock_session_portfolio_null_price():
+    """Async session returning one ISIN row with no price (latest_price=None)."""
+    session = AsyncMock()
+    result = MagicMock()
+    result.all.return_value = [
+        _make_portfolio_row(
+            owner="simone",
+            broker_platform="ibkr",
+            isin="IE00B3RBWM25",
+            total_invested=Decimal("1000.0000"),
+            net_quantity=Decimal("10.0000"),
+            latest_price=None,
+        )
+    ]
+    session.execute = AsyncMock(return_value=result)
+    return session
+
+
+@pytest.fixture
+def mock_session_portfolio_mixed():
+    """Async session: simone/ibkr has two ISINs — one priced, one not; sarah/ibkr fully priced."""
+    session = AsyncMock()
+    result = MagicMock()
+    result.all.return_value = [
+        _make_portfolio_row(
+            owner="simone",
+            broker_platform="ibkr",
+            isin="IE00B3RBWM25",
+            total_invested=Decimal("1000.0000"),
+            net_quantity=Decimal("10.0000"),
+            latest_price=Decimal("120.0000"),
+        ),
+        _make_portfolio_row(
+            owner="simone",
+            broker_platform="ibkr",
+            isin="IE00B5BMR087",
+            total_invested=Decimal("500.0000"),
+            net_quantity=Decimal("5.0000"),
+            latest_price=None,
+        ),
+        _make_portfolio_row(
+            owner="sarah",
+            broker_platform="ibkr",
+            isin="IE00B4L5Y983",
+            total_invested=Decimal("800.0000"),
+            net_quantity=Decimal("8.0000"),
+            latest_price=Decimal("110.0000"),
+        ),
+    ]
+    session.execute = AsyncMock(return_value=result)
+    return session
+
+
+def _build_portfolio_client(session_fixture) -> TestClient:
+    async def override_get_session():
+        yield session_fixture
+
+    app.dependency_overrides[get_session] = override_get_session
+    mock_engine = MagicMock()
+    mock_conn = AsyncMock()
+    mock_conn.run_sync = AsyncMock()
+    mock_engine.begin.return_value = _make_async_cm(mock_conn)
+    return mock_engine
+
+
+@pytest.fixture
+def client_portfolio_empty(mock_session_portfolio_empty):
+    async def override_get_session():
+        yield mock_session_portfolio_empty
+
+    app.dependency_overrides[get_session] = override_get_session
+    mock_engine = MagicMock()
+    mock_conn = AsyncMock()
+    mock_conn.run_sync = AsyncMock()
+    mock_engine.begin.return_value = _make_async_cm(mock_conn)
+    with patch("backend.main.engine", mock_engine):
+        with TestClient(app) as c:
+            yield c
+    app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def client_portfolio_single_row(mock_session_portfolio_single_row):
+    async def override_get_session():
+        yield mock_session_portfolio_single_row
+
+    app.dependency_overrides[get_session] = override_get_session
+    mock_engine = MagicMock()
+    mock_conn = AsyncMock()
+    mock_conn.run_sync = AsyncMock()
+    mock_engine.begin.return_value = _make_async_cm(mock_conn)
+    with patch("backend.main.engine", mock_engine):
+        with TestClient(app) as c:
+            yield c
+    app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def client_portfolio_multiple_rows(mock_session_portfolio_multiple_rows):
+    async def override_get_session():
+        yield mock_session_portfolio_multiple_rows
+
+    app.dependency_overrides[get_session] = override_get_session
+    mock_engine = MagicMock()
+    mock_conn = AsyncMock()
+    mock_conn.run_sync = AsyncMock()
+    mock_engine.begin.return_value = _make_async_cm(mock_conn)
+    with patch("backend.main.engine", mock_engine):
+        with TestClient(app) as c:
+            yield c
+    app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def client_portfolio_null_price(mock_session_portfolio_null_price):
+    async def override_get_session():
+        yield mock_session_portfolio_null_price
+
+    app.dependency_overrides[get_session] = override_get_session
+    mock_engine = MagicMock()
+    mock_conn = AsyncMock()
+    mock_conn.run_sync = AsyncMock()
+    mock_engine.begin.return_value = _make_async_cm(mock_conn)
+    with patch("backend.main.engine", mock_engine):
+        with TestClient(app) as c:
+            yield c
+    app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def client_portfolio_mixed(mock_session_portfolio_mixed):
+    async def override_get_session():
+        yield mock_session_portfolio_mixed
+
+    app.dependency_overrides[get_session] = override_get_session
+    mock_engine = MagicMock()
+    mock_conn = AsyncMock()
+    mock_conn.run_sync = AsyncMock()
+    mock_engine.begin.return_value = _make_async_cm(mock_conn)
+    with patch("backend.main.engine", mock_engine):
+        with TestClient(app) as c:
+            yield c
+    app.dependency_overrides.clear()
+
+
 @pytest.fixture
 def client_etf_not_found(mock_session_etf_not_found):
     async def override_get_session():

@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.5] - 2026-07-05
+
+### Added
+
+- **Frontend**: `app/(tabularium)/tabularium/portfolio/components/PortfolioOverviewTable.tsx` — full `'use client'` interactive overview table replacing the typed placeholder; owns `selected` (`Set<string>` initialised to all rows), `sortColumn`, and `sortDirection` state; 7 columns: checkbox, Owner, Broker (logo + `Building2` fallback), Invested, Value, Performance (absolute + relative side-by-side, colour-coded), Share; `<tfoot>` Total row with weighted `performance_pct` = Σ(performance_abs) / Σ(total_invested) × 100 (null rows excluded from both Σ); Share column recalculates on every selection change; division-by-zero guard when all rows are unchecked.
+- **Frontend**: New `app/(tabularium)/tabularium/portfolio/utils/brokerLogo.ts` — `brokerLogoPath(platform: string): string | null` helper; normalises platform to lowercase with no spaces or hyphens before lookup; maps `n26` → `/brokers/n26.png`, `ibkr` / `interactivebrokers` → `/brokers/ibkr.jpeg`; returns `null` for unrecognised platforms.
+- **Frontend**: New `app/(tabularium)/tabularium/portfolio/utils/perfClass.ts` — `perfClass(value: number | null): string` utility; returns `'text-green-600'` for positive, `'text-red-600'` for negative, `'text-neutral-500'` for zero or null.
+
 ## [0.3.4] - 2026-07-05
 
 ### Added

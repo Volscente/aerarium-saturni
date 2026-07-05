@@ -17,7 +17,9 @@ The Frontend is the Next.js 15 + Nextra 4 application for the Aerarium Saturni p
 - **`app/(tabularium)/tabularium/page.tsx`** — Tabularium landing page
 - **`app/(tabularium)/tabularium/portfolio/page.tsx`** — Portfolio tab shell: Next.js Server Component; parallel-fetches `GET /portfolio/overview` (`portfolio-overview` cache tag) and `GET /etfs` (`etfs` cache tag); renders `<PortfolioPageClient>` with both datasets as props
 - **`app/(tabularium)/tabularium/portfolio/components/PortfolioPageClient.tsx`** — `'use client'` tab container; owns `activeTab: 'portfolio' | 'etf-registry'` state; renders two-tab header (roman-* tokens) and the active tab body; exports `PortfolioRowResponse` and `PortfolioOverviewResponse` TypeScript interfaces
-- **`app/(tabularium)/tabularium/portfolio/components/PortfolioOverviewTable.tsx`** — placeholder `'use client'` component accepting `rows: PortfolioRowResponse[]`; full implementation delivered in TASK-3
+- **`app/(tabularium)/tabularium/portfolio/components/PortfolioOverviewTable.tsx`** — `'use client'` interactive overview table; owns `selected` (`Set<string>`), `sortColumn`, and `sortDirection` state; derives `selectedRows`, `selectedTotal`, `sortedRows`, and `totals` footer via `useMemo`; renders 7 columns: checkbox, Owner, Broker (logo + `Building2` fallback), Invested, Value, Performance (abs + pct, colour-coded), Share; `<tfoot>` Total row uses weighted return for `performance_pct`
+- **`app/(tabularium)/tabularium/portfolio/utils/brokerLogo.ts`** — `brokerLogoPath(platform: string): string | null` — normalises broker platform name to lowercase with no spaces/hyphens and returns the static asset path under `/brokers/`, or `null` for unknown platforms
+- **`app/(tabularium)/tabularium/portfolio/utils/perfClass.ts`** — `perfClass(value: number | null): string` — returns `'text-green-600'` (positive), `'text-red-600'` (negative), or `'text-neutral-500'` (zero/null)
 - **`app/(tabularium)/tabularium/etf-schema.ts`** — Shared Zod schema (`EtfFormSchema`, `EtfFormValues`); no directive; JSONB distribution fields validated as JSON strings; importable by `etf-actions.ts` (server) and `EtfForm.tsx` (client)
 - **`app/(tabularium)/tabularium/etf-actions.ts`** — `createEtf`, `updateEtf`, `deleteEtf`, `addPriceSnapshot` Server Actions; parse JSONB string fields to `Record<string, number>` before backend call; each calls `revalidateTag('etfs')` and `revalidateTag('portfolio-overview')` on success; return `{ success: true } | { error: string }`
 - **`app/(tabularium)/tabularium/components/EtfRegistryTable.tsx`** — `'use client'` filterable table; owns ticker/asset-class/issuer filter state and `editingEtf` state; per-row Edit, Delete (with `window.confirm`), `PriceUpdateButton`, `HoldingsUpload` actions
@@ -153,6 +155,12 @@ just frontend-dev       # rebuild then start server
 ---
 
 ### Changelog
+
+#### 2026-07-05 (v0.3.5)
+
+- Replaced `app/(tabularium)/tabularium/portfolio/components/PortfolioOverviewTable.tsx` placeholder with full interactive implementation: checkbox per-row selection, master toggle with indeterminate state, bidirectional column sorting (nulls last), dynamic Total footer with weighted `performance_pct`, Share column recalculating on every selection change, performance colour indicators, broker logos with `Building2` fallback
+- Added `app/(tabularium)/tabularium/portfolio/utils/brokerLogo.ts` — `brokerLogoPath` lookup helper
+- Added `app/(tabularium)/tabularium/portfolio/utils/perfClass.ts` — `perfClass` Tailwind colour utility
 
 #### 2026-07-05 (v0.3.4)
 

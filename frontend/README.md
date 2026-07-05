@@ -15,11 +15,15 @@ The Frontend is the Next.js 15 + Nextra 4 application for the Aerarium Saturni p
 - **`app/(tabularium)/tabularium/layout.tsx`** — Tabularium layout shell: `CustomNavbar` + `AddTransactionButton` action bar + `TabulariumSubNav` + `CustomFooter`, no Nextra chrome, full-width content area
 - **`app/(tabularium)/tabularium/components/TabulariumSubNav.tsx`** — `'use client'` persistent sub-navigation bar; two nav links (`/tabularium/portfolio`, `/tabularium/transactions`) with `usePathname()` prefix-match active state; `roman-*` token styling; no Nextra imports
 - **`app/(tabularium)/tabularium/page.tsx`** — Tabularium landing page
-- **`app/(tabularium)/tabularium/portfolio/page.tsx`** — ETF Registry: Next.js Server Component; calls `GET /etfs` with `{ next: { tags: ['etfs'] } }` cache tag; renders `AddEtfButton` + `EtfRegistryTable` or an empty-state message
+- **`app/(tabularium)/tabularium/portfolio/page.tsx`** — Portfolio tab shell: Next.js Server Component; parallel-fetches `GET /portfolio/overview` (`portfolio-overview` cache tag) and `GET /etfs` (`etfs` cache tag); renders `<PortfolioPageClient>` with both datasets as props
+- **`app/(tabularium)/tabularium/portfolio/components/PortfolioPageClient.tsx`** — `'use client'` tab container; owns `activeTab: 'portfolio' | 'etf-registry'` state; renders two-tab header (roman-* tokens) and the active tab body; exports `PortfolioRowResponse` and `PortfolioOverviewResponse` TypeScript interfaces
+- **`app/(tabularium)/tabularium/portfolio/components/PortfolioOverviewTable.tsx`** — `'use client'` interactive overview table; owns `selected` (`Set<string>`), `sortColumn`, and `sortDirection` state; derives `selectedRows`, `selectedTotal`, `sortedRows`, and `totals` footer via `useMemo`; renders 7 columns: checkbox, Owner, Broker (logo + `Building2` fallback), Invested, Value, Performance (abs + pct, colour-coded), Share; `<tfoot>` Total row uses weighted return for `performance_pct`
+- **`app/(tabularium)/tabularium/portfolio/utils/brokerLogo.ts`** — `brokerLogoPath(platform: string): string | null` — normalises broker platform name to lowercase with no spaces/hyphens and returns the static asset path under `/brokers/`, or `null` for unknown platforms
+- **`app/(tabularium)/tabularium/portfolio/utils/perfClass.ts`** — `perfClass(value: number | null): string` — returns `'text-green-600'` (positive), `'text-red-600'` (negative), or `'text-neutral-500'` (zero/null)
 - **`app/(tabularium)/tabularium/etf-schema.ts`** — Shared Zod schema (`EtfFormSchema`, `EtfFormValues`); no directive; JSONB distribution fields validated as JSON strings; importable by `etf-actions.ts` (server) and `EtfForm.tsx` (client)
-- **`app/(tabularium)/tabularium/etf-actions.ts`** — `createEtf`, `updateEtf`, `deleteEtf`, `addPriceSnapshot` Server Actions; parse JSONB string fields to `Record<string, number>` before backend call; each calls `revalidateTag('etfs')` on success; return `{ success: true } | { error: string }`
+- **`app/(tabularium)/tabularium/etf-actions.ts`** — `createEtf`, `updateEtf`, `deleteEtf`, `addPriceSnapshot` Server Actions; parse JSONB string fields to `Record<string, number>` before backend call; each calls `revalidateTag('etfs')` and `revalidateTag('portfolio-overview')` on success; return `{ success: true } | { error: string }`
 - **`app/(tabularium)/tabularium/components/EtfRegistryTable.tsx`** — `'use client'` filterable table; owns ticker/asset-class/issuer filter state and `editingEtf` state; per-row Edit, Delete (with `window.confirm`), `PriceUpdateButton`, `HoldingsUpload` actions
-- **`app/(tabularium)/tabularium/components/AddEtfButton.tsx`** — `'use client'` trigger button; owns `isDrawerOpen` state; mounted inside `portfolio/page.tsx` (not in the layout) so it appears only on the ETF registry view
+- **`app/(tabularium)/tabularium/components/AddEtfButton.tsx`** — `'use client'` trigger button; owns `isDrawerOpen` state; mounted inside `PortfolioPageClient` within the "ETF Registry" tab body so it appears only when that tab is active
 - **`app/(tabularium)/tabularium/components/EtfDrawer.tsx`** — `'use client'` fixed right-side slide-in panel (`fixed inset-y-0 right-0 z-50 w-[28rem]`); mirrors `TransactionDrawer`; title toggles "Add ETF" / "Edit ETF" based on `etf` prop
 - **`app/(tabularium)/tabularium/components/EtfForm.tsx`** — `'use client'` create/edit form; single `formState` object state; field visibility matrix: bonds JSONB fields shown when `asset_class === 'Bonds'`, equity metric fields when `asset_class === 'Equities'`; `EtfResponse` interface exported from here and re-used by table/drawer
 - **`app/(tabularium)/tabularium/components/PriceUpdateButton.tsx`** — `'use client'` per-row toggle that expands to an inline price/currency/date form; calls `addPriceSnapshot` Server Action
@@ -27,7 +31,7 @@ The Frontend is the Next.js 15 + Nextra 4 application for the Aerarium Saturni p
 - **`app/api/etfs/[id]/holdings/upload/route.ts`** — Next.js App Router POST route handler; proxies multipart CSV uploads from the browser to `${BACKEND_URL}/etfs/{id}/holdings/upload` (needed because `BACKEND_URL` is server-side only)
 - **`app/(tabularium)/tabularium/transactions/page.tsx`** — Transaction Ledger: Next.js Server Component; calls `GET /transactions` with `{ next: { tags: ['transactions'] } }` cache tag; renders a full-width chronological table (11 columns) or an empty-state message
 - **`app/(tabularium)/tabularium/transaction-schema.ts`** — Shared Zod schema (`TransactionFormSchema`, `TransactionFormValues`); no `'use client'`/`'use server'` directive so it is importable by both `actions.ts` (server) and `TransactionForm.tsx` (client)
-- **`app/(tabularium)/tabularium/actions.ts`** — `createTransaction` Server Action: re-validates with Zod, POSTs to `POST /transactions`, calls `revalidateTag('transactions')`, returns `{ success: true } | { error: string }`
+- **`app/(tabularium)/tabularium/actions.ts`** — `createTransaction` Server Action: re-validates with Zod, POSTs to `POST /transactions`, calls `revalidateTag('transactions')` and `revalidateTag('portfolio-overview')`, returns `{ success: true } | { error: string }`
 - **`app/(tabularium)/tabularium/components/AddTransactionButton.tsx`** — `'use client'` trigger button; owns `isDrawerOpen` state; always mounted in the Tabularium layout so the button is visible on all three sub-routes
 - **`app/(tabularium)/tabularium/components/TransactionDrawer.tsx`** — `'use client'` fixed right-side slide-in panel (`fixed inset-y-0 right-0 z-50 w-96`); Tailwind `translate-x-full` / `translate-x-0` transition; semi-transparent backdrop overlay; contains `TransactionForm`
 - **`app/(tabularium)/tabularium/components/TransactionForm.tsx`** — `'use client'` dynamic form; field visibility driven by `transactionType` (Buy/Sell: quantity+price+fees; Dividend: price as "Amount per share"+optional quantity; Split: ratio); Zod validation on submit; calls `createTransaction` and invokes `onSuccess()` on HTTP 201
@@ -45,7 +49,7 @@ The Frontend is the Next.js 15 + Nextra 4 application for the Aerarium Saturni p
 
 - `GET /` — Home page (sidebar-free welcome interface; Nextra `[[...slug]]` route)
 - `GET /tabularium` — Tabularium landing page (App Router route group; no Nextra chrome)
-- `GET /tabularium/portfolio` — ETF Registry: live filterable table of all registered ETFs with create, edit, delete, price logging, and CSV holdings upload actions
+- `GET /tabularium/portfolio` — Portfolio tab shell: "Portfolio" tab (Overview visualisation, default) and "ETF Registry" tab (live filterable ETF table with create, edit, delete, price logging, and CSV holdings upload actions)
 - `POST /api/etfs/{id}/holdings/upload` — Internal Next.js route handler; proxies CSV multipart upload from the browser to the FastAPI backend
 - `GET /tabularium/transactions` — Transaction Ledger; server-rendered chronological table of all recorded transactions fetched from `GET /transactions` on the FastAPI backend
 - `GET /codex` — Codex section landing (financial theory wiki; Nextra route)
@@ -151,6 +155,20 @@ just frontend-dev       # rebuild then start server
 ---
 
 ### Changelog
+
+#### 2026-07-05 (v0.3.5)
+
+- Replaced `app/(tabularium)/tabularium/portfolio/components/PortfolioOverviewTable.tsx` placeholder with full interactive implementation: checkbox per-row selection, master toggle with indeterminate state, bidirectional column sorting (nulls last), dynamic Total footer with weighted `performance_pct`, Share column recalculating on every selection change, performance colour indicators, broker logos with `Building2` fallback
+- Added `app/(tabularium)/tabularium/portfolio/utils/brokerLogo.ts` — `brokerLogoPath` lookup helper
+- Added `app/(tabularium)/tabularium/portfolio/utils/perfClass.ts` — `perfClass` Tailwind colour utility
+
+#### 2026-07-05 (v0.3.4)
+
+- Refactored `app/(tabularium)/tabularium/portfolio/page.tsx` into a tab shell: parallel-fetches `GET /portfolio/overview` and `GET /etfs`; renders `<PortfolioPageClient>`
+- Added `app/(tabularium)/tabularium/portfolio/components/PortfolioPageClient.tsx` — `'use client'` tab container with `activeTab` state; "Portfolio" tab (default) and "ETF Registry" tab (relocated `AddEtfButton` + `EtfRegistryTable`)
+- Added `app/(tabularium)/tabularium/portfolio/components/PortfolioOverviewTable.tsx` — typed placeholder accepting `rows: PortfolioRowResponse[]`; full implementation in TASK-3
+- Modified `app/(tabularium)/tabularium/actions.ts` — `createTransaction` now also calls `revalidateTag('portfolio-overview')`
+- Modified `app/(tabularium)/tabularium/etf-actions.ts` — `createEtf`, `updateEtf`, `deleteEtf`, `addPriceSnapshot` each now also call `revalidateTag('portfolio-overview')`
 
 #### 2026-06-19 (v0.3.2)
 

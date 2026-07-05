@@ -49,6 +49,7 @@ export async function createTransaction(
     }
 
     revalidateTag('transactions')
+    revalidateTag('portfolio-overview')
     return { success: true }
   } catch (err) {
     return { error: err instanceof Error ? err.message : 'Network error' }

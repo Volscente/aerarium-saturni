@@ -5,6 +5,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.5] - 2026-07-05
+
+### Added
+
+- **Frontend**: `app/(tabularium)/tabularium/portfolio/components/PortfolioOverviewTable.tsx` — full `'use client'` interactive overview table replacing the typed placeholder; owns `selected` (`Set<string>` initialised to all rows), `sortColumn`, and `sortDirection` state; 7 columns: checkbox, Owner, Broker (logo + `Building2` fallback), Invested, Value, Performance (absolute + relative side-by-side, colour-coded), Share; `<tfoot>` Total row with weighted `performance_pct` = Σ(performance_abs) / Σ(total_invested) × 100 (null rows excluded from both Σ); Share column recalculates on every selection change; division-by-zero guard when all rows are unchecked.
+- **Frontend**: New `app/(tabularium)/tabularium/portfolio/utils/brokerLogo.ts` — `brokerLogoPath(platform: string): string | null` helper; normalises platform to lowercase with no spaces or hyphens before lookup; maps `n26` → `/brokers/n26.png`, `ibkr` / `interactivebrokers` → `/brokers/ibkr.jpeg`; returns `null` for unrecognised platforms.
+- **Frontend**: New `app/(tabularium)/tabularium/portfolio/utils/perfClass.ts` — `perfClass(value: number | null): string` utility; returns `'text-green-600'` for positive, `'text-red-600'` for negative, `'text-neutral-500'` for zero or null.
+
+## [0.3.4] - 2026-07-05
+
+### Added
+
+- **Frontend**: New `app/(tabularium)/tabularium/portfolio/components/PortfolioPageClient.tsx` — `'use client'` tab container with `activeTab: 'portfolio' | 'etf-registry'` state; renders two-tab header styled with `roman-*` tokens; "Portfolio" tab (default) hosts `PortfolioOverviewTable`; "ETF Registry" tab hosts `AddEtfButton` + `EtfRegistryTable`; exports `PortfolioRowResponse` and `PortfolioOverviewResponse` TypeScript interfaces.
+- **Frontend**: New `app/(tabularium)/tabularium/portfolio/components/PortfolioOverviewTable.tsx` — typed placeholder component accepting `rows: PortfolioRowResponse[]`; full interactive implementation delivered in TASK-3.
+
+### Changed
+
+- **Frontend**: `app/(tabularium)/tabularium/portfolio/page.tsx` — refactored from a single-purpose ETF Registry Server Component to a tab shell: parallel-fetches `GET /portfolio/overview` (cache tag `portfolio-overview`) and `GET /etfs` (cache tag `etfs`) via `Promise.all`, then renders `<PortfolioPageClient overviewData={...} etfs={...} />`.
+- **Frontend**: `app/(tabularium)/tabularium/actions.ts` — `createTransaction` now calls `revalidateTag('portfolio-overview')` alongside the existing `revalidateTag('transactions')` to keep the Portfolio Overview cache consistent after any transaction write.
+- **Frontend**: `app/(tabularium)/tabularium/etf-actions.ts` — `createEtf`, `updateEtf`, `deleteEtf`, and `addPriceSnapshot` each now call `revalidateTag('portfolio-overview')` alongside the existing `revalidateTag('etfs')`, since ETF price history feeds the Overview's `current_value` computation.
+
+## [0.3.3] - 2026-07-01
+
+### Added
+
+- **Backend**: New `src/backend/schemas/portfolio.py` — `PortfolioRowResponse` and `PortfolioOverviewResponse` Pydantic v2 schemas; `current_value`, `performance_abs`, and `performance_pct` are nullable for groups where any held ISIN has no price record.
+- **Backend**: New `src/backend/routers/portfolio.py` — `GET /portfolio/overview` route handler; two-phase SQLAlchemy async query: Phase 1 CTE groups `transactions` by `(owner, broker_platform, isin)` (buy/sell only) producing net holdings; Phase 2 left-joins to `etfs` with a correlated subquery on `etf_price_history` for the latest price per ISIN; Python-side `(owner, broker_platform)` grouping and null propagation ensure missing prices propagate to the whole group.
+- **Tests**: New `tests/routers/test_portfolio.py` — 5 unit tests covering empty result, single row with price data, multiple rows with different owners, null `current_value` when no price data, and mixed null/non-null groups.
+
+### Changed
+
+- **Backend**: `src/backend/main.py` — `portfolio` router registered at prefix `/portfolio`.
+- **Tests**: `tests/conftest.py` — Added `_make_portfolio_row` helper and five `mock_session_portfolio_*` / `client_portfolio_*` fixture pairs.
+
 ## [0.3.2] - 2026-06-19
 
 ### Added

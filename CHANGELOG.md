@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.4] - 2026-07-05
+
+### Added
+
+- **Frontend**: New `app/(tabularium)/tabularium/portfolio/components/PortfolioPageClient.tsx` — `'use client'` tab container with `activeTab: 'portfolio' | 'etf-registry'` state; renders two-tab header styled with `roman-*` tokens; "Portfolio" tab (default) hosts `PortfolioOverviewTable`; "ETF Registry" tab hosts `AddEtfButton` + `EtfRegistryTable`; exports `PortfolioRowResponse` and `PortfolioOverviewResponse` TypeScript interfaces.
+- **Frontend**: New `app/(tabularium)/tabularium/portfolio/components/PortfolioOverviewTable.tsx` — typed placeholder component accepting `rows: PortfolioRowResponse[]`; full interactive implementation delivered in TASK-3.
+
+### Changed
+
+- **Frontend**: `app/(tabularium)/tabularium/portfolio/page.tsx` — refactored from a single-purpose ETF Registry Server Component to a tab shell: parallel-fetches `GET /portfolio/overview` (cache tag `portfolio-overview`) and `GET /etfs` (cache tag `etfs`) via `Promise.all`, then renders `<PortfolioPageClient overviewData={...} etfs={...} />`.
+- **Frontend**: `app/(tabularium)/tabularium/actions.ts` — `createTransaction` now calls `revalidateTag('portfolio-overview')` alongside the existing `revalidateTag('transactions')` to keep the Portfolio Overview cache consistent after any transaction write.
+- **Frontend**: `app/(tabularium)/tabularium/etf-actions.ts` — `createEtf`, `updateEtf`, `deleteEtf`, and `addPriceSnapshot` each now call `revalidateTag('portfolio-overview')` alongside the existing `revalidateTag('etfs')`, since ETF price history feeds the Overview's `current_value` computation.
+
 ## [0.3.3] - 2026-07-01
 
 ### Added

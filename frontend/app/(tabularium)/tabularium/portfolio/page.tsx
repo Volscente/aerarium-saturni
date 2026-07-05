@@ -1,8 +1,39 @@
 export const dynamic = 'force-dynamic'
 
-import { AddEtfButton } from '../components/AddEtfButton'
-import { EtfRegistryTable } from '../components/EtfRegistryTable'
+import { PortfolioPageClient } from './components/PortfolioPageClient'
+import type {
+  PortfolioOverviewResponse,
+} from './components/PortfolioPageClient'
 import type { EtfResponse } from '../components/EtfForm'
+
+async function fetchPortfolioOverview(): Promise<PortfolioOverviewResponse> {
+  /**
+   * Fetch aggregated portfolio data from the backend.
+   *
+   * Calls GET ${process.env.BACKEND_URL}/portfolio/overview with a Next.js
+   * data cache tag so that revalidateTag('portfolio-overview') in any server
+   * action instantly stales this fetch for the next request. Returns
+   * { rows: [] } on any network error or non-2xx response so the page
+   * renders the empty-state UI without crashing.
+   *
+   * Returns:
+   *   PortfolioOverviewResponse with a `rows` array of PortfolioRowResponse.
+   *   Performance fields are null when price data is absent for any held ISIN.
+   *
+   * Throws:
+   *   Error: if the fetch fails or the response is not ok.
+   */
+  try {
+    const res = await fetch(
+      `${process.env.BACKEND_URL}/portfolio/overview`,
+      { next: { tags: ['portfolio-overview'] } }
+    )
+    if (!res.ok) return { rows: [] }
+    return res.json()
+  } catch {
+    return { rows: [] }
+  }
+}
 
 async function fetchEtfs(): Promise<EtfResponse[]> {
   /**
@@ -29,22 +60,10 @@ async function fetchEtfs(): Promise<EtfResponse[]> {
 }
 
 export default async function PortfolioPage() {
-  const etfs = await fetchEtfs()
+  const [overviewData, etfs] = await Promise.all([
+    fetchPortfolioOverview(),
+    fetchEtfs(),
+  ])
 
-  return (
-    <div className="px-6 py-8">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="font-roman text-3xl font-bold text-roman-gold">
-          ETF Registry
-        </h1>
-        <AddEtfButton />
-      </div>
-
-      {etfs.length === 0 ? (
-        <p className="text-roman-stone">No ETFs registered yet.</p>
-      ) : (
-        <EtfRegistryTable etfs={etfs} />
-      )}
-    </div>
-  )
+  return <PortfolioPageClient overviewData={overviewData} etfs={etfs} />
 }

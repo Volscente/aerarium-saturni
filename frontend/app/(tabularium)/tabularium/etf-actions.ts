@@ -66,6 +66,7 @@ export async function createEtf(
     }
 
     revalidateTag('etfs')
+    revalidateTag('portfolio-overview')
     return { success: true }
   } catch (err) {
     return { error: err instanceof Error ? err.message : 'Network error' }
@@ -121,6 +122,7 @@ export async function updateEtf(
     }
 
     revalidateTag('etfs')
+    revalidateTag('portfolio-overview')
     return { success: true }
   } catch (err) {
     return { error: err instanceof Error ? err.message : 'Network error' }
@@ -155,6 +157,7 @@ export async function deleteEtf(
     }
 
     revalidateTag('etfs')
+    revalidateTag('portfolio-overview')
     return { success: true }
   } catch (err) {
     return { error: err instanceof Error ? err.message : 'Network error' }
@@ -196,6 +199,7 @@ export async function addPriceSnapshot(
     }
 
     revalidateTag('etfs')
+    revalidateTag('portfolio-overview')
     return { success: true }
   } catch (err) {
     return { error: err instanceof Error ? err.message : 'Network error' }

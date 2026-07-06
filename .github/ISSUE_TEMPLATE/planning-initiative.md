@@ -7,11 +7,11 @@ assignees: Volscente
 
 ---
 
-#### Scope
+#### Scope
 
 Plan a new initiative for the project.
 
-#### Goal
+#### Goal
 
 Draft all the required planning documents.
 

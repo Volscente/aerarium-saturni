@@ -7,13 +7,26 @@ notion-page: "https://app.notion.com/p/11-Enable-Transactions-Edit-3955cc6c0f078
 github-repo: "https://github.com/Volscente/aerarium-saturni"
 milestone: [11-enable-transactions-edit](https://github.com/Volscente/aerarium-saturni/milestone/9)
 tech-stack:
-  - ""                  # e.g. Python, Flask, whoosh
+  - "Next.js 15 (App Router, Server Components, Server Actions)"
+  - "Tailwind CSS"
+  - "Zod"
+  - "Python / FastAPI"
+  - "SQLAlchemy (async)"
+  - "Pydantic v2"
+  - "PostgreSQL"
 scope-in:
-  - ""                  # Each line is one in-scope capability
+  - "Edit transaction: user can update any field of an existing transaction via the drawer/form flow"
+  - "Delete transaction: user can remove a transaction row permanently"
+  - "Mandatory field validation: form prevents submission with blank required fields on edit"
+  - "Cache revalidation: transaction ledger and portfolio overview refresh immediately after edit or delete"
 scope-out:
-  - ""                  # Format: "Item: reason" (e.g. "Fuzzy matching: future phase")
+  - "Bulk edit/delete: not stated in initiative scope"
+  - "Transaction audit log / history: future initiative"
+  - "Undo / restore deleted transactions: future initiative"
+  - "CSV bulk import: already excluded from backend scope"
 milestones:
-  - ""                  # Ordered milestone names; each maps to a GitHub Issue
+  - "Backend: PUT /transactions/{id} and DELETE /transactions/{id} endpoints"
+  - "Frontend: Edit and Delete buttons on transaction table rows with drawer pre-population"
 context-paths:
   - "frontend/README.md"
   - "backend/README.md"
@@ -21,40 +34,36 @@ context-paths:
 
 ## Problem
 
-<!-- Required. Describe the technical gap or pain point driving this initiative.
-     Write as much as needed — one sentence or several paragraphs.
-     No personal motivation here — that lives in the Notion page above. -->
+The Transaction Ledger at `/tabularium/transactions` is currently append-only. Once a transaction is recorded there is no way to correct a field value (wrong price, wrong quantity, wrong ticker) or remove an erroneous entry. This means any data entry mistake persists permanently, silently corrupting the portfolio overview derived from the same records.
 
 ## Approach direction
 
-<!-- Optional. Your initial idea or preferred high-level approach.
-     Leave blank if you want Claude to propose the approach freely. -->
+Reuse the existing `TransactionDrawer` / `TransactionForm` infrastructure in an edit mode (pre-populated with the selected row's data), mirroring the pattern already established for ETFs in `EtfRegistryTable` and `EtfForm`. Each row in the transaction table gains an Edit button (opens the drawer pre-filled) and a Delete button (calls a Server Action after confirmation). Two new FastAPI endpoints (`PUT /transactions/{id}`, `DELETE /transactions/{id}`) back the new Server Actions.
 
 ## Success criteria
 
-<!-- Optional. How will you know this initiative is done?
-     List measurable outcomes (e.g. "users can search by ingredient name in < 300 ms").
-     Used to generate the Objectives section in the RFC. -->
+- User can click Edit on any transaction row, modify any field, and see the ledger update immediately.
+- User can click Delete on any transaction row and have it removed permanently after confirmation.
+- Mandatory fields remain enforced during edit — the form cannot be submitted with blank required fields.
+- The portfolio overview reflects edits and deletes without a manual page refresh.
 
 ## Constraints
 
-<!-- Optional. Hard requirements the solution must satisfy.
-     Examples: SLA targets, banned technologies, budget caps, compliance rules.
-     Claude will not relax these when designing the approach. -->
+- Any Server Action that writes or deletes transaction data must call both `revalidateTag('transactions')` and `revalidateTag('portfolio-overview')`.
+- `TransactionFormSchema` (Zod) must remain the single validation contract for both create and edit paths.
+- New FastAPI endpoints must use `Depends(get_session)` for dependency injection and `psycopg[binary]` as the database driver.
+- Lighthouse performance score must remain ≥ 90 on `/tabularium/transactions` after changes.
 
 ## Desired tech
 
-<!-- Optional. Technologies you want to experiment with or strongly prefer.
-     Separate from the tech-stack YAML field (which lists the existing stack);
-     this is for new tools you want to try — include your reasoning if useful. -->
+No new technologies are introduced. The initiative intentionally reuses the existing stack to keep scope minimal.
 
 ## Integration context
 
-<!-- Optional. How should the solution integrate with the current system?
-     E.g. "must reuse the existing auth middleware", "expose a REST endpoint consumed by the mobile app".
-     Used to shape integration subsections in the RFC. -->
+The solution extends two existing layers: `actions.ts` gains `updateTransaction` and `deleteTransaction` Server Actions; `routers/transactions.py` gains `PUT /transactions/{id}` and `DELETE /transactions/{id}` handlers. On the frontend, the transactions table gains row-level action buttons and the `TransactionDrawer` / `TransactionForm` components are extended to support an edit mode, following the same create/edit duality already present in `EtfDrawer` and `EtfForm`.
 
 ## Known risks / concerns
 
-<!-- Optional. Doubts about your approach or technical uncertainties.
-     Used to seed the Risks & Open Questions table in the RFC. -->
+- The transactions table is currently a pure Server Component; adding per-row Edit/Delete buttons requires introducing a `'use client'` boundary, which must be scoped carefully to avoid re-rendering the full table on every interaction.
+- `revalidateTag('portfolio-overview')` must be included in both `updateTransaction` and `deleteTransaction` — omitting it would leave the portfolio overview stale after a transaction change, since its metrics derive from the same records.
+- The `transactions` table has no Alembic migration baseline yet; if the edit initiative requires any schema change it must coordinate with the deferred baseline migration work.

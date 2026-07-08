@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.6] - 2026-07-08
+
+### Added
+
+- **Backend**: New `TransactionUpdate` Pydantic v2 model in `src/backend/schemas/transactions.py`; all fields optional with `None` defaults; no `model_validator`; mirrors `EtfUpdate` in `schemas/etfs.py`.
+- **Backend**: `PUT /transactions/{id}` route handler (HTTP 200) in `src/backend/routers/transactions.py`; fetches transaction by UUID primary key, applies non-`None` fields via `setattr` loop, commits and returns updated `TransactionResponse`; 404 if not found.
+- **Backend**: `DELETE /transactions/{id}` route handler (HTTP 204) in `src/backend/routers/transactions.py`; fetches transaction by UUID primary key, deletes the row and commits; 404 if not found.
+- **Tests**: `mock_session_transaction_found`, `mock_session_transaction_not_found`, `client_transaction_found`, and `client_transaction_not_found` fixtures in `backend/tests/conftest.py`.
+- **Tests**: 4 new unit tests in `backend/tests/routers/test_transactions.py` covering successful update (200), update 404, successful delete (204), and delete 404.
+
 ## [0.3.5] - 2026-07-05
 
 ### Added

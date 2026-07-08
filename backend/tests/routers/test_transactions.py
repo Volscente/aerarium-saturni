@@ -4,6 +4,8 @@ import pytest
 
 from tests.conftest import VALID_BUY_PAYLOAD
 
+DUMMY_TRANSACTION_ID = "00000000-0000-0000-0000-000000000002"
+
 
 def test_create_transaction_valid(client):
     """POST valid buy payload returns 201 with UUID id and created_at."""
@@ -60,3 +62,36 @@ def test_list_transactions_ordered_desc(client_with_rows):
     assert response.status_code == 200
     dates = [row["transaction_date"] for row in response.json()]
     assert dates == sorted(dates, reverse=True)
+
+
+def test_update_transaction_success(client_transaction_found):
+    """PUT /transactions/{id} with a valid partial payload returns 200 with the updated row."""
+    response = client_transaction_found.put(
+        f"/transactions/{DUMMY_TRANSACTION_ID}",
+        json={"price": "200.0000"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["owner"] == "simone"
+
+
+def test_update_transaction_not_found(client_transaction_not_found):
+    """PUT /transactions/{unknown-id} returns 404 when the transaction does not exist."""
+    response = client_transaction_not_found.put(
+        f"/transactions/{DUMMY_TRANSACTION_ID}",
+        json={"price": "200.0000"},
+    )
+    assert response.status_code == 404
+
+
+def test_delete_transaction_success(client_transaction_found):
+    """DELETE /transactions/{id} returns 204 with no response body."""
+    response = client_transaction_found.delete(f"/transactions/{DUMMY_TRANSACTION_ID}")
+    assert response.status_code == 204
+    assert response.content == b""
+
+
+def test_delete_transaction_not_found(client_transaction_not_found):
+    """DELETE /transactions/{unknown-id} returns 404 when the transaction does not exist."""
+    response = client_transaction_not_found.delete(f"/transactions/{DUMMY_TRANSACTION_ID}")
+    assert response.status_code == 404

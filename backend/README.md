@@ -12,9 +12,9 @@ The Backend is the Python FastAPI service for Aerarium Saturni. It owns all data
 - **`backend/alembic.ini`** — Alembic root config; `script_location = alembic`; sqlalchemy.url overridden at runtime from `DATABASE_URL`
 - **`backend/alembic/env.py`** — Migration runner; imports `Base.metadata`; synchronous psycopg3 `create_engine` with `NullPool`; `run_migrations_online()` entry point
 - **`backend/alembic/versions/001_create_etf_tables.py`** — First migration: `etfs`, `etf_holdings`, `etf_price_history` tables with FK cascades, UNIQUE constraints, GIN indexes on JSONB columns, and composite B-Tree index on `(etf_id, timestamp DESC)`
-- **`src/backend/schemas/transactions.py`** — `TransactionCreate` Pydantic v2 request model with ISIN format validation and `model_validator` (quantity required for buy/sell; ratio required for split); `TransactionResponse` response model with ORM-mode serialization
+- **`src/backend/schemas/transactions.py`** — `TransactionCreate` Pydantic v2 request model with ISIN format validation and `model_validator` (quantity required for buy/sell; ratio required for split); `TransactionUpdate` partial update model (all fields optional, no `model_validator`); `TransactionResponse` response model with ORM-mode serialization
 - **`src/backend/schemas/etfs.py`** — `EtfCreate` (ISIN `field_validator`; `model_validator` requiring bond distribution maps when `asset_class = Bonds`); `EtfUpdate` (all fields optional for partial updates); `EtfResponse` (ORM-mode); `EtfPriceCreate`; `EtfPriceResponse`; `EtfHoldingRow` (used for CSV row parsing)
-- **`src/backend/routers/transactions.py`** — `POST /transactions` (HTTP 201) and `GET /transactions` FastAPI route handlers using `Depends(get_session)`
+- **`src/backend/routers/transactions.py`** — `POST /transactions` (HTTP 201), `GET /transactions`, `PUT /transactions/{id}` (HTTP 200, partial update), and `DELETE /transactions/{id}` (HTTP 204) FastAPI route handlers using `Depends(get_session)`
 - **`src/backend/routers/etfs.py`** — Six FastAPI route handlers for ETF CRUD, manual price logging, and atomic CSV holdings upload; uses `Depends(get_session)` and `python-multipart` `UploadFile` for file handling
 - **`src/backend/schemas/portfolio.py`** — `PortfolioRowResponse` (six fields: owner, broker_platform, total_invested, current_value, performance_abs, performance_pct — performance fields nullable when price data absent); `PortfolioOverviewResponse` wrapping a list of rows
 - **`src/backend/routers/portfolio.py`** — `GET /portfolio/overview` handler; two-phase SQLAlchemy async query (CTE for net holdings per ISIN, correlated subquery for latest price); Python-side grouping and null propagation; `_build_portfolio_query` and `_to_row_response` helpers
@@ -26,6 +26,8 @@ The Backend is the Python FastAPI service for Aerarium Saturni. It owns all data
 - `GET /health` — Liveness check; returns `{"status": "ok"}`; no database dependency; used by Docker Compose health checks and CI smoke tests
 - `POST /transactions` — Create a transaction; accepts `TransactionCreate` JSON body; returns `TransactionResponse` (HTTP 201)
 - `GET /transactions` — List all transactions ordered by `transaction_date DESC`; optional `?owner=` query parameter filters by portfolio owner; returns `list[TransactionResponse]`
+- `PUT /transactions/{id}` — Partial update of an existing transaction's fields; accepts `TransactionUpdate` JSON body (all fields optional); returns updated `TransactionResponse` (HTTP 200); 404 if not found
+- `DELETE /transactions/{id}` — Permanently delete a transaction row (HTTP 204); 404 if not found
 - `POST /etfs` — Create an ETF; validates ISIN format and asset-class-conditional fields; returns `EtfResponse` (HTTP 201)
 - `GET /etfs` — List all ETFs; optional `?ticker=`, `?asset_class=`, `?issuer=` query parameters; returns `list[EtfResponse]`
 - `PUT /etfs/{id}` — Partial update of an ETF's scalar or JSONB fields; returns updated `EtfResponse` (HTTP 200); 404 if not found
@@ -96,6 +98,13 @@ curl -s -H "Origin: http://localhost:3000" \
 ---
 
 ### Changelog
+
+#### 2026-07-08 (v0.3.6)
+
+- `src/backend/schemas/transactions.py` — Added `TransactionUpdate` Pydantic v2 partial-update model; all fields optional with `None` defaults; no `model_validator`; mirrors `EtfUpdate` in `schemas/etfs.py`
+- `src/backend/routers/transactions.py` — Added `PUT /transactions/{id}` (HTTP 200, `setattr` partial-update loop, 404 on unknown id) and `DELETE /transactions/{id}` (HTTP 204, 404 on unknown id) route handlers; imported `UUID`, `HTTPException`, `TransactionUpdate`
+- `tests/conftest.py` — Added `mock_session_transaction_found`, `mock_session_transaction_not_found`, `client_transaction_found`, `client_transaction_not_found` fixtures
+- `tests/routers/test_transactions.py` — Added `DUMMY_TRANSACTION_ID` constant and 4 new unit tests: `test_update_transaction_success`, `test_update_transaction_not_found`, `test_delete_transaction_success`, `test_delete_transaction_not_found`
 
 #### 2026-07-01 (v0.3.3)
 

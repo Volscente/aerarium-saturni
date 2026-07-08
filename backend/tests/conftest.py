@@ -208,6 +208,61 @@ def mock_session_etf_not_found():
 
 
 @pytest.fixture
+def mock_session_transaction_found():
+    """Async session returning a mock Transaction row from scalar_one_or_none."""
+    session = AsyncMock()
+    row = _make_mock_row()
+    result = MagicMock()
+    result.scalar_one_or_none.return_value = row
+    session.execute = AsyncMock(return_value=result)
+    session.delete = AsyncMock()
+    session.refresh = AsyncMock()
+    return session
+
+
+@pytest.fixture
+def mock_session_transaction_not_found():
+    """Async session returning None from scalar_one_or_none (transaction not found)."""
+    session = AsyncMock()
+    result = MagicMock()
+    result.scalar_one_or_none.return_value = None
+    session.execute = AsyncMock(return_value=result)
+    return session
+
+
+@pytest.fixture
+def client_transaction_found(mock_session_transaction_found):
+    async def override_get_session():
+        yield mock_session_transaction_found
+
+    app.dependency_overrides[get_session] = override_get_session
+    mock_engine = MagicMock()
+    mock_conn = AsyncMock()
+    mock_conn.run_sync = AsyncMock()
+    mock_engine.begin.return_value = _make_async_cm(mock_conn)
+    with patch("backend.main.engine", mock_engine):
+        with TestClient(app) as c:
+            yield c
+    app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def client_transaction_not_found(mock_session_transaction_not_found):
+    async def override_get_session():
+        yield mock_session_transaction_not_found
+
+    app.dependency_overrides[get_session] = override_get_session
+    mock_engine = MagicMock()
+    mock_conn = AsyncMock()
+    mock_conn.run_sync = AsyncMock()
+    mock_engine.begin.return_value = _make_async_cm(mock_conn)
+    with patch("backend.main.engine", mock_engine):
+        with TestClient(app) as c:
+            yield c
+    app.dependency_overrides.clear()
+
+
+@pytest.fixture
 def client_with_rows(mock_session_with_rows):
     async def override_get_session():
         yield mock_session_with_rows

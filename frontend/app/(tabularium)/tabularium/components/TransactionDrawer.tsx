@@ -1,14 +1,16 @@
 'use client'
 
 import { X } from 'lucide-react'
+import type { TransactionResponse } from '../transaction-schema'
 import { TransactionForm } from './TransactionForm'
 
 export interface TransactionDrawerProps {
   isOpen: boolean
   onClose: () => void
+  transaction?: TransactionResponse | null
 }
 
-export function TransactionDrawer({ isOpen, onClose }: TransactionDrawerProps): JSX.Element {
+export function TransactionDrawer({ isOpen, onClose, transaction }: TransactionDrawerProps): JSX.Element {
   /**
    * Right-side slide-in panel housing `TransactionForm`.
    *
@@ -17,10 +19,14 @@ export function TransactionDrawer({ isOpen, onClose }: TransactionDrawerProps): 
    * z-50 w-96`) keeps it above page content on all sub-routes. A semi-transparent
    * backdrop (`fixed inset-0 bg-black/40 z-40`) is rendered when `isOpen` is true;
    * clicking it calls `onClose`. Passes `onSuccess={onClose}` to `TransactionForm`.
+   * Title toggles between "Add Transaction" (create mode) and "Edit Transaction"
+   * (edit mode) based on the transaction prop.
    *
    * Args:
    *   isOpen: Whether the drawer is in the visible (translate-x-0) position.
    *   onClose: Callback to close the drawer.
+   *   transaction: Optional existing transaction; when provided, TransactionForm
+   *     operates in edit mode pre-populated with the transaction's values.
    *
    * Returns:
    *   JSX containing the drawer panel and conditional backdrop overlay.
@@ -49,7 +55,7 @@ export function TransactionDrawer({ isOpen, onClose }: TransactionDrawerProps): 
           {/* Header */}
           <div className="flex items-center justify-between border-b border-roman-stone/40 px-6 py-4 shrink-0">
             <h2 className="font-roman text-lg font-semibold text-roman-gold">
-              Add Transaction
+              {transaction ? 'Edit Transaction' : 'Add Transaction'}
             </h2>
             <button
               onClick={onClose}
@@ -62,7 +68,7 @@ export function TransactionDrawer({ isOpen, onClose }: TransactionDrawerProps): 
 
           {/* Scrollable form area */}
           <div className="flex-1 overflow-y-auto px-6 py-4">
-            <TransactionForm onSuccess={onClose} />
+            <TransactionForm transaction={transaction ?? undefined} onSuccess={onClose} />
           </div>
         </div>
       </div>

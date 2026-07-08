@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { createTransaction } from '../actions'
-import { TransactionFormSchema } from '../transaction-schema'
+import { createTransaction, updateTransaction } from '../actions'
+import { TransactionFormSchema, type TransactionResponse } from '../transaction-schema'
 
 type TransactionType = 'buy' | 'sell' | 'dividend' | 'split'
 type BrokerPlatform = 'ibkr' | 'n26'
@@ -10,6 +10,7 @@ type AssetClass = 'stock' | 'bond' | 'etf'
 
 export interface TransactionFormProps {
   onSuccess: () => void
+  transaction?: TransactionResponse
 }
 
 const inputClass =
@@ -31,15 +32,17 @@ function FieldError({ errors }: { errors?: string[] }) {
   return <p className="mt-1 text-xs text-red-500">{errors[0]}</p>
 }
 
-export function TransactionForm({ onSuccess }: TransactionFormProps): JSX.Element {
+export function TransactionForm({ onSuccess, transaction }: TransactionFormProps): JSX.Element {
   /**
    * Dynamic transaction entry form with context-sensitive field visibility.
    *
    * Maintains controlled state for `transactionType` and `assetClass`. Renders
    * fields per the visibility matrix below. On submit, validates against
-   * `TransactionFormSchema` (Zod) and calls `createTransaction`; on success
-   * calls `onSuccess()` to close the drawer. Inline error messages are rendered
-   * below each field using Zod issue messages.
+   * `TransactionFormSchema` (Zod) and calls `createTransaction` (create mode) or
+   * `updateTransaction` (edit mode); on success calls `onSuccess()` to close the
+   * drawer. Inline error messages are rendered below each field using Zod issue
+   * messages. Edit mode is detected by the presence of the `transaction` prop;
+   * all fields are pre-populated from its values.
    *
    * Field visibility matrix:
    *   All types:  owner, broker_platform, transaction_type, asset_class, currency, ticker?, isin?, transaction_date (always shown)
@@ -49,6 +52,9 @@ export function TransactionForm({ onSuccess }: TransactionFormProps): JSX.Elemen
    *
    * Args:
    *   onSuccess: Callback invoked when the Server Action returns `{ success: true }`.
+   *   transaction: Optional existing transaction for edit mode; when provided,
+   *     formState is initialised from its values and updateTransaction is called
+   *     on submit instead of createTransaction.
    *
    * Returns:
    *   JSX containing the form with dynamic field set and inline validation errors.
@@ -57,20 +63,26 @@ export function TransactionForm({ onSuccess }: TransactionFormProps): JSX.Elemen
   const [serverError, setServerError] = useState<string | null>(null)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({})
 
-  const [transactionType, setTransactionType] = useState<TransactionType>('buy')
-  const [owner, setOwner] = useState('')
-  const [brokerPlatform, setBrokerPlatform] = useState<BrokerPlatform>('ibkr')
-  const [assetClass, setAssetClass] = useState<AssetClass>('stock')
-  const [currency, setCurrency] = useState('')
-  const [transactionDate, setTransactionDate] = useState(
-    new Date().toISOString().split('T')[0]
+  const [transactionType, setTransactionType] = useState<TransactionType>(
+    (transaction?.transaction_type as TransactionType) ?? 'buy'
   )
-  const [ticker, setTicker] = useState('')
-  const [isin, setIsin] = useState('')
-  const [quantity, setQuantity] = useState('')
-  const [price, setPrice] = useState('')
-  const [fees, setFees] = useState('')
-  const [ratio, setRatio] = useState('')
+  const [owner, setOwner] = useState(transaction?.owner ?? '')
+  const [brokerPlatform, setBrokerPlatform] = useState<BrokerPlatform>(
+    (transaction?.broker_platform as BrokerPlatform) ?? 'ibkr'
+  )
+  const [assetClass, setAssetClass] = useState<AssetClass>(
+    (transaction?.asset_class as AssetClass) ?? 'stock'
+  )
+  const [currency, setCurrency] = useState(transaction?.currency ?? '')
+  const [transactionDate, setTransactionDate] = useState(
+    transaction?.transaction_date ?? new Date().toISOString().split('T')[0]
+  )
+  const [ticker, setTicker] = useState(transaction?.ticker ?? '')
+  const [isin, setIsin] = useState(transaction?.isin ?? '')
+  const [quantity, setQuantity] = useState(transaction?.quantity ?? '')
+  const [price, setPrice] = useState(transaction?.price ?? '')
+  const [fees, setFees] = useState(transaction?.fees ?? '')
+  const [ratio, setRatio] = useState(transaction?.ratio ?? '')
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -116,7 +128,9 @@ export function TransactionForm({ onSuccess }: TransactionFormProps): JSX.Elemen
     setServerError(null)
 
     startTransition(async () => {
-      const response = await createTransaction(result.data)
+      const response = transaction
+        ? await updateTransaction(transaction.id, result.data)
+        : await createTransaction(result.data)
       if ('error' in response) {
         setServerError(response.error)
       } else {
@@ -356,7 +370,7 @@ export function TransactionForm({ onSuccess }: TransactionFormProps): JSX.Elemen
         disabled={isPending}
         className="w-full rounded border border-roman-gold/50 bg-roman-gold/10 px-4 py-2 text-sm font-medium text-roman-gold hover:bg-roman-gold/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        {isPending ? 'Saving…' : 'Save Transaction'}
+        {isPending ? 'Saving…' : transaction ? 'Update Transaction' : 'Save Transaction'}
       </button>
     </form>
   )

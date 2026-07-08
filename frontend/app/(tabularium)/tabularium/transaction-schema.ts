@@ -1,5 +1,22 @@
 import { z } from 'zod'
 
+export interface TransactionResponse {
+  id: string
+  owner: string
+  broker_platform: 'ibkr' | 'n26'
+  transaction_type: 'buy' | 'sell' | 'dividend' | 'split'
+  asset_class: 'stock' | 'bond' | 'etf'
+  ticker: string | null
+  isin: string | null
+  quantity: string | null
+  price: string | null
+  currency: string
+  fees: string
+  ratio: string | null
+  transaction_date: string
+  created_at: string
+}
+
 const ISIN_REGEX = /^[A-Z0-9]{12}$/
 
 export const TransactionFormSchema = z.object({

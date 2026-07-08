@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.7] - 2026-07-08
+
+### Added
+
+- **Frontend**: New `TransactionTable` client component (`app/(tabularium)/tabularium/components/TransactionTable.tsx`) — `'use client'` component receiving `transactions: TransactionResponse[]`; owns `editingTransaction` state; renders the 11-column ledger table with per-row Edit and Delete action buttons; embeds `TransactionDrawer` in edit mode; surfaces delete errors inline.
+- **Frontend**: `updateTransaction(id, data)` Server Action in `actions.ts` — Zod re-validation → `PUT /transactions/{id}` → `revalidateTag('transactions')` + `revalidateTag('portfolio-overview')`; returns `{ success: true } | { error: string }`.
+- **Frontend**: `deleteTransaction(id)` Server Action in `actions.ts` — `DELETE /transactions/{id}` → `revalidateTag('transactions')` + `revalidateTag('portfolio-overview')`; returns `{ success: true } | { error: string }`.
+- **Frontend**: `TransactionResponse` interface exported from `transaction-schema.ts` (shared across `page.tsx`, `TransactionTable`, `TransactionDrawer`, and `TransactionForm`).
+
+### Changed
+
+- **Frontend**: `TransactionDrawer` — accepts optional `transaction?: TransactionResponse` prop; title toggles between "Add Transaction" and "Edit Transaction"; passes transaction to `TransactionForm`.
+- **Frontend**: `TransactionForm` — accepts optional `transaction?: TransactionResponse` prop; pre-populates all field state from the prop when present; calls `updateTransaction` instead of `createTransaction` in edit mode; submit button label toggles to "Update Transaction" in edit mode.
+- **Frontend**: `transactions/page.tsx` — refactored to delegate table rendering to `<TransactionTable>`; remains a Server Component; local `TransactionResponse` interface removed in favour of the shared export from `transaction-schema.ts`.
+
 ## [0.3.6] - 2026-07-08
 
 ### Added

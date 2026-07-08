@@ -3,6 +3,85 @@
 import { revalidateTag } from 'next/cache'
 import { TransactionFormSchema, type TransactionFormValues } from './transaction-schema'
 
+export async function updateTransaction(
+  id: string,
+  payload: TransactionFormValues
+): Promise<{ success: true } | { error: string }> {
+  /**
+   * Re-validates payload with TransactionFormSchema, calls PUT /transactions/{id},
+   * and invalidates both cache tags on success.
+   *
+   * Args:
+   *   id: UUID of the transaction to update.
+   *   payload: Full form values from TransactionForm (all fields, not just changed ones).
+   *
+   * Returns:
+   *   { success: true } on HTTP 200 from the backend.
+   *   { error: string } on Zod parse failure or any non-200 response.
+   */
+  const parsed = TransactionFormSchema.safeParse(payload)
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? 'Invalid form data' }
+  }
+
+  const { ticker, isin, ...rest } = parsed.data
+  const body = {
+    ...rest,
+    ticker: ticker || undefined,
+    isin: isin || undefined,
+  }
+
+  try {
+    const res = await fetch(`${process.env.BACKEND_URL}/transactions/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+
+    if (res.status !== 200) {
+      const text = await res.text()
+      return { error: `Backend error ${res.status}: ${text}` }
+    }
+
+    revalidateTag('transactions')
+    revalidateTag('portfolio-overview')
+    return { success: true }
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : 'Network error' }
+  }
+}
+
+export async function deleteTransaction(
+  id: string
+): Promise<{ success: true } | { error: string }> {
+  /**
+   * Calls DELETE /transactions/{id} and invalidates both cache tags on success.
+   *
+   * Args:
+   *   id: UUID of the transaction to delete.
+   *
+   * Returns:
+   *   { success: true } on HTTP 204 from the backend.
+   *   { error: string } on any non-204 response or network error.
+   */
+  try {
+    const res = await fetch(`${process.env.BACKEND_URL}/transactions/${id}`, {
+      method: 'DELETE',
+    })
+
+    if (res.status !== 204) {
+      const text = await res.text()
+      return { error: `Backend error ${res.status}: ${text}` }
+    }
+
+    revalidateTag('transactions')
+    revalidateTag('portfolio-overview')
+    return { success: true }
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : 'Network error' }
+  }
+}
+
 export async function createTransaction(
   payload: TransactionFormValues
 ): Promise<{ success: true } | { error: string }> {

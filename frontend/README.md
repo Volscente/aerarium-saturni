@@ -29,12 +29,13 @@ The Frontend is the Next.js 15 + Nextra 4 application for the Aerarium Saturni p
 - **`app/(tabularium)/tabularium/components/PriceUpdateButton.tsx`** — `'use client'` per-row toggle that expands to an inline price/currency/date form; calls `addPriceSnapshot` Server Action
 - **`app/(tabularium)/tabularium/components/HoldingsUpload.tsx`** — `'use client'` CSV file input; POSTs to `/api/etfs/{id}/holdings/upload` (Next.js route handler proxy); shows "Inserted N rows" or structured error
 - **`app/api/etfs/[id]/holdings/upload/route.ts`** — Next.js App Router POST route handler; proxies multipart CSV uploads from the browser to `${BACKEND_URL}/etfs/{id}/holdings/upload` (needed because `BACKEND_URL` is server-side only)
-- **`app/(tabularium)/tabularium/transactions/page.tsx`** — Transaction Ledger: Next.js Server Component; calls `GET /transactions` with `{ next: { tags: ['transactions'] } }` cache tag; renders a full-width chronological table (11 columns) or an empty-state message
-- **`app/(tabularium)/tabularium/transaction-schema.ts`** — Shared Zod schema (`TransactionFormSchema`, `TransactionFormValues`); no `'use client'`/`'use server'` directive so it is importable by both `actions.ts` (server) and `TransactionForm.tsx` (client)
-- **`app/(tabularium)/tabularium/actions.ts`** — `createTransaction` Server Action: re-validates with Zod, POSTs to `POST /transactions`, calls `revalidateTag('transactions')` and `revalidateTag('portfolio-overview')`, returns `{ success: true } | { error: string }`
-- **`app/(tabularium)/tabularium/components/AddTransactionButton.tsx`** — `'use client'` trigger button; owns `isDrawerOpen` state; always mounted in the Tabularium layout so the button is visible on all three sub-routes
-- **`app/(tabularium)/tabularium/components/TransactionDrawer.tsx`** — `'use client'` fixed right-side slide-in panel (`fixed inset-y-0 right-0 z-50 w-96`); Tailwind `translate-x-full` / `translate-x-0` transition; semi-transparent backdrop overlay; contains `TransactionForm`
-- **`app/(tabularium)/tabularium/components/TransactionForm.tsx`** — `'use client'` dynamic form; field visibility driven by `transactionType` (Buy/Sell: quantity+price+fees; Dividend: price as "Amount per share"+optional quantity; Split: ratio); Zod validation on submit; calls `createTransaction` and invokes `onSuccess()` on HTTP 201
+- **`app/(tabularium)/tabularium/transactions/page.tsx`** — Transaction Ledger: Next.js Server Component; calls `GET /transactions` with `{ next: { tags: ['transactions'] } }` cache tag; passes the result to `<TransactionTable>` as props; remains a Server Component so `revalidateTag` continues to work
+- **`app/(tabularium)/tabularium/transaction-schema.ts`** — Shared Zod schema (`TransactionFormSchema`, `TransactionFormValues`) and `TransactionResponse` TypeScript interface; no `'use client'`/`'use server'` directive so it is importable by both `actions.ts` (server) and all client components
+- **`app/(tabularium)/tabularium/actions.ts`** — `createTransaction`, `updateTransaction`, `deleteTransaction` Server Actions: each re-validates with Zod (create/update) or calls the backend directly (delete), then calls both `revalidateTag('transactions')` and `revalidateTag('portfolio-overview')`; returns `{ success: true } | { error: string }`
+- **`app/(tabularium)/tabularium/components/AddTransactionButton.tsx`** — `'use client'` trigger button; owns `isDrawerOpen` state; always mounted in the Tabularium layout so the button is visible on all three sub-routes; opens `TransactionDrawer` in create mode (no `transaction` prop)
+- **`app/(tabularium)/tabularium/components/TransactionTable.tsx`** — `'use client'` transaction ledger table; owns `editingTransaction: TransactionResponse | null` state; renders 11 data columns + Actions column with Edit and Delete buttons per row; Edit sets `editingTransaction` and opens the embedded edit-mode drawer; Delete calls `deleteTransaction` after `window.confirm`; errors shown inline above the table
+- **`app/(tabularium)/tabularium/components/TransactionDrawer.tsx`** — `'use client'` fixed right-side slide-in panel (`fixed inset-y-0 right-0 z-50 w-96`); Tailwind `translate-x-full` / `translate-x-0` transition; semi-transparent backdrop overlay; accepts optional `transaction?: TransactionResponse` prop; title toggles "Add Transaction" / "Edit Transaction"; passes `transaction` to `TransactionForm`
+- **`app/(tabularium)/tabularium/components/TransactionForm.tsx`** — `'use client'` dynamic form; field visibility driven by `transactionType`; accepts optional `transaction?: TransactionResponse` prop; pre-populates all field state from the prop in edit mode; calls `updateTransaction` instead of `createTransaction` on submit when prop is present; submit button label toggles to "Update Transaction" in edit mode
 - **`theme/components/Navbar.tsx`** — Framework-agnostic `CustomNavbar`; data-driven `NavLink[]` array; `usePathname()` active state with prefix matching; accepts optional `children?: ReactNode` rendered at the trailing end of the right-side flex container; reused in both layouts
 - **`theme/components/Footer.tsx`** — `CustomFooter`; Scale icon + year auto-fill; reused in both layouts
 - **`styles/globals.css`** — Global stylesheet: Tailwind directives, Roman CSS custom properties, `@layer base` overrides
@@ -80,7 +81,7 @@ The Frontend is the Next.js 15 + Nextra 4 application for the Aerarium Saturni p
 - The `<Search />` component (from `nextra/components`) must be passed as `children` to `CustomNavbar` in the `[[...slug]]` layout's `navbar` prop. **Do not remove it or break this chain** — see [Search integration](#search-integration).
 - `content/tabularium.mdx` must not be re-created; its absence is what allows the App Router route group to own `/tabularium` without Nextra shadowing it.
 - The Tabularium has exactly **two sub-routes**: `/tabularium/portfolio` and `/tabularium/transactions`. Do not add a third sub-route (e.g. `/tabularium/holdings`, `/tabularium/performance`) without first consolidating or splitting the existing `portfolio` page. The original RFC proposed three routes, but `portfolio` was intentionally kept as a single rich dashboard covering holdings, allocation, and performance visualisations — the split is only worth making when both sides are data-backed.
-- Any Server Action that writes transaction data must call `revalidateTag('transactions')`. If a future analytics PR makes `/tabularium/portfolio` data-backed from the transactions table, it must also add `revalidateTag` for the portfolio cache tag to `createTransaction` in `actions.ts`.
+- Any Server Action that writes or deletes transaction data must call both `revalidateTag('transactions')` and `revalidateTag('portfolio-overview')`. This applies to `createTransaction`, `updateTransaction`, and `deleteTransaction` in `actions.ts`.
 
 ## Search integration
 
@@ -155,6 +156,15 @@ just frontend-dev       # rebuild then start server
 ---
 
 ### Changelog
+
+#### 2026-07-08 (v0.3.7)
+
+- Added `app/(tabularium)/tabularium/components/TransactionTable.tsx` — new `'use client'` component; renders 11-column ledger table with per-row Edit/Delete action buttons; owns `editingTransaction` state that drives an embedded `TransactionDrawer` in edit mode; delete errors surfaced inline
+- Added `updateTransaction` and `deleteTransaction` Server Actions to `actions.ts`; both call `revalidateTag('transactions')` and `revalidateTag('portfolio-overview')`
+- Extended `TransactionDrawer` with optional `transaction?: TransactionResponse` prop; title toggles "Add Transaction" / "Edit Transaction"
+- Extended `TransactionForm` with optional `transaction?: TransactionResponse` prop; pre-populates form state in edit mode; calls `updateTransaction` instead of `createTransaction` on submit
+- Exported `TransactionResponse` interface from `transaction-schema.ts` (moved from `transactions/page.tsx`) so it can be shared across all transaction components
+- Refactored `transactions/page.tsx` to delegate table rendering to `<TransactionTable>`; remains a Server Component
 
 #### 2026-07-05 (v0.3.5)
 

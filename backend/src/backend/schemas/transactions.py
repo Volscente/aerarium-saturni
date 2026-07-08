@@ -64,6 +64,33 @@ class TransactionCreate(BaseModel):
         return self
 
 
+class TransactionUpdate(BaseModel):
+    """Partial update payload for an existing transaction.
+
+    All fields are optional with ``None`` defaults. Only non-``None`` fields are
+    applied to the ORM row via the ``setattr`` loop in ``update_transaction``.
+    No ``model_validator`` is present — the caller (Server Action) is responsible
+    for sending a consistent payload validated by ``TransactionFormSchema``.
+
+    Mirrors ``EtfUpdate`` in ``schemas/etfs.py``.
+    """
+
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+    owner: str | None = None
+    broker_platform: Literal["ibkr", "n26"] | None = None
+    transaction_type: Literal["buy", "sell", "dividend", "split"] | None = None
+    asset_class: Literal["stock", "bond", "etf"] | None = None
+    ticker: str | None = None
+    isin: str | None = None
+    quantity: Decimal | None = Field(default=None, gt=0)
+    price: Decimal | None = Field(default=None, gt=0)
+    ratio: str | None = None
+    currency: str | None = Field(default=None, min_length=3, max_length=3)
+    fees: Decimal | None = Field(default=None, ge=0)
+    transaction_date: date | None = None
+
+
 class TransactionResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

@@ -6,7 +6,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <body>
-        <ThemeProvider defaultTheme="dark" storageKey="the-codex-theme">
+        <ThemeProvider attribute="class" defaultTheme="dark" storageKey="the-codex-theme">
           {children}
         </ThemeProvider>
       </body>

@@ -38,6 +38,7 @@ export default async function NextraLayout({
       navbar={<CustomNavbar><Search /></CustomNavbar>}
       footer={<CustomFooter />}
       darkMode
+      nextThemes={{ attribute: 'class', defaultTheme: 'dark', storageKey: 'the-codex-theme' }}
       sidebar={{ defaultMenuCollapseLevel: 1, toggleButton: true }}
       copyPageButton={!isHomePage}
     >

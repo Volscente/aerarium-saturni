@@ -20,8 +20,16 @@ import 'katex/dist/katex.min.css'
  * Returns:
  *   Nextra <Layout> wrapping children; Nextra theme config from theme/config.tsx.
  */
-export default async function NextraLayout({ children }: { children: ReactNode }) {
+export default async function NextraLayout({
+  children,
+  params,
+}: {
+  children: ReactNode
+  params: Promise<{ slug?: string[] }>
+}) {
   const pageMap = await getPageMap()
+  const { slug } = await params
+  const isHomePage = !slug || slug.length === 0
 
   return (
     <Layout
@@ -31,6 +39,7 @@ export default async function NextraLayout({ children }: { children: ReactNode }
       footer={<CustomFooter />}
       darkMode
       sidebar={{ defaultMenuCollapseLevel: 1, toggleButton: true }}
+      copyPageButton={!isHomePage}
     >
       {children}
     </Layout>

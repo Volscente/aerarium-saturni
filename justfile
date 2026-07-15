@@ -39,25 +39,26 @@ frontend-dev: check_root frontend-rebuild
     open http://localhost:3000 &
     npm run start
 
+# Start the Frontend in dev mode with HMR (no full rebuild — for fast iteration)
+frontend-dev-watch: check_root
+    #!/usr/bin/env bash
+    cd "{{ ROOT_DIR }}/frontend"
+    if [ ! -d node_modules ]; then
+        npm install
+    fi
+    open http://localhost:3000 &
+    npm run dev
+
 # ----------------------------------------
 # ---------------- Backend & Database ----------------
 
-# Docker-compose build -> Create the docker-compose stack (Backend + Frontend)
-run_backend: check_root
-    docker-compose up --build
-
-# Docker-compose build (recreate) -> No clean database
-run_backend_recreate: check_root
-    docker-compose up --build --force-recreate
-
-# Docker-compose down + remove volumes, then rebuild (use when schema changes require a clean database)
-run_backend_fresh: check_root
-    docker-compose down -v
-    docker-compose up --build
+# Start only database + backend (leave port 3000 free for frontend-dev-watch)
+run_services: check_root
+    docker-compose up --build database backend
 
 # Stop backend docker-compose stack
-stop_backend: check_root
-    docker-compose stop
+stop_services: check_root
+    docker-compose stop database backend
 
 # Run backend unit tests
 backend-test: check_root
@@ -69,5 +70,25 @@ run_database: check_root
 
 stop_database: check_root
     docker-compose stop database
+
+# ----------------------------------------
+# ---------------- Full Stack ----------------
+
+# Build and start the full stack (database + backend + frontend)
+run_stack: check_root
+    docker-compose up --build
+
+# Build and start the full stack, force-recreating all containers
+run_stack_recreate: check_root
+    docker-compose up --build --force-recreate
+
+# Wipe all volumes and rebuild the full stack (use when schema changes require a clean database)
+run_stack_fresh: check_root
+    docker-compose down -v
+    docker-compose up --build
+
+# Stop the full stack
+stop_stack: check_root
+    docker-compose stop
 
 # ----------------------------------------

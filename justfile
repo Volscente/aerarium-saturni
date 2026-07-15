@@ -74,6 +74,19 @@ stop_database: check_root
 # ----------------------------------------
 # ---------------- Full Stack ----------------
 
+# Start full stack with frontend hot-reload (database + backend via Docker, frontend via npm dev)
+run_stack_dev: check_root
+    #!/usr/bin/env bash
+    cd "{{ ROOT_DIR }}/frontend"
+    if [ ! -d node_modules ]; then
+        npm install
+    fi
+    docker-compose up --build database backend &
+    DOCKER_PID=$!
+    trap "kill $DOCKER_PID 2>/dev/null; docker-compose stop database backend" EXIT INT TERM
+    open http://localhost:3000 &
+    npm run dev
+
 # Build and start the full stack (database + backend + frontend)
 run_stack: check_root
     docker-compose up --build

@@ -4,11 +4,19 @@
 @import "katex/dist/katex.min.css";
 
 @theme {
-  --color-roman-obsidian: #1A1A2E;
-  --color-roman-parchment: #F5F0E8;
-  --color-roman-terracotta: #C0553A;
-  --color-roman-gold: #B8860B;
-  --color-roman-stone: #8B8680;
+  --color-canvas: #faf9fc;
+  --color-surface: #f1eff5;
+  --color-body: #1a1625;
+  --color-accent: #059669;
+  --color-brand: #7c3aed;
+  --color-muted: #6b6675;
+
+  --color-canvas-dark: #070f2b;
+  --color-surface-dark: #070f2b;
+  --color-body-dark: #070f2b;
+  --color-accent-dark: #070f2b;
+  --color-brand-dark: #070f2b;
+  --color-muted-dark: #070f2b;
 
   --font-roman: Georgia, Cambria, "Times New Roman", serif;
 }
@@ -16,27 +24,49 @@
 @layer base {
   html {
     -webkit-text-size-adjust: 100%;
-    background-color: #F5F0E8;
-    color: #1A1A2E;
+    background-color: #faf9fc;
+    color: #1a1625;
   }
 
   html.dark {
     color-scheme: dark;
-    background-color: #1A1A2E;
-    color: #F5F0E8;
+    background-color: #0b090f;
+    color: #e5e1ec;
   }
 
-  h1, h2, h3, h4, h5, h6 {
-    color: #B8860B;
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    color: #7c3aed;
     font-family: Georgia, Cambria, "Times New Roman", serif;
   }
 
+  html.dark h1,
+  html.dark h2,
+  html.dark h3,
+  html.dark h4,
+  html.dark h5,
+  html.dark h6 {
+    color: #a78bfa;
+  }
+
   a:not(.nextra-nav-link):not(.nextra-sidebar a) {
-    color: #C0553A;
+    color: #059669;
+  }
+
+  html.dark a:not(.nextra-nav-link):not(.nextra-sidebar a) {
+    color: #10b981;
   }
 
   a:not(.nextra-nav-link):not(.nextra-sidebar a):hover {
-    color: #B8860B;
+    color: #7c3aed;
+  }
+
+  html.dark a:not(.nextra-nav-link):not(.nextra-sidebar a):hover {
+    color: #a78bfa;
   }
 
   *,

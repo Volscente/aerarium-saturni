@@ -4,19 +4,19 @@
 @import "katex/dist/katex.min.css";
 
 @theme {
-  --color-canvas: #faf9fc;
-  --color-surface: #f1eff5;
-  --color-body: #1a1625;
-  --color-accent: #059669;
-  --color-brand: #1b4242;
-  --color-muted: #6b6675;
+  --color-canvas: #e1f0da;
+  --color-surface: #d4e7c5;
+  --color-muted: #bfd8af;
+  --color-body: #99bc85;
+  --color-accent: #6b9456;
+  --color-brand: #3d6228;
 
-  --color-canvas-dark: #0b090f;
-  --color-surface-dark: #070f2b;
-  --color-body-dark: #e5e1ec;
-  --color-accent-dark: #10b981;
-  --color-brand-dark: #1b4242;
-  --color-muted-dark: #6b6675;
+  --color-canvas-dark: #000000;
+  --color-surface-dark: #52057b;
+  --color-body-dark: #d4a8f5;
+  --color-accent-dark: #bc6ff1;
+  --color-brand-dark: #e8d0ff;
+  --color-muted-dark: #892cdc;
 
   --font-roman: Georgia, Cambria, "Times New Roman", serif;
 }

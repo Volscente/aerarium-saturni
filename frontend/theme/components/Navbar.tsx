@@ -58,7 +58,7 @@ export function CustomNavbar({ children }: { children?: ReactNode }) {
   useEffect(() => setMounted(true), [])
 
   return (
-    <nav className="sticky top-0 z-50 flex h-16 items-center justify-between border-b border-roman-stone/40 bg-roman-parchment dark:bg-roman-obsidian px-6">
+    <nav className="sticky top-0 z-50 flex h-16 items-center justify-between bg-roman-parchment/75 dark:bg-roman-obsidian/60 px-6 backdrop-blur-md shadow-sm shadow-roman-stone/10">
       <Link
         href="/"
         className="flex shrink-0 items-center gap-2 text-roman-gold font-roman font-semibold text-lg hover:text-roman-terracotta transition-colors"

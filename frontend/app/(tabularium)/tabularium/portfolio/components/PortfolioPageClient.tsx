@@ -43,15 +43,15 @@ export function PortfolioPageClient({
   const [activeTab, setActiveTab] = useState<ActiveTab>('portfolio')
 
   const tabClass = (tab: ActiveTab) =>
-    `px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
+    `px-4 py-1.5 text-sm font-medium transition-all rounded-full ${
       activeTab === tab
-        ? 'border-roman-gold text-roman-gold'
-        : 'border-transparent text-roman-stone hover:text-roman-parchment'
+        ? 'bg-roman-gold/15 text-roman-gold'
+        : 'text-roman-stone hover:bg-roman-stone/10 hover:text-roman-parchment'
     }`
 
   return (
     <div className="px-6 py-8">
-      <div className="mb-6 flex border-b border-roman-stone/30">
+      <div className="mb-6 flex gap-2">
         <button
           onClick={() => setActiveTab('portfolio')}
           className={tabClass('portfolio')}

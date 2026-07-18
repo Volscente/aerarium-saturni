@@ -217,14 +217,14 @@ export function PortfolioOverviewTable({
   }
 
   return (
-    <div>
+    <div className="rounded-2xl border border-roman-stone/10 bg-white/5 dark:bg-roman-obsidian/50 p-6 backdrop-blur-sm">
       <h1 className="mb-6 font-roman text-3xl font-bold text-roman-gold">
         Portfolio Overview
       </h1>
       <div className="w-full overflow-x-auto">
         <table className="w-full border-collapse text-sm text-roman-stone">
           <thead>
-            <tr className="border-b border-roman-stone/30 text-left">
+            <tr className="border-b border-roman-stone/20 text-left">
               <th className="py-3 pr-4">
                 <input
                   ref={masterCheckRef}
@@ -270,7 +270,7 @@ export function PortfolioOverviewTable({
               return (
                 <tr
                   key={key}
-                  className="border-b border-roman-stone/20 hover:bg-roman-stone/5 transition-colors"
+                  className="border-b border-roman-stone/10 hover:bg-roman-stone/5 transition-colors rounded-lg"
                 >
                   <td className="py-3 pr-4">
                     <input
@@ -315,7 +315,7 @@ export function PortfolioOverviewTable({
             })}
           </tbody>
           <tfoot>
-            <tr className="border-t-2 border-roman-stone/50 font-medium text-roman-parchment">
+            <tr className="border-t border-roman-stone/20 font-medium text-roman-parchment">
               <td className="py-3 pr-4" />
               <td className="py-3 pr-4" colSpan={2}>
                 Total

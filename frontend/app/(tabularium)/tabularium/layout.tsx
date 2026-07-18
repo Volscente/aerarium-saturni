@@ -26,10 +26,12 @@ export default function TabulariumLayout({
   return (
     <div className="flex min-h-screen flex-col">
       <CustomNavbar />
-      <div className="flex justify-end border-b border-roman-stone/20 px-6 py-2">
-        <AddTransactionButton />
+      <div className="mx-4 mt-2 mb-2 overflow-hidden rounded-2xl border border-roman-stone/10 bg-roman-parchment/30 dark:bg-roman-obsidian/50 backdrop-blur-sm">
+        <div className="flex justify-end px-6 py-3">
+          <AddTransactionButton />
+        </div>
+        <TabulariumSubNav />
       </div>
-      <TabulariumSubNav />
       <main className="flex-1">{children}</main>
       <CustomFooter />
     </div>

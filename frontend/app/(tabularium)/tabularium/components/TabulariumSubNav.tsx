@@ -35,17 +35,17 @@ export function TabulariumSubNav() {
   const pathname = usePathname()
 
   return (
-    <nav className="flex gap-6 border-b border-roman-stone/40 bg-roman-parchment dark:bg-roman-obsidian px-6 py-2 text-sm">
+    <nav className="flex gap-2 border-t border-roman-stone/10 px-6 py-3 text-sm">
       {NAV_LINKS.map(({ label, href }) => {
         const active = pathname.startsWith(href)
         return (
           <Link
             key={href}
             href={href}
-            className={`font-medium transition-colors pb-2 ${
+            className={`rounded-full px-4 py-1.5 font-medium transition-all ${
               active
-                ? 'text-roman-terracotta border-b-2 border-roman-terracotta'
-                : 'text-roman-stone hover:text-roman-gold'
+                ? 'bg-roman-terracotta/15 text-roman-terracotta'
+                : 'text-roman-stone hover:bg-roman-stone/10 hover:text-roman-gold'
             }`}
           >
             {label}

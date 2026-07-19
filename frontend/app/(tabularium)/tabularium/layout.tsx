@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react'
 import { CustomNavbar } from '../../../theme/components/Navbar'
 import { CustomFooter } from '../../../theme/components/Footer'
-import { AddTransactionButton } from './components/AddTransactionButton'
 import { TabulariumSubNav } from './components/TabulariumSubNav'
 
 /**
@@ -27,9 +26,6 @@ export default function TabulariumLayout({
     <div className="flex min-h-screen flex-col">
       <CustomNavbar />
       <div className="mx-4 mt-2 mb-2 overflow-hidden rounded-2xl border border-roman-stone/10 bg-roman-parchment/30 dark:bg-roman-obsidian/50 backdrop-blur-sm">
-        <div className="flex justify-end px-6 py-3">
-          <AddTransactionButton />
-        </div>
         <TabulariumSubNav />
       </div>
       <main className="flex-1">{children}</main>

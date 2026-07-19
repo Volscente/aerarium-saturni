@@ -1,8 +1,8 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { Plus } from 'lucide-react'
-import { EtfDrawer } from './EtfDrawer'
+import { Plus } from "lucide-react";
+import { useState } from "react";
+import { EtfDrawer } from "./EtfDrawer";
 
 export function AddEtfButton(): JSX.Element {
   /**
@@ -16,13 +16,13 @@ export function AddEtfButton(): JSX.Element {
    * Returns:
    *   JSX containing the trigger button and EtfDrawer, always mounted.
    */
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false)
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   return (
     <>
       <button
         onClick={() => setIsDrawerOpen(true)}
-        className="flex items-center gap-2 rounded border border-roman-gold/50 bg-roman-gold/10 px-4 py-2 text-sm font-medium text-roman-gold hover:bg-roman-gold/20 transition-colors"
+        className="flex items-center gap-2 rounded-full border border-roman-gold/40 bg-roman-gold/10 px-5 py-2 text-sm font-medium text-roman-gold hover:bg-roman-gold/20 hover:border-roman-gold/70 transition-all"
         aria-label="Open add ETF drawer"
       >
         <Plus className="h-4 w-4" />
@@ -30,5 +30,5 @@ export function AddEtfButton(): JSX.Element {
       </button>
       <EtfDrawer isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} />
     </>
-  )
+  );
 }

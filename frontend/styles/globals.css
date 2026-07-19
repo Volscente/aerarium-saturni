@@ -18,6 +18,12 @@
   --color-brand-dark: #e8d0ff;
   --color-muted-dark: #892cdc;
 
+  --color-roman-parchment: #F5F0E8;
+  --color-roman-obsidian: #1A1A2E;
+  --color-roman-gold: #B8860B;
+  --color-roman-stone: #8B8680;
+  --color-roman-terracotta: #C0553A;
+
   --font-roman: Georgia, Cambria, "Times New Roman", serif;
 }
 

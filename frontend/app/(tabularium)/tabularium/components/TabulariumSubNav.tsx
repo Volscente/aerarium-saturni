@@ -11,6 +11,7 @@ interface NavLink {
 const NAV_LINKS: NavLink[] = [
   { label: 'Portfolio', href: '/tabularium/portfolio' },
   { label: 'Transactions', href: '/tabularium/transactions' },
+  { label: 'ETF Registry', href: '/tabularium/etf-registry' },
 ]
 
 /**

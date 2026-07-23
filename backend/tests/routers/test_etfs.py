@@ -1,5 +1,7 @@
 from uuid import UUID
 
+import pytest
+
 from tests.conftest import VALID_ETF_PAYLOAD
 
 DUMMY_ETF_ID = "00000000-0000-0000-0000-000000000001"
@@ -53,6 +55,22 @@ def test_update_etf_not_found(client_etf_not_found):
 def test_delete_etf_not_found(client_etf_not_found):
     """DELETE /etfs/{unknown-id} returns 404 when the ETF does not exist."""
     response = client_etf_not_found.delete(f"/etfs/{DUMMY_ETF_ID}")
+    assert response.status_code == 404
+
+
+def test_get_price_history_with_rows(client_with_price_history):
+    """GET /etfs/{id}/price-history returns 200 with price rows ordered newest-first."""
+    response = client_with_price_history.get(f"/etfs/{DUMMY_ETF_ID}/price-history")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 2
+    assert data[0]["currency"] == "EUR"
+    assert float(data[0]["price"]) == pytest.approx(105.0)
+
+
+def test_get_price_history_etf_not_found(client_etf_not_found):
+    """GET /etfs/{unknown-id}/price-history returns 404 when the ETF does not exist."""
+    response = client_etf_not_found.get(f"/etfs/{DUMMY_ETF_ID}/price-history")
     assert response.status_code == 404
 
 

@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useTransition } from 'react'
-import { deleteEtf } from '../etf-actions'
+import { Fragment, useState, useTransition } from 'react'
+import { deleteEtf, fetchPriceHistory } from '../etf-actions'
+import type { EtfPriceEntry } from '../etf-actions'
 import { EtfDrawer } from './EtfDrawer'
 import { PriceUpdateButton } from './PriceUpdateButton'
 import { HoldingsUpload } from './HoldingsUpload'
@@ -41,6 +42,10 @@ export function EtfRegistryTable({ etfs }: EtfRegistryTableProps): JSX.Element {
   const [editingEtf, setEditingEtf] = useState<EtfResponse | null>(null)
   const [deleteError, setDeleteError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
+  const [expandedEtfId, setExpandedEtfId] = useState<string | null>(null)
+  const [priceHistoryMap, setPriceHistoryMap] = useState<
+    Record<string, EtfPriceEntry[] | 'loading' | 'error'>
+  >({})
 
   const filtered = etfs.filter((etf) => {
     const tickerMatch =
@@ -53,6 +58,22 @@ export function EtfRegistryTable({ etfs }: EtfRegistryTableProps): JSX.Element {
       etf.issuer.toLowerCase().includes(issuerFilter.toLowerCase())
     return tickerMatch && assetClassMatch && issuerMatch
   })
+
+  const handleRowClick = (etfId: string) => {
+    if (expandedEtfId === etfId) {
+      setExpandedEtfId(null)
+      return
+    }
+    setExpandedEtfId(etfId)
+    if (priceHistoryMap[etfId] !== undefined) return
+    setPriceHistoryMap((prev) => ({ ...prev, [etfId]: 'loading' }))
+    fetchPriceHistory(etfId).then((result) => {
+      setPriceHistoryMap((prev) => ({
+        ...prev,
+        [etfId]: 'error' in result ? 'error' : result,
+      }))
+    })
+  }
 
   const handleDelete = (etf: EtfResponse) => {
     if (
@@ -131,43 +152,100 @@ export function EtfRegistryTable({ etfs }: EtfRegistryTableProps): JSX.Element {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((etf) => (
-                <tr
-                  key={etf.id}
-                  className="border-b border-roman-stone/20 hover:bg-roman-stone/5 transition-colors"
-                >
-                  <td className="py-3 pr-4 font-mono font-medium">{etf.ticker}</td>
-                  <td className="py-3 pr-4 font-mono">{etf.isin}</td>
-                  <td className="py-3 pr-4 max-w-[200px] truncate" title={etf.name}>
-                    {etf.name}
-                  </td>
-                  <td className="py-3 pr-4">{etf.issuer}</td>
-                  <td className="py-3 pr-4">{etf.asset_class}</td>
-                  <td className="py-3 pr-4 tabular-nums">
-                    {(parseFloat(etf.ter) * 100).toFixed(2)}%
-                  </td>
-                  <td className="py-3 pr-4">{etf.domicile}</td>
-                  <td className="py-3">
-                    <div className="flex flex-wrap gap-2 items-start">
-                      <button
-                        onClick={() => setEditingEtf(etf)}
-                        className="rounded border border-roman-stone/30 px-2 py-1 text-xs text-roman-stone hover:border-roman-gold/50 hover:text-roman-gold transition-colors"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(etf)}
-                        disabled={isPending}
-                        className="rounded border border-roman-stone/30 px-2 py-1 text-xs text-roman-stone hover:border-roman-terracotta hover:text-roman-terracotta transition-colors disabled:opacity-50"
-                      >
-                        Delete
-                      </button>
-                      <PriceUpdateButton etfId={etf.id} />
-                      <HoldingsUpload etfId={etf.id} />
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {filtered.map((etf) => {
+                const isExpanded = expandedEtfId === etf.id
+                const history = priceHistoryMap[etf.id]
+                return (
+                  <Fragment key={etf.id}>
+                    <tr
+                      onClick={() => handleRowClick(etf.id)}
+                      className="border-b border-roman-stone/20 hover:bg-roman-stone/5 transition-colors cursor-pointer"
+                    >
+                      <td className="py-3 pr-4 font-mono font-medium">
+                        <span className="mr-1 text-roman-stone/40 select-none">
+                          {isExpanded ? '▾' : '▸'}
+                        </span>
+                        {etf.ticker}
+                      </td>
+                      <td className="py-3 pr-4 font-mono">{etf.isin}</td>
+                      <td className="py-3 pr-4 max-w-[200px] truncate" title={etf.name}>
+                        {etf.name}
+                      </td>
+                      <td className="py-3 pr-4">{etf.issuer}</td>
+                      <td className="py-3 pr-4">{etf.asset_class}</td>
+                      <td className="py-3 pr-4 tabular-nums">
+                        {(parseFloat(etf.ter) * 100).toFixed(2)}%
+                      </td>
+                      <td className="py-3 pr-4">{etf.domicile}</td>
+                      <td className="py-3" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex flex-wrap gap-2 items-start">
+                          <button
+                            onClick={() => setEditingEtf(etf)}
+                            className="rounded border border-roman-stone/30 px-2 py-1 text-xs text-roman-stone hover:border-roman-gold/50 hover:text-roman-gold transition-colors"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDelete(etf)}
+                            disabled={isPending}
+                            className="rounded border border-roman-stone/30 px-2 py-1 text-xs text-roman-stone hover:border-roman-terracotta hover:text-roman-terracotta transition-colors disabled:opacity-50"
+                          >
+                            Delete
+                          </button>
+                          <PriceUpdateButton etfId={etf.id} />
+                          <HoldingsUpload etfId={etf.id} />
+                        </div>
+                      </td>
+                    </tr>
+                    {isExpanded && (
+                      <tr className="bg-roman-stone/5">
+                        <td colSpan={8} className="px-6 py-4">
+                          {history === 'loading' && (
+                            <p className="text-xs text-roman-stone/60">Loading price history…</p>
+                          )}
+                          {history === 'error' && (
+                            <p className="text-xs text-red-500">Failed to load price history.</p>
+                          )}
+                          {Array.isArray(history) && history.length === 0 && (
+                            <p className="text-xs text-roman-stone/60">No price history recorded yet.</p>
+                          )}
+                          {Array.isArray(history) && history.length > 0 && (
+                            <table className="w-full text-xs text-roman-stone border-collapse">
+                              <thead>
+                                <tr className="border-b border-roman-stone/20 text-left">
+                                  <th className="pb-2 pr-6 font-medium text-roman-gold">Date</th>
+                                  <th className="pb-2 pr-6 font-medium text-roman-gold">Time</th>
+                                  <th className="pb-2 pr-6 font-medium text-roman-gold">Price</th>
+                                  <th className="pb-2 font-medium text-roman-gold">Currency</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {history.map((entry) => {
+                                  const dt = new Date(entry.timestamp)
+                                  return (
+                                    <tr key={entry.id} className="border-b border-roman-stone/10">
+                                      <td className="py-1.5 pr-6 tabular-nums">
+                                        {dt.toLocaleDateString()}
+                                      </td>
+                                      <td className="py-1.5 pr-6 tabular-nums">
+                                        {dt.toLocaleTimeString()}
+                                      </td>
+                                      <td className="py-1.5 pr-6 tabular-nums font-mono">
+                                        {parseFloat(entry.price).toFixed(4)}
+                                      </td>
+                                      <td className="py-1.5 font-mono">{entry.currency}</td>
+                                    </tr>
+                                  )
+                                })}
+                              </tbody>
+                            </table>
+                          )}
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
+                )
+              })}
             </tbody>
           </table>
         </div>

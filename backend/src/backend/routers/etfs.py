@@ -137,6 +137,36 @@ async def delete_etf(
     await session.commit()
 
 
+@router.get("/{id}/price-history", response_model=list[EtfPriceResponse])
+async def get_price_history(
+    id: UUID,
+    session: AsyncSession = Depends(get_session),
+) -> list[EtfPriceResponse]:
+    """Return all price snapshots for an ETF ordered by timestamp descending.
+
+    Args:
+        id: UUID of the parent ETF; raises 404 if not found in ``etfs`` table.
+        session: Async SQLAlchemy session injected by ``Depends(get_session)``.
+
+    Returns:
+        List of ``EtfPriceResponse`` models ordered newest-first; empty list
+        when no snapshots have been recorded yet.
+
+    Raises:
+        HTTPException 404: If no ETF with the given ``id`` exists.
+    """
+    result = await session.execute(select(Etf).where(Etf.id == id))
+    if result.scalar_one_or_none() is None:
+        raise HTTPException(status_code=404, detail="ETF not found")
+    stmt = (
+        select(EtfPriceHistory)
+        .where(EtfPriceHistory.etf_id == id)
+        .order_by(EtfPriceHistory.timestamp.desc())
+    )
+    rows = (await session.execute(stmt)).scalars().all()
+    return [EtfPriceResponse.model_validate(row) for row in rows]
+
+
 @router.post("/{id}/price", response_model=EtfPriceResponse, status_code=201)
 async def create_price(
     id: UUID,

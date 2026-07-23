@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.8] - 2026-07-23
+
+### Added
+
+- **Backend**: `GET /etfs/{id}/price-history` route handler in `src/backend/routers/etfs.py` — returns `list[EtfPriceResponse]` ordered by `timestamp DESC`; 404 if the ETF does not exist.
+- **Frontend**: `fetchPriceHistory(id)` Server Action and `EtfPriceEntry` interface in `etf-actions.ts` — fetches `GET /etfs/{id}/price-history` from the backend; returns `EtfPriceEntry[] | { error: string }`.
+- **Tests**: `_make_mock_price_row` helper and `mock_session_with_price_history` fixture in `backend/tests/conftest.py` — uses `side_effect` to return an ETF-found result on the first execute and price rows on the second.
+- **Tests**: `client_with_price_history` fixture in `backend/tests/conftest.py`.
+- **Tests**: 2 new unit tests in `backend/tests/routers/test_etfs.py`: `test_get_price_history_with_rows` (200, validates row count and field values) and `test_get_price_history_etf_not_found` (404).
+
+### Changed
+
+- **Frontend**: `EtfRegistryTable.tsx` — rows are now clickable; clicking toggles an inline price history sub-table below the row (▸/▾ indicator in the Ticker column); price history is fetched via `fetchPriceHistory` on first expand and cached in `priceHistoryMap` local state; action buttons stop click propagation; shows loading, empty, error, and data states.
+
 ## [0.3.7] - 2026-07-08
 
 ### Added

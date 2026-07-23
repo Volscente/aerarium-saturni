@@ -164,6 +164,27 @@ export async function deleteEtf(
   }
 }
 
+export interface EtfPriceEntry {
+  id: string
+  etf_id: string
+  price: string
+  currency: string
+  timestamp: string
+}
+
+export async function fetchPriceHistory(
+  id: string
+): Promise<EtfPriceEntry[] | { error: string }> {
+  try {
+    const res = await fetch(`${process.env.BACKEND_URL}/etfs/${id}/price-history`)
+    if (res.status === 404) return { error: 'ETF not found' }
+    if (!res.ok) return { error: `Backend error ${res.status}` }
+    return res.json() as Promise<EtfPriceEntry[]>
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : 'Network error' }
+  }
+}
+
 export async function addPriceSnapshot(
   id: string,
   price: number,

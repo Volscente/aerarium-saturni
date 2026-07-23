@@ -12,7 +12,7 @@ from fastapi.testclient import TestClient
 
 from backend.db import get_session
 from backend.main import app
-from backend.models import Etf, Transaction
+from backend.models import Etf, EtfPriceHistory, Transaction
 
 VALID_ETF_PAYLOAD = {
     "ticker": "VWCE",
@@ -170,6 +170,35 @@ def _make_mock_etf_row(**overrides) -> MagicMock:
     row.bond_credit_scores = overrides.get("bond_credit_scores", None)
     row.created_at = overrides.get("created_at", datetime(2026, 6, 19, 12, 0, 0, tzinfo=timezone.utc))
     return row
+
+
+def _make_mock_price_row(**overrides) -> MagicMock:
+    row = MagicMock(spec=EtfPriceHistory)
+    row.id = overrides.get("id", uuid4())
+    row.etf_id = overrides.get("etf_id", uuid4())
+    row.price = overrides.get("price", Decimal("100.5000"))
+    row.currency = overrides.get("currency", "EUR")
+    row.timestamp = overrides.get("timestamp", datetime(2026, 7, 23, 12, 0, 0, tzinfo=timezone.utc))
+    return row
+
+
+@pytest.fixture
+def mock_session_with_price_history():
+    """Async session: first execute finds the ETF, second returns two price history rows."""
+    session = AsyncMock()
+
+    etf_result = MagicMock()
+    etf_result.scalar_one_or_none.return_value = _make_mock_etf_row()
+
+    price_rows = [
+        _make_mock_price_row(price=Decimal("105.0000")),
+        _make_mock_price_row(price=Decimal("100.5000")),
+    ]
+    price_result = MagicMock()
+    price_result.scalars.return_value.all.return_value = price_rows
+
+    session.execute = AsyncMock(side_effect=[etf_result, price_result])
+    return session
 
 
 @pytest.fixture
@@ -495,6 +524,22 @@ def client_portfolio_null_price(mock_session_portfolio_null_price):
 def client_portfolio_mixed(mock_session_portfolio_mixed):
     async def override_get_session():
         yield mock_session_portfolio_mixed
+
+    app.dependency_overrides[get_session] = override_get_session
+    mock_engine = MagicMock()
+    mock_conn = AsyncMock()
+    mock_conn.run_sync = AsyncMock()
+    mock_engine.begin.return_value = _make_async_cm(mock_conn)
+    with patch("backend.main.engine", mock_engine):
+        with TestClient(app) as c:
+            yield c
+    app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def client_with_price_history(mock_session_with_price_history):
+    async def override_get_session():
+        yield mock_session_with_price_history
 
     app.dependency_overrides[get_session] = override_get_session
     mock_engine = MagicMock()

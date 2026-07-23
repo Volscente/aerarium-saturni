@@ -222,10 +222,13 @@ export function EtfRegistryTable({ etfs }: EtfRegistryTableProps): JSX.Element {
                               <tbody>
                                 {history.map((entry) => {
                                   const dt = new Date(entry.timestamp)
+                                  const day = String(dt.getDate()).padStart(2, '0')
+                                  const month = String(dt.getMonth() + 1).padStart(2, '0')
+                                  const year = dt.getFullYear()
                                   return (
                                     <tr key={entry.id} className="border-b border-roman-stone/10">
                                       <td className="py-1.5 pr-6 tabular-nums">
-                                        {dt.toLocaleDateString()}
+                                        {`${day}.${month}.${year}`}
                                       </td>
                                       <td className="py-1.5 pr-6 tabular-nums">
                                         {dt.toLocaleTimeString()}

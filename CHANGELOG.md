@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-07-24
+
+### Changed
+
+- **Backend**: `EtfHolding` ORM class in `backend/src/backend/models.py` — replaced columns (`company_name`, `weight_pct`, `sector`, `region`, `market_value`, `shares`) with RFC-specified schema (`stock_isin VARCHAR(12)`, `stock_name VARCHAR(200)`, `weight_percentage NUMERIC(8,4)`, `snapshot_date DATE`); added composite B-Tree index on `(etf_id, snapshot_date)`.
+- **Backend**: `EtfHoldingRow` Pydantic v2 model in `backend/src/backend/schemas/etfs.py` — replaced old fields with `stock_isin`, `stock_name`, `weight_percentage`, `snapshot_date`; added `validate_isin` `field_validator` (uppercases input, then rejects non-12-alphanumeric values).
+
+### Added
+
+- **Backend**: Alembic migration `backend/alembic/versions/002_alter_etf_holdings.py` — drops and recreates `etf_holdings` with the new schema; `downgrade` restores the `001` column layout; composite B-Tree index on `(etf_id, snapshot_date DESC)` added via `sa.text()`.
+- **Tests**: New `backend/tests/schemas/test_etf_holding_row.py` — 8 unit tests covering valid row, invalid ISIN (short), invalid ISIN (non-alphanumeric), `weight_percentage = 0`, negative weight, missing `stock_name`, missing `snapshot_date`, and lowercase ISIN normalisation.
+
+### Fixed
+
+- **Tests**: `test_upload_holdings_valid` and `test_upload_holdings_invalid_row` in `backend/tests/routers/test_etfs.py` — updated CSV column headers from old schema (`company_name`, `weight_pct`, `sector`, `region`) to new schema (`stock_isin`, `stock_name`, `weight_percentage`, `snapshot_date`).
+
 ## [0.3.8] - 2026-07-23
 
 ### Added

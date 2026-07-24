@@ -112,3 +112,16 @@ def test_upload_holdings_invalid_row(client_with_etfs):
     )
     assert response.status_code == 422
     assert response.json()["detail"]["row"] == 1
+
+
+def test_upload_holdings_etf_not_found(client_etf_not_found):
+    """POST /etfs/{unknown-id}/holdings/upload returns 404 when the ETF does not exist."""
+    csv_content = (
+        "stock_isin,stock_name,weight_percentage,snapshot_date\n"
+        "IE00B3RBWM25,Vanguard FTSE All-World,5.0,2026-07-22"
+    )
+    response = client_etf_not_found.post(
+        f"/etfs/{DUMMY_ETF_ID}/holdings/upload",
+        files={"file": ("holdings.csv", csv_content.encode(), "text/csv")},
+    )
+    assert response.status_code == 404

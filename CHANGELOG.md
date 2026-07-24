@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1] - 2026-07-24
+
+### Added
+
+- **Tests**: `test_upload_holdings_etf_not_found` in `backend/tests/routers/test_etfs.py` — verifies that `POST /etfs/{unknown-id}/holdings/upload` returns 404 when the parent ETF does not exist; completes the three-case upload test coverage specified in the API layer spec.
+
 ## [0.4.0] - 2026-07-24
 
 ### Changed

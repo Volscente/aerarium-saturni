@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.2] - 2026-07-24
+
+### Added
+
+- **Backend**: `stock_ticker VARCHAR(20)` nullable column added to `EtfHolding` ORM class in `backend/src/backend/models.py` to store constituent tickers for issuers (iShares, Vanguard) that do not provide ISINs in their export CSVs.
+- **Backend**: `EtfHoldingRow` schema in `backend/src/backend/schemas/etfs.py` — `stock_ticker: str | None` field added; `validate_identifier_present` `model_validator` added to enforce that at least one of `stock_isin` or `stock_ticker` is present per CSV row.
+- **Backend**: Alembic migration `backend/alembic/versions/003_alter_etf_holdings_add_ticker.py` — makes `stock_isin` nullable and adds `stock_ticker VARCHAR(20)` nullable column.
+- **Tests**: 3 new unit tests in `backend/tests/schemas/test_etf_holding_row.py`: `test_valid_row_ticker_only` (Ticker-only row accepted), `test_valid_row_both_identifiers` (both accepted), `test_missing_both_identifiers` (neither rejected with 422).
+
+### Changed
+
+- **Backend**: `stock_isin` column in `EtfHolding` ORM changed from `NOT NULL` to nullable to allow ticker-only constituent rows.
+- **Backend**: `EtfHoldingRow.validate_isin` updated to `mode="before"` to treat blank/empty ISIN cells from issuer CSVs as absent rather than raising a format error.
+
 ## [0.4.1] - 2026-07-24
 
 ### Added

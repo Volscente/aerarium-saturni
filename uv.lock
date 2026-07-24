@@ -10,7 +10,7 @@ members = [
 
 [[package]]
 name = "aerarium-saturn"
-version = "0.4.0"
+version = "0.4.1"
 source = { virtual = "." }
 
 [[package]]
@@ -59,7 +59,7 @@ wheels = [
 
 [[package]]
 name = "backend"
-version = "0.4.0"
+version = "0.4.1"
 source = { editable = "backend" }
 dependencies = [
     { name = "alembic" },

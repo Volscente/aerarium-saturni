@@ -8,13 +8,14 @@ The Backend is the Python FastAPI service for Aerarium Saturni. It owns all data
 
 - **`src/backend/main.py`** — FastAPI application entry point; `lifespan` event creates the `transactions` table via `Base.metadata.create_all`; CORS middleware; transactions router registered at `/transactions`; `GET /health` liveness endpoint
 - **`src/backend/db.py`** — Async SQLAlchemy engine and session factory; `get_session` async generator for FastAPI dependency injection
-- **`src/backend/models.py`** — `Base` (declarative base); `Transaction` ORM class (14 columns); `Etf` ORM class (25 columns including four JSONB distribution columns); `EtfHolding` child class (6 columns: `id`, `etf_id` FK cascade, `stock_isin`, `stock_name`, `weight_percentage`, `snapshot_date`; composite index on `(etf_id, snapshot_date)`); `EtfPriceHistory` child class with FK cascade and composite index
+- **`src/backend/models.py`** — `Base` (declarative base); `Transaction` ORM class (14 columns); `Etf` ORM class (25 columns including four JSONB distribution columns); `EtfHolding` child class (7 columns: `id`, `etf_id` FK cascade, `stock_isin` nullable, `stock_ticker` nullable, `stock_name`, `weight_percentage`, `snapshot_date`; at least one of `stock_isin`/`stock_ticker` required per row; composite index on `(etf_id, snapshot_date)`); `EtfPriceHistory` child class with FK cascade and composite index
 - **`backend/alembic.ini`** — Alembic root config; `script_location = alembic`; sqlalchemy.url overridden at runtime from `DATABASE_URL`
 - **`backend/alembic/env.py`** — Migration runner; imports `Base.metadata`; synchronous psycopg3 `create_engine` with `NullPool`; `run_migrations_online()` entry point
 - **`backend/alembic/versions/001_create_etf_tables.py`** — First migration: `etfs`, `etf_holdings`, `etf_price_history` tables with FK cascades, UNIQUE constraints, GIN indexes on JSONB columns, and composite B-Tree index on `(etf_id, timestamp DESC)`
 - **`backend/alembic/versions/002_alter_etf_holdings.py`** — Second migration: drops and recreates `etf_holdings` with RFC schema (`stock_isin`, `stock_name`, `weight_percentage`, `snapshot_date`); composite B-Tree index on `(etf_id, snapshot_date DESC)`
+- **`backend/alembic/versions/003_alter_etf_holdings_add_ticker.py`** — Third migration: makes `stock_isin` nullable; adds `stock_ticker VARCHAR(20)` nullable to accommodate iShares/Vanguard CSVs that provide a Ticker instead of an ISIN
 - **`src/backend/schemas/transactions.py`** — `TransactionCreate` Pydantic v2 request model with ISIN format validation and `model_validator` (quantity required for buy/sell; ratio required for split); `TransactionUpdate` partial update model (all fields optional, no `model_validator`); `TransactionResponse` response model with ORM-mode serialization
-- **`src/backend/schemas/etfs.py`** — `EtfCreate` (ISIN `field_validator`; `model_validator` requiring bond distribution maps when `asset_class = Bonds`); `EtfUpdate` (all fields optional for partial updates); `EtfResponse` (ORM-mode); `EtfPriceCreate`; `EtfPriceResponse`; `EtfHoldingRow` (CSV row parsing: `stock_isin`, `stock_name`, `weight_percentage`, `snapshot_date`; ISIN validator normalises to uppercase)
+- **`src/backend/schemas/etfs.py`** — `EtfCreate` (ISIN `field_validator`; `model_validator` requiring bond distribution maps when `asset_class = Bonds`); `EtfUpdate` (all fields optional for partial updates); `EtfResponse` (ORM-mode); `EtfPriceCreate`; `EtfPriceResponse`; `EtfHoldingRow` (CSV row parsing: `stock_isin` nullable + `stock_ticker` nullable with `model_validator` requiring at least one; ISIN validator normalises to uppercase, accepts blank/empty as absent)
 - **`src/backend/routers/transactions.py`** — `POST /transactions` (HTTP 201), `GET /transactions`, `PUT /transactions/{id}` (HTTP 200, partial update), and `DELETE /transactions/{id}` (HTTP 204) FastAPI route handlers using `Depends(get_session)`
 - **`src/backend/routers/etfs.py`** — Seven FastAPI route handlers for ETF CRUD, price history retrieval, manual price logging, and atomic CSV holdings upload; uses `Depends(get_session)` and `python-multipart` `UploadFile` for file handling
 - **`src/backend/schemas/portfolio.py`** — `PortfolioRowResponse` (six fields: owner, broker_platform, total_invested, current_value, performance_abs, performance_pct — performance fields nullable when price data absent); `PortfolioOverviewResponse` wrapping a list of rows
@@ -100,6 +101,13 @@ curl -s -H "Origin: http://localhost:3000" \
 ---
 
 ### Changelog
+
+#### 2026-07-24 (v0.4.2)
+
+- `src/backend/models.py` — `EtfHolding`: `stock_isin` made nullable (`String(12), nullable=True`); new `stock_ticker` column added (`String(20), nullable=True`)
+- `src/backend/schemas/etfs.py` — `EtfHoldingRow`: `stock_isin` changed to `str | None = Field(default=None)`; `stock_ticker: str | None` added; `validate_isin` updated to `mode="before"` to treat blank/empty as absent; `validate_identifier_present` `model_validator` added requiring at least one identifier per row
+- `backend/alembic/versions/003_alter_etf_holdings_add_ticker.py` — New migration: `ALTER COLUMN stock_isin` to nullable; `ADD COLUMN stock_ticker VARCHAR(20)` nullable; `downgrade` reverses both (note: downgrade fails if any row has `stock_isin = NULL`)
+- `tests/schemas/test_etf_holding_row.py` — 3 new tests: `test_valid_row_ticker_only`, `test_valid_row_both_identifiers`, `test_missing_both_identifiers`
 
 #### 2026-07-24 (v0.4.0)
 

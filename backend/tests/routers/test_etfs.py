@@ -88,9 +88,9 @@ def test_create_price_valid(client_with_etfs):
 def test_upload_holdings_valid(client_with_etfs):
     """POST /etfs/{id}/holdings/upload with valid CSV returns 200 and inserted_rows count."""
     csv_content = (
-        "company_name,weight_pct,sector,region\n"
-        "Apple Inc,5.0,Technology,US\n"
-        "Microsoft Corp,4.5,Technology,US"
+        "stock_isin,stock_name,weight_percentage,snapshot_date\n"
+        "IE00B3RBWM25,Vanguard FTSE All-World,5.0,2026-07-22\n"
+        "IE00B5BMR087,iShares Core S&P 500,4.5,2026-07-22"
     )
     response = client_with_etfs.post(
         f"/etfs/{DUMMY_ETF_ID}/holdings/upload",
@@ -103,8 +103,8 @@ def test_upload_holdings_valid(client_with_etfs):
 def test_upload_holdings_invalid_row(client_with_etfs):
     """POST /etfs/{id}/holdings/upload with an unparseable row returns 422 with row number."""
     csv_content = (
-        "company_name,weight_pct,sector,region\n"
-        "Apple Inc,not_a_number,Technology,US"
+        "stock_isin,stock_name,weight_percentage,snapshot_date\n"
+        "IE00B3RBWM25,Vanguard FTSE All-World,not_a_number,2026-07-22"
     )
     response = client_with_etfs.post(
         f"/etfs/{DUMMY_ETF_ID}/holdings/upload",

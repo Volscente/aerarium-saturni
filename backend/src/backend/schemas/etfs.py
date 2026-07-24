@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 from uuid import UUID
 
@@ -150,11 +150,38 @@ class EtfPriceResponse(BaseModel):
 
 
 class EtfHoldingRow(BaseModel):
+    """Pydantic v2 model for validating a single CSV row from an issuer holdings export.
+
+    Used only at the CSV parse boundary (upload handler); not exposed as an API response
+    model. Rejects malformed rows before any database write.
+    """
+
     model_config = ConfigDict(str_strip_whitespace=True)
 
-    company_name: str = Field(min_length=1, max_length=200)
-    weight_pct: Decimal = Field(ge=0, le=100)
-    sector: str = Field(min_length=1, max_length=100)
-    region: str = Field(min_length=1, max_length=100)
-    market_value: Decimal | None = Field(default=None, gt=0)
-    shares: Decimal | None = Field(default=None, gt=0)
+    stock_isin: str
+    stock_name: str = Field(min_length=1, max_length=200)
+    weight_percentage: Decimal = Field(gt=0)
+    snapshot_date: date
+
+    @field_validator("stock_isin")
+    @classmethod
+    def validate_isin(cls, v: str) -> str:
+        """Normalise and validate an ISIN.
+
+        Uppercases the input before validation so lowercase input (e.g.
+        ``ie00b4l5y983``) is accepted and stored as ``IE00B4L5Y983``.
+
+        Args:
+            v: Raw ISIN string from the CSV row.
+
+        Returns:
+            The validated, uppercased ISIN string.
+
+        Raises:
+            ValueError: If the value is not exactly 12 alphanumeric characters
+                after uppercasing.
+        """
+        v = v.upper()
+        if len(v) != 12 or not v.isalnum():
+            raise ValueError("ISIN must be exactly 12 alphanumeric characters")
+        return v

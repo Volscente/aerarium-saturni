@@ -90,14 +90,16 @@ class EtfHolding(Base):
     etf_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("etfs.id", ondelete="CASCADE"), nullable=False
     )
-    company_name: Mapped[str] = mapped_column(String(200), nullable=False)
-    weight_pct: Mapped[Decimal] = mapped_column(Numeric(6, 4), nullable=False)
-    sector: Mapped[str] = mapped_column(String(100), nullable=False)
-    region: Mapped[str] = mapped_column(String(100), nullable=False)
-    market_value: Mapped[Decimal | None] = mapped_column(Numeric(18, 2), nullable=True)
-    shares: Mapped[Decimal | None] = mapped_column(Numeric(18, 6), nullable=True)
+    stock_isin: Mapped[str] = mapped_column(String(12), nullable=False)
+    stock_name: Mapped[str] = mapped_column(String(200), nullable=False)
+    weight_percentage: Mapped[Decimal] = mapped_column(Numeric(8, 4), nullable=False)
+    snapshot_date: Mapped[date] = mapped_column(Date, nullable=False)
 
     etf: Mapped["Etf"] = relationship(back_populates="holdings")
+
+    __table_args__ = (
+        Index("ix_etf_holdings_etf_id_snapshot_date", "etf_id", "snapshot_date"),
+    )
 
 
 class EtfPriceHistory(Base):

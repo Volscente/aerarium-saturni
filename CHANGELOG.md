@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.3] - 2026-08-12
+
+### Added
+
+- **Backend**: New `backend/src/backend/converters/holdings_xlsx.py` — `convert_holdings_xlsx(path)` converts an issuer's XLSX holdings export into `EtfHoldingRow`-shaped dict rows, ahead of the existing `POST /etfs/{id}/holdings/upload` CSV endpoint. Dispatches on the file's ticker (filename stem) via `ISSUER_BY_TICKER` (`EUNL`→iShares, `VWCE`→Vanguard, `LYP6`→Amundi) to a per-issuer parser, since each issuer publishes a structurally different layout (language, header row offset, available identifier, weight format/units).
+- **Backend**: Same module — `write_csv(rows, path)` writes converted rows to CSV with a header inferred from the rows, since each issuer's rows carry only the identifier column it actually provides (`stock_ticker` for iShares/Vanguard, `stock_isin` for Amundi); `EtfHoldingRow.stock_ticker` has no blank-to-`None` normalisation, so writing an empty value for the unused identifier would fail its `min_length=1` constraint on upload.
+- **Backend**: `_load_workbook` in the same module tolerates a malformed `styles.xml` observed in the Amundi export (`rgb="0xffffff"` instead of a bare hex value, which crashes openpyxl entirely) by rewriting the invalid color values in an in-memory copy of the archive before retrying.
+- **Backend**: Each converter drops cash, money-market, and derivative/futures rows (via the issuer's own asset-class column) and rows whose weight rounds to `<= 0` at 4 decimal places — both would otherwise violate `EtfHoldingRow`'s `weight_percentage > 0` constraint or pollute the stock-only holdings table with non-equity instruments.
+- **Backend**: `backend/pyproject.toml` — `openpyxl>=3.1.5` added to runtime `dependencies` (moved from the `dev` group, since conversion now runs as part of the application).
+- **Tests**: New `backend/tests/converters/test_holdings_xlsx.py` — 9 unit tests run against the real issuer fixtures committed at `backend/data/holdings/original/`: valid conversion and exact row counts for each issuer (EUNL 1231, VWCE 3697, LYP6 609), cash/derivative/futures exclusion per issuer, unknown-ticker `ValueError`, and a CSV write/read round-trip re-validated against `EtfHoldingRow`.
+
 ## [0.4.2] - 2026-07-24
 
 ### Added

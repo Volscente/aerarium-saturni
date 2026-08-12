@@ -18,8 +18,10 @@ The Backend is the Python FastAPI service for Aerarium Saturni. It owns all data
 - **`src/backend/schemas/etfs.py`** — `EtfCreate` (ISIN `field_validator`; `model_validator` requiring bond distribution maps when `asset_class = Bonds`); `EtfUpdate` (all fields optional for partial updates); `EtfResponse` (ORM-mode); `EtfPriceCreate`; `EtfPriceResponse`; `EtfHoldingRow` (CSV row parsing: `stock_isin` nullable + `stock_ticker` nullable with `model_validator` requiring at least one; ISIN validator normalises to uppercase, accepts blank/empty as absent)
 - **`src/backend/routers/transactions.py`** — `POST /transactions` (HTTP 201), `GET /transactions`, `PUT /transactions/{id}` (HTTP 200, partial update), and `DELETE /transactions/{id}` (HTTP 204) FastAPI route handlers using `Depends(get_session)`
 - **`src/backend/routers/etfs.py`** — Seven FastAPI route handlers for ETF CRUD, price history retrieval, manual price logging, and atomic CSV holdings upload; uses `Depends(get_session)` and `python-multipart` `UploadFile` for file handling
+- **`src/backend/converters/holdings_xlsx.py`** — `convert_holdings_xlsx(path)`: converts an issuer holdings XLSX export into `EtfHoldingRow`-shaped dict rows ahead of the CSV upload endpoint; dispatches on the file's ticker stem (`ISSUER_BY_TICKER`: `EUNL`→iShares, `VWCE`→Vanguard, `LYP6`→Amundi) to a per-issuer parser, since each issuer's layout, language, and available identifier (ticker vs ISIN) differ; drops cash/money-market/derivative and zero-weight rows; tolerates Amundi's malformed `styles.xml` by rewriting invalid aRGB color values in memory before retrying; `write_csv(rows, path)` writes the result with a header inferred from the rows (only the identifier column the issuer actually provides)
 - **`src/backend/schemas/portfolio.py`** — `PortfolioRowResponse` (six fields: owner, broker_platform, total_invested, current_value, performance_abs, performance_pct — performance fields nullable when price data absent); `PortfolioOverviewResponse` wrapping a list of rows
 - **`src/backend/routers/portfolio.py`** — `GET /portfolio/overview` handler; two-phase SQLAlchemy async query (CTE for net holdings per ISIN, correlated subquery for latest price); Python-side grouping and null propagation; `_build_portfolio_query` and `_to_row_response` helpers
+- **`data/holdings/original/`** — Real issuer XLSX exports (`EUNL.xlsx`, `VWCE.xlsx`, `LYP6.xlsx`) committed as fixtures; used directly by `tests/converters/test_holdings_xlsx.py`. `data/holdings/transformed/` is the converter's intended CSV output location.
 - **`pyproject.toml`** — UV workspace member; all runtime dependencies declared
 - **`Dockerfile`** — Minimal container image stub; installs UV, syncs dependencies, runs uvicorn
 
@@ -49,6 +51,7 @@ The Backend is the Python FastAPI service for Aerarium Saturni. It owns all data
 - **PostgreSQL** — Relational database for financial data; connection URL injected via `DATABASE_URL` environment variable
 - **Alembic** — Schema migration tool; `alembic upgrade head` applies all pending migrations; `env.py` uses synchronous psycopg3 `create_engine` alongside the async engine in `db.py`
 - **python-multipart** — Required by FastAPI's `UploadFile` for `multipart/form-data` parsing; used by the CSV holdings upload endpoint
+- **openpyxl** — Reads issuer XLSX holdings exports in `converters/holdings_xlsx.py`; a runtime dependency (not dev-only) since conversion happens ahead of the CSV upload endpoint, not just in tests
 
 ## Constraints / invariants
 
@@ -101,6 +104,13 @@ curl -s -H "Origin: http://localhost:3000" \
 ---
 
 ### Changelog
+
+#### 2026-08-12 (v0.4.3)
+
+- `src/backend/converters/holdings_xlsx.py` — New module: `convert_holdings_xlsx(path)` converts issuer XLSX holdings exports to `EtfHoldingRow`-shaped dict rows ahead of the CSV upload endpoint; dispatches on the file's ticker stem via `ISSUER_BY_TICKER` to `_convert_ishares`, `_convert_vanguard`, or `_convert_amundi`; `write_csv(rows, path)` helper. Each converter drops cash/money-market/derivative rows (via the issuer's own asset-class column) and rows whose weight rounds to `<= 0` at 4 decimal places, since `EtfHoldingRow` requires `weight_percentage > 0`; each converter emits only the identifier column its issuer actually provides (`stock_ticker` for iShares/Vanguard, `stock_isin` for Amundi) rather than a blank value for the other, since `EtfHoldingRow.stock_ticker` has no blank-to-`None` normalisation (unlike `stock_isin`) and would fail its `min_length=1` constraint on an empty string.
+- `src/backend/converters/holdings_xlsx.py` — `_load_workbook` tolerates Amundi's malformed `styles.xml` (`rgb="0xffffff"` instead of a bare hex value, which crashes openpyxl) by rewriting the invalid color values in an in-memory copy of the archive before retrying.
+- `backend/pyproject.toml` — `openpyxl>=3.1.5` moved from the `dev` dependency group to runtime `dependencies`, since conversion now runs as part of the application, not just tests.
+- `tests/converters/test_holdings_xlsx.py` — 9 new unit tests, run against the real fixtures in `data/holdings/original/`: valid conversion + exact row count for each issuer (EUNL 1231, VWCE 3697, LYP6 609), cash/derivative/futures exclusion per issuer, unknown-ticker `ValueError`, and a CSV write/read round-trip re-validated against `EtfHoldingRow`.
 
 #### 2026-07-24 (v0.4.2)
 

@@ -1,0 +1,20 @@
+backend/README.md
+  s_3b5bde00e4317b::t_787d1527047187 105-123
+  s_3b5bde00e4317b::t_9973a7b5f86922 65
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "f9c089ca5230a7ed0a59998333554ef4b2bed938",
+  "prompts": {},
+  "sessions": {
+    "s_3b5bde00e4317b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "09c2ef6a-1c0d-43d7-90f8-e86c1cc32db9",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Simone Porreca <porrecasimone@gmail.com>"
+    }
+  }
+}

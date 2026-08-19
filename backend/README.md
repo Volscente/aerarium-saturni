@@ -17,11 +17,11 @@ The Backend is the Python FastAPI service for Aerarium Saturni. It owns all data
 - **`src/backend/schemas/transactions.py`** — `TransactionCreate` Pydantic v2 request model with ISIN format validation and `model_validator` (quantity required for buy/sell; ratio required for split); `TransactionUpdate` partial update model (all fields optional, no `model_validator`); `TransactionResponse` response model with ORM-mode serialization
 - **`src/backend/schemas/etfs.py`** — `EtfCreate` (ISIN `field_validator`; `model_validator` requiring bond distribution maps when `asset_class = Bonds`); `EtfUpdate` (all fields optional for partial updates); `EtfResponse` (ORM-mode); `EtfPriceCreate`; `EtfPriceResponse`; `EtfHoldingRow` (CSV row parsing: `stock_isin` nullable + `stock_ticker` nullable with `model_validator` requiring at least one; ISIN validator normalises to uppercase, accepts blank/empty as absent)
 - **`src/backend/routers/transactions.py`** — `POST /transactions` (HTTP 201), `GET /transactions`, `PUT /transactions/{id}` (HTTP 200, partial update), and `DELETE /transactions/{id}` (HTTP 204) FastAPI route handlers using `Depends(get_session)`
-- **`src/backend/routers/etfs.py`** — Seven FastAPI route handlers for ETF CRUD, price history retrieval, manual price logging, and atomic CSV holdings upload; uses `Depends(get_session)` and `python-multipart` `UploadFile` for file handling
-- **`src/backend/converters/holdings_xlsx.py`** — `convert_holdings_xlsx(path)`: converts an issuer holdings XLSX export into `EtfHoldingRow`-shaped dict rows ahead of the CSV upload endpoint; dispatches on the file's ticker stem (`ISSUER_BY_TICKER`: `EUNL`→iShares, `VWCE`→Vanguard, `LYP6`→Amundi) to a per-issuer parser, since each issuer's layout, language, and available identifier (ticker vs ISIN) differ; drops cash/money-market/derivative and zero-weight rows; tolerates Amundi's malformed `styles.xml` by rewriting invalid aRGB color values in memory before retrying; `write_csv(rows, path)` writes the result with a header inferred from the rows (only the identifier column the issuer actually provides)
+- **`src/backend/routers/etfs.py`** — Seven FastAPI route handlers for ETF CRUD, price history retrieval, manual price logging, and atomic CSV/XLSX holdings upload; uses `Depends(get_session)` and `python-multipart` `UploadFile` for file handling
+- **`src/backend/converters/holdings_xlsx.py`** — `convert_holdings_xlsx(source, ticker=None)`: converts an issuer holdings XLSX export into `EtfHoldingRow`-shaped dict rows; called directly from `upload_holdings` when the uploaded filename ends in `.xlsx`. `source` is a `Path` or an open binary file-like object (e.g. the in-memory uploaded bytes); `ticker` defaults to `source.stem` for a `Path` and is required otherwise. The ticker is resolved from its *leading* alphanumeric token rather than an exact match (`ISSUER_BY_TICKER`: `EUNL`→iShares, `VWCE`→Vanguard, `LYP6`→Amundi), since browsers suffix repeat downloads of the same file (`EUNL (1).xlsx`, `EUNL_2026-07-23.xlsx`) and an exact-stem match would 422 on routine re-uploads. Each per-issuer parser also differs in layout, language, and available identifier (ticker vs ISIN); drops cash/money-market/derivative and zero-weight rows; tolerates Amundi's malformed `styles.xml` by rewriting invalid aRGB color values in memory before retrying. `write_csv(rows, path)` is a standalone helper (used in tests) for writing converted rows to an inspectable CSV file — not on the upload request path.
 - **`src/backend/schemas/portfolio.py`** — `PortfolioRowResponse` (six fields: owner, broker_platform, total_invested, current_value, performance_abs, performance_pct — performance fields nullable when price data absent); `PortfolioOverviewResponse` wrapping a list of rows
 - **`src/backend/routers/portfolio.py`** — `GET /portfolio/overview` handler; two-phase SQLAlchemy async query (CTE for net holdings per ISIN, correlated subquery for latest price); Python-side grouping and null propagation; `_build_portfolio_query` and `_to_row_response` helpers
-- **`data/holdings/original/`** — Real issuer XLSX exports (`EUNL.xlsx`, `VWCE.xlsx`, `LYP6.xlsx`) committed as fixtures; used directly by `tests/converters/test_holdings_xlsx.py`. `data/holdings/transformed/` is the converter's intended CSV output location.
+- **`data/holdings/original/`** — Real issuer XLSX exports (`EUNL.xlsx`, `VWCE.xlsx`, `LYP6.xlsx`) committed as fixtures; used directly by `tests/converters/test_holdings_xlsx.py` and `tests/routers/test_etfs.py`.
 - **`pyproject.toml`** — UV workspace member; all runtime dependencies declared
 - **`Dockerfile`** — Minimal container image stub; installs UV, syncs dependencies, runs uvicorn
 
@@ -38,7 +38,7 @@ The Backend is the Python FastAPI service for Aerarium Saturni. It owns all data
 - `DELETE /etfs/{id}` — Delete an ETF and cascade to holdings and price history (HTTP 204); 404 if not found
 - `GET /etfs/{id}/price-history` — List all price snapshots for an ETF ordered by `timestamp DESC`; returns `list[EtfPriceResponse]`; 404 if the ETF does not exist
 - `POST /etfs/{id}/price` — Append a manual price snapshot; accepts `EtfPriceCreate`; returns `EtfPriceResponse` (HTTP 201)
-- `POST /etfs/{id}/holdings/upload` — Atomically replace all holdings for an ETF from a `multipart/form-data` CSV upload; returns `{"inserted_rows": n}` (HTTP 200); rolls back entirely on any row validation error
+- `POST /etfs/{id}/holdings/upload` — Atomically replace all holdings for an ETF from a `multipart/form-data` upload; accepts CSV (unchanged contract) or issuer XLSX — a `.xlsx` filename is run through `convert_holdings_xlsx` first, using the filename's ticker (e.g. `EUNL.xlsx`) to pick the issuer parser; returns `{"inserted_rows": n}` (HTTP 200); rolls back entirely on any row validation error or unrecognised XLSX ticker
 - `GET /portfolio/overview` — Aggregate all buy/sell transactions by `(owner, broker_platform)`; returns `PortfolioOverviewResponse` with `total_invested`, `current_value` (nullable), `performance_abs` (nullable), `performance_pct` (nullable) per group; `current_value` is `null` for any group where at least one held ISIN has no price record in `etf_price_history`
 
 ## External dependencies
@@ -50,8 +50,8 @@ The Backend is the Python FastAPI service for Aerarium Saturni. It owns all data
 - **Pydantic** — Core FastAPI dependency; all future API request and response schemas use Pydantic v2 models
 - **PostgreSQL** — Relational database for financial data; connection URL injected via `DATABASE_URL` environment variable
 - **Alembic** — Schema migration tool; `alembic upgrade head` applies all pending migrations; `env.py` uses synchronous psycopg3 `create_engine` alongside the async engine in `db.py`
-- **python-multipart** — Required by FastAPI's `UploadFile` for `multipart/form-data` parsing; used by the CSV holdings upload endpoint
-- **openpyxl** — Reads issuer XLSX holdings exports in `converters/holdings_xlsx.py`; a runtime dependency (not dev-only) since conversion happens ahead of the CSV upload endpoint, not just in tests
+- **python-multipart** — Required by FastAPI's `UploadFile` for `multipart/form-data` parsing; used by the holdings upload endpoint
+- **openpyxl** — Reads issuer XLSX holdings exports in `converters/holdings_xlsx.py`, called directly from `upload_holdings` when a `.xlsx` file is uploaded
 
 ## Constraints / invariants
 
@@ -62,6 +62,7 @@ The Backend is the Python FastAPI service for Aerarium Saturni. It owns all data
 - `Base.metadata.create_all()` is called at startup for the `transactions` table only; it remains for backwards compatibility while a baseline Alembic migration for `transactions` is deferred to a follow-up milestone. All new tables must be introduced via Alembic migrations.
 - All new schema changes must go through Alembic (`alembic upgrade head`), not `create_all()`. The `transactions` table is the sole exception pending a baseline migration.
 - `alembic downgrade base` removes only the ETF tables; the `transactions` table is unaffected (managed by `create_all`, not Alembic). This asymmetry is intentional.
+- `backend/Dockerfile` copies only `backend/src/` into the image — `alembic/` and `alembic.ini` are not included. Migrations cannot be run via `docker exec` into the `backend` container; run `alembic` from the host instead (see Usage → Troubleshooting below).
 
 ## Out of scope
 
@@ -101,16 +102,38 @@ curl -s -H "Origin: http://localhost:3000" \
 # Expected: access-control-allow-origin: http://localhost:3000
 ```
 
+### Troubleshooting: applying Alembic migrations against the Docker Compose database
+
+The `backend` container has no `alembic/` directory or `alembic.ini` (see Constraints / invariants), so migrations must run from the host, pointed at `localhost` instead of the in-network `database` hostname:
+
+```bash
+cd backend
+DB_URL=$(docker exec aerarium-saturni-backend-1 printenv DATABASE_URL | sed 's/@database:/@localhost:/')
+DATABASE_URL="$DB_URL" uv run alembic upgrade head
+```
+
+**If `upgrade head` fails with `psycopg.errors.DuplicateTable: relation "etfs" already exists"`**: the `etfs`/`etf_holdings`/`etf_price_history` tables were created directly against this database volume (matching the `001` migration's schema) before Alembic was ever run against it, so there is no `alembic_version` row recording that. Stamp the DB at `001` first, then upgrade normally:
+
+```bash
+DATABASE_URL="$DB_URL" uv run alembic stamp 001
+DATABASE_URL="$DB_URL" uv run alembic upgrade head
+```
+
+The symptom at the API level is a `500` on any ETF write endpoint touching the stale table, e.g. `POST /etfs/{id}/holdings/upload` failing with `psycopg.errors.UndefinedColumn: column "stock_isin" of relation "etf_holdings" does not exist` — that's this same drift, not a bug in the upload handler itself.
+
 ---
 
 ### Changelog
 
 #### 2026-08-12 (v0.4.3)
 
-- `src/backend/converters/holdings_xlsx.py` — New module: `convert_holdings_xlsx(path)` converts issuer XLSX holdings exports to `EtfHoldingRow`-shaped dict rows ahead of the CSV upload endpoint; dispatches on the file's ticker stem via `ISSUER_BY_TICKER` to `_convert_ishares`, `_convert_vanguard`, or `_convert_amundi`; `write_csv(rows, path)` helper. Each converter drops cash/money-market/derivative rows (via the issuer's own asset-class column) and rows whose weight rounds to `<= 0` at 4 decimal places, since `EtfHoldingRow` requires `weight_percentage > 0`; each converter emits only the identifier column its issuer actually provides (`stock_ticker` for iShares/Vanguard, `stock_isin` for Amundi) rather than a blank value for the other, since `EtfHoldingRow.stock_ticker` has no blank-to-`None` normalisation (unlike `stock_isin`) and would fail its `min_length=1` constraint on an empty string.
+- `src/backend/converters/holdings_xlsx.py` — New module: `convert_holdings_xlsx(source, ticker=None)` converts an issuer XLSX holdings export to `EtfHoldingRow`-shaped dict rows; `source` accepts a `Path` or an open binary file-like object (in-memory uploaded bytes), `ticker` defaults to `source.stem` for a `Path` and is required otherwise. Dispatches on the ticker via `ISSUER_BY_TICKER` to `_convert_ishares`, `_convert_vanguard`, or `_convert_amundi`. Each converter drops cash/money-market/derivative rows (via the issuer's own asset-class column) and rows whose weight rounds to `<= 0` at 4 decimal places, since `EtfHoldingRow` requires `weight_percentage > 0`; each converter emits only the identifier column its issuer actually provides (`stock_ticker` for iShares/Vanguard, `stock_isin` for Amundi) rather than a blank value for the other, since `EtfHoldingRow.stock_ticker` has no blank-to-`None` normalisation (unlike `stock_isin`) and would fail its `min_length=1` constraint on an empty string. `write_csv(rows, path)` is a standalone helper for writing rows to an inspectable CSV, not used on the request path.
+- `src/backend/converters/holdings_xlsx.py` — Ticker resolution matches the *leading* alphanumeric token (`_LEADING_TICKER_PATTERN`) rather than requiring the full stem to equal a registered ticker, since browsers suffix repeat downloads of the same issuer file (`EUNL (1).xlsx`, `EUNL_2026-07-23.xlsx`) and an exact match would 422 on filename drift alone during routine re-uploads.
 - `src/backend/converters/holdings_xlsx.py` — `_load_workbook` tolerates Amundi's malformed `styles.xml` (`rgb="0xffffff"` instead of a bare hex value, which crashes openpyxl) by rewriting the invalid color values in an in-memory copy of the archive before retrying.
-- `backend/pyproject.toml` — `openpyxl>=3.1.5` moved from the `dev` dependency group to runtime `dependencies`, since conversion now runs as part of the application, not just tests.
-- `tests/converters/test_holdings_xlsx.py` — 9 new unit tests, run against the real fixtures in `data/holdings/original/`: valid conversion + exact row count for each issuer (EUNL 1231, VWCE 3697, LYP6 609), cash/derivative/futures exclusion per issuer, unknown-ticker `ValueError`, and a CSV write/read round-trip re-validated against `EtfHoldingRow`.
+- `src/backend/routers/etfs.py` — `upload_holdings` now branches on the uploaded filename: a `.xlsx` name is read into `io.BytesIO` and passed to `convert_holdings_xlsx` (ticker taken from the filename stem) before the existing per-row `EtfHoldingRow` validation and atomic delete-then-insert; any other filename is parsed as CSV, unchanged. An unrecognised XLSX ticker raises `HTTPException 422` with `{"error": "..."}` rather than the row-indexed `{"row": n, "errors": [...]}` used for CSV/row validation failures.
+- `backend/pyproject.toml` — `openpyxl>=3.1.5` moved from the `dev` dependency group to runtime `dependencies`, since conversion now runs as part of the request path, not just tests.
+- `tests/converters/test_holdings_xlsx.py` — 11 unit test functions (16 collected cases) run against the real fixtures in `data/holdings/original/`: valid conversion + exact row count for each issuer (EUNL 1231, VWCE 3697, LYP6 609), cash/derivative/futures exclusion per issuer, unknown-ticker `ValueError`, file-like-object input with an explicit ticker, missing-ticker `ValueError` for non-`Path` input, a parametrised `test_convert_resolves_ticker_from_renamed_or_suffixed_filenames` covering 6 filename variants, and a CSV write/read round-trip re-validated against `EtfHoldingRow`.
+- `tests/routers/test_etfs.py` — 3 unit tests: `test_upload_holdings_xlsx_valid` (POSTs the real `EUNL.xlsx` fixture, asserts 200 and `inserted_rows == 1231`), `test_upload_holdings_xlsx_valid_with_browser_suffixed_filename` (same fixture uploaded as `EUNL (1).xlsx`), `test_upload_holdings_xlsx_unrecognised_ticker` (422 for an unrecognised XLSX filename ticker).
 
 #### 2026-07-24 (v0.4.2)
 

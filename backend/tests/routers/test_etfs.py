@@ -1,3 +1,4 @@
+from pathlib import Path
 from uuid import UUID
 
 import pytest
@@ -5,6 +6,7 @@ import pytest
 from tests.conftest import VALID_ETF_PAYLOAD
 
 DUMMY_ETF_ID = "00000000-0000-0000-0000-000000000001"
+FIXTURES_DIR = Path(__file__).resolve().parents[2] / "data" / "holdings" / "original"
 
 
 def test_create_etf_valid(client):
@@ -125,3 +127,53 @@ def test_upload_holdings_etf_not_found(client_etf_not_found):
         files={"file": ("holdings.csv", csv_content.encode(), "text/csv")},
     )
     assert response.status_code == 404
+
+
+def test_upload_holdings_xlsx_valid(client_with_etfs):
+    """POST /etfs/{id}/holdings/upload with a real issuer XLSX (EUNL.xlsx) converts and inserts."""
+    xlsx_bytes = (FIXTURES_DIR / "EUNL.xlsx").read_bytes()
+    response = client_with_etfs.post(
+        f"/etfs/{DUMMY_ETF_ID}/holdings/upload",
+        files={
+            "file": (
+                "EUNL.xlsx",
+                xlsx_bytes,
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            )
+        },
+    )
+    assert response.status_code == 200
+    assert response.json() == {"inserted_rows": 1231}
+
+
+def test_upload_holdings_xlsx_valid_with_browser_suffixed_filename(client_with_etfs):
+    """A repeat download suffixed by the browser (e.g. 'EUNL (1).xlsx') still resolves to iShares."""
+    xlsx_bytes = (FIXTURES_DIR / "EUNL.xlsx").read_bytes()
+    response = client_with_etfs.post(
+        f"/etfs/{DUMMY_ETF_ID}/holdings/upload",
+        files={
+            "file": (
+                "EUNL (1).xlsx",
+                xlsx_bytes,
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            )
+        },
+    )
+    assert response.status_code == 200
+    assert response.json() == {"inserted_rows": 1231}
+
+
+def test_upload_holdings_xlsx_unrecognised_ticker(client_with_etfs):
+    """POST /etfs/{id}/holdings/upload with an XLSX filename that isn't a known issuer ticker returns 422."""
+    response = client_with_etfs.post(
+        f"/etfs/{DUMMY_ETF_ID}/holdings/upload",
+        files={
+            "file": (
+                "UNKNOWN.xlsx",
+                b"not a real workbook",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            )
+        },
+    )
+    assert response.status_code == 422
+    assert "Unrecognised ETF ticker" in response.json()["detail"]["error"]

@@ -92,6 +92,35 @@ def test_convert_unknown_ticker_raises():
         convert_holdings_xlsx(Path("UNKNOWN.xlsx"))
 
 
+def test_convert_from_file_like_object_with_explicit_ticker():
+    """A BytesIO source (e.g. an in-memory upload) works with an explicit ticker argument."""
+    with (FIXTURES_DIR / "EUNL.xlsx").open("rb") as f:
+        rows = convert_holdings_xlsx(f, ticker="eunl")
+
+    assert len(rows) == 1231
+    assert rows[0]["stock_ticker"] == "NVDA"
+
+
+def test_convert_file_like_object_without_ticker_raises():
+    """A non-Path source has no filename to infer a ticker from, so ticker is required."""
+    with (FIXTURES_DIR / "EUNL.xlsx").open("rb") as f:
+        with pytest.raises(ValueError, match="ticker must be provided"):
+            convert_holdings_xlsx(f)
+
+
+@pytest.mark.parametrize(
+    "stem",
+    ["EUNL", "eunl", "EUNL (1)", "EUNL(2)", "EUNL_2026-07-23", "EUNL-holdings"],
+)
+def test_convert_resolves_ticker_from_renamed_or_suffixed_filenames(stem):
+    """The ticker is resolved from a leading token, not an exact match, so browser-suffixed repeat downloads (e.g. 'EUNL (1).xlsx') still resolve to EUNL."""
+    with (FIXTURES_DIR / "EUNL.xlsx").open("rb") as f:
+        rows = convert_holdings_xlsx(f, ticker=stem)
+
+    assert len(rows) == 1231
+    assert rows[0]["stock_ticker"] == "NVDA"
+
+
 def test_write_csv_roundtrip(tmp_path):
     """Rows written to CSV and re-read via csv.DictReader still validate against EtfHoldingRow."""
     import csv

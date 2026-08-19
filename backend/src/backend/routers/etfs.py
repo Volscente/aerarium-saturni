@@ -1,5 +1,6 @@
 import csv
 import io
+from pathlib import Path
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile
@@ -7,6 +8,7 @@ from pydantic import ValidationError
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.converters.holdings_xlsx import convert_holdings_xlsx
 from backend.db import get_session
 from backend.models import Etf, EtfHolding, EtfPriceHistory
 from backend.schemas.etfs import (
@@ -203,16 +205,23 @@ async def upload_holdings(
     file: UploadFile,
     session: AsyncSession = Depends(get_session),
 ) -> dict[str, int]:
-    """Replace all holdings for an ETF atomically from a CSV upload.
+    """Replace all holdings for an ETF atomically from a CSV or issuer XLSX upload.
 
-    Reads the uploaded CSV, parses each row into an ``EtfHoldingRow`` model,
+    Reads the uploaded file, parses each row into an ``EtfHoldingRow`` model,
     then within a single session transaction deletes all existing
     ``etf_holdings`` rows for the given ETF and bulk-inserts the new rows.
     Any parsing failure or constraint error rolls back the entire operation.
 
+    A ``.xlsx`` file is first run through ``convert_holdings_xlsx``, which
+    picks an issuer-specific parser from the uploaded filename's ticker (e.g.
+    ``EUNL.xlsx`` → iShares) — issuer exports are structurally too different
+    (language, layout, available identifier) to parse with one generic reader.
+    Any other filename is read as CSV, unchanged from the original contract.
+
     Args:
         id: UUID of the parent ETF; raises 404 if not found in ``etfs`` table.
-        file: Uploaded CSV; required columns match ``EtfHoldingRow`` field names.
+        file: Uploaded CSV or issuer XLSX; CSV columns (or, for XLSX, the
+            converter's output) must match ``EtfHoldingRow`` field names.
         session: Async SQLAlchemy session injected by ``Depends(get_session)``.
 
     Returns:
@@ -220,8 +229,9 @@ async def upload_holdings(
 
     Raises:
         HTTPException 404: If no ETF with the given ``id`` exists.
-        HTTPException 422: If any CSV row fails ``EtfHoldingRow`` validation;
-            body includes ``{"row": n, "field": "...", "error": "..."}``.
+        HTTPException 422: If the XLSX filename's ticker isn't a recognised
+            issuer, or any row fails ``EtfHoldingRow`` validation; body is
+            ``{"error": "..."}`` or ``{"row": n, "errors": [...]}`` respectively.
     """
     result = await session.execute(select(Etf).where(Etf.id == id))
     etf = result.scalar_one_or_none()
@@ -229,9 +239,17 @@ async def upload_holdings(
         raise HTTPException(status_code=404, detail="ETF not found")
 
     content = await file.read()
-    reader = csv.DictReader(io.StringIO(content.decode("utf-8")))
+    filename = file.filename or ""
+    if filename.lower().endswith(".xlsx"):
+        try:
+            row_dicts = convert_holdings_xlsx(io.BytesIO(content), ticker=Path(filename).stem)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail={"error": str(exc)})
+    else:
+        row_dicts = list(csv.DictReader(io.StringIO(content.decode("utf-8"))))
+
     holdings: list[EtfHoldingRow] = []
-    for i, row_dict in enumerate(reader, start=1):
+    for i, row_dict in enumerate(row_dicts, start=1):
         try:
             holding = EtfHoldingRow(**row_dict)
         except ValidationError as exc:

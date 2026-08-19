@@ -4,8 +4,11 @@ import zipfile
 from datetime import date
 from decimal import Decimal
 from pathlib import Path
+from typing import BinaryIO
 
 import openpyxl
+
+XlsxSource = Path | BinaryIO
 
 GERMAN_MONTHS = {
     "Januar": 1,
@@ -31,25 +34,33 @@ ISSUER_BY_TICKER = {
 _ISIN_PATTERN = re.compile(r"[A-Z0-9]{12}")
 _GERMAN_DATE_PATTERN = re.compile(r"(\d{1,2})\.\s*([A-Za-zÀ-ÿ]+)\s*(\d{4})")
 _AMUNDI_DATE_PATTERN = re.compile(r"zum (\d{2})/(\d{2})/(\d{4})")
+_LEADING_TICKER_PATTERN = re.compile(r"[A-Za-z0-9]+")
 
 
-def convert_holdings_xlsx(path: Path) -> list[dict[str, str]]:
+def convert_holdings_xlsx(source: XlsxSource, ticker: str | None = None) -> list[dict[str, str]]:
     """Convert an issuer holdings XLSX export into EtfHoldingRow-shaped dict rows.
 
-    Dispatches on the file's ticker (its stem, uppercased) rather than sniffing
-    the content, since issuer layouts are structurally different enough that a
-    wrong guess would silently misparse columns rather than fail loudly.
+    Dispatches on the issuer's ticker rather than sniffing the file's content,
+    since issuer layouts are structurally different enough that a wrong guess
+    would silently misparse columns rather than fail loudly.
 
     Args:
-        path: Path to the issuer XLSX export; its stem must be a known ticker
-            (see ``ISSUER_BY_TICKER``).
+        source: Path to the issuer XLSX export, or an open binary file-like
+            object (e.g. the bytes of an in-memory upload).
+        ticker: The issuer's ticker, or a filename/stem carrying it as a
+            leading token (e.g. ``"EUNL (1)"``, ``"EUNL_2026-07-23"``, both
+            resolve to ``EUNL``) — repeat downloads of the same file get
+            suffixed by the browser, so an exact match would be too brittle
+            for routine re-uploads. Case-insensitive. Defaults to
+            ``source.stem`` when ``source`` is a ``Path``; required otherwise,
+            since a file-like object has no filename to infer it from.
 
     Returns:
         List of dicts with string values ready to be written as CSV rows or
         passed straight into ``EtfHoldingRow``. Each dict carries whichever
         identifier the issuer actually publishes — ``stock_ticker`` for
         iShares/Vanguard, ``stock_isin`` for Amundi — never both, so a blank
-        cell for the other identifier is never written to CSV (``EtfHoldingRow``
+        cell for the other identifier is never produced (``EtfHoldingRow``
         only normalises a blank/absent *ISIN* to ``None``; a blank
         ``stock_ticker`` would fail its ``min_length=1`` constraint). Cash,
         money-market, derivative, and zero-weight lines are dropped, since
@@ -57,13 +68,19 @@ def convert_holdings_xlsx(path: Path) -> list[dict[str, str]]:
         ``weight_percentage > 0``.
 
     Raises:
-        ValueError: If the file's ticker (stem) has no registered converter.
+        ValueError: If ``ticker`` is omitted and ``source`` isn't a ``Path``,
+            or the resolved ticker has no registered converter.
     """
-    ticker = path.stem.upper()
-    issuer = ISSUER_BY_TICKER.get(ticker)
+    if ticker is None:
+        if not isinstance(source, Path):
+            raise ValueError("ticker must be provided when source is not a file path")
+        ticker = source.stem
+    match = _LEADING_TICKER_PATTERN.match(ticker)
+    resolved_ticker = match.group(0).upper() if match else ticker.upper()
+    issuer = ISSUER_BY_TICKER.get(resolved_ticker)
     if issuer is None:
-        raise ValueError(f"Unrecognised ETF ticker '{ticker}'; no converter registered")
-    return _CONVERTERS[issuer](path)
+        raise ValueError(f"Unrecognised ETF ticker '{resolved_ticker}'; no converter registered")
+    return _CONVERTERS[issuer](source)
 
 
 def write_csv(rows: list[dict[str, str]], output_path: Path) -> None:
@@ -86,7 +103,7 @@ def write_csv(rows: list[dict[str, str]], output_path: Path) -> None:
         writer.writerows(rows)
 
 
-def _load_workbook(path: Path):
+def _load_workbook(source: XlsxSource):
     """Load an XLSX workbook, tolerating issuer files with malformed style XML.
 
     Amundi exports have been observed with an invalid aRGB color value
@@ -96,28 +113,33 @@ def _load_workbook(path: Path):
     irrelevant here, only cell values matter.
 
     Args:
-        path: Path to the XLSX file.
+        source: Path to the XLSX file, or an open binary file-like object.
 
     Returns:
         The loaded ``openpyxl.Workbook``.
     """
+    if not isinstance(source, Path):
+        source.seek(0)
     try:
-        return openpyxl.load_workbook(path, data_only=True)
+        return openpyxl.load_workbook(source, data_only=True)
     except ValueError:
-        return openpyxl.load_workbook(_sanitize_invalid_colors(path), data_only=True)
+        if not isinstance(source, Path):
+            source.seek(0)
+        return openpyxl.load_workbook(_sanitize_invalid_colors(source), data_only=True)
 
 
-def _sanitize_invalid_colors(path: Path) -> io.BytesIO:
+def _sanitize_invalid_colors(source: XlsxSource) -> io.BytesIO:
     """Rewrite non-hex ``rgb="0x..."`` color values in a workbook's styles.xml.
 
     Args:
-        path: Path to the XLSX file whose stylesheet openpyxl rejected.
+        source: Path or open binary file-like object of the XLSX file whose
+            stylesheet openpyxl rejected.
 
     Returns:
         An in-memory copy of the XLSX zip archive with valid aRGB hex values.
     """
     buf = io.BytesIO()
-    with zipfile.ZipFile(path) as zin, zipfile.ZipFile(buf, "w") as zout:
+    with zipfile.ZipFile(source) as zin, zipfile.ZipFile(buf, "w") as zout:
         for item in zin.infolist():
             data = zin.read(item.filename)
             if item.filename == "xl/styles.xml":
@@ -184,7 +206,7 @@ def _clean_weight(value: object) -> Decimal | None:
     return quantized
 
 
-def _convert_ishares(path: Path) -> list[dict[str, str]]:
+def _convert_ishares(source: XlsxSource) -> list[dict[str, str]]:
     """Convert an iShares holdings export (e.g. EUNL.xlsx) to holding rows.
 
     Header row 3 (German column names); data from row 4. Only rows with
@@ -193,12 +215,12 @@ def _convert_ishares(path: Path) -> list[dict[str, str]]:
     pass the weight filter despite not being stock constituents.
 
     Args:
-        path: Path to the iShares XLSX export.
+        source: Path or open binary file-like object of the iShares XLSX export.
 
     Returns:
         Converted holding rows keyed by ``stock_ticker`` (no ISIN available).
     """
-    wb = _load_workbook(path)
+    wb = _load_workbook(source)
     ws = wb.active
     snapshot_date = _parse_german_date(str(ws.cell(row=1, column=2).value))
 
@@ -222,7 +244,7 @@ def _convert_ishares(path: Path) -> list[dict[str, str]]:
     return rows
 
 
-def _convert_vanguard(path: Path) -> list[dict[str, str]]:
+def _convert_vanguard(source: XlsxSource) -> list[dict[str, str]]:
     """Convert a Vanguard holdings export (e.g. VWCE.xlsx) to holding rows.
 
     Header row 7 (German column names); data from row 8. Rows with no ticker
@@ -230,12 +252,12 @@ def _convert_vanguard(path: Path) -> list[dict[str, str]]:
     Vanguard exports provide no ISIN fallback identifier.
 
     Args:
-        path: Path to the Vanguard XLSX export.
+        source: Path or open binary file-like object of the Vanguard XLSX export.
 
     Returns:
         Converted holding rows keyed by ``stock_ticker`` (no ISIN available).
     """
-    wb = _load_workbook(path)
+    wb = _load_workbook(source)
     ws = wb.active
     title_row = " ".join(str(c) for c in next(ws.iter_rows(min_row=5, max_row=5, values_only=True)) if c)
     snapshot_date = _parse_german_date(title_row)
@@ -260,7 +282,7 @@ def _convert_vanguard(path: Path) -> list[dict[str, str]]:
     return rows
 
 
-def _convert_amundi(path: Path) -> list[dict[str, str]]:
+def _convert_amundi(source: XlsxSource) -> list[dict[str, str]]:
     """Convert an Amundi holdings export (e.g. LYP6.xlsx) to holding rows.
 
     Metadata block precedes the real header row; the snapshot date is
@@ -275,12 +297,12 @@ def _convert_amundi(path: Path) -> list[dict[str, str]]:
     rather than trailing them, and the disclaimer footer follows all of it.
 
     Args:
-        path: Path to the Amundi XLSX export.
+        source: Path or open binary file-like object of the Amundi XLSX export.
 
     Returns:
         Converted holding rows keyed by ``stock_isin`` (no ticker available).
     """
-    wb = _load_workbook(path)
+    wb = _load_workbook(source)
     ws = wb.active
     rows_iter = ws.iter_rows(values_only=True)
 
@@ -296,9 +318,9 @@ def _convert_amundi(path: Path) -> list[dict[str, str]]:
             header_row_index = i
             break
     if snapshot_date is None:
-        raise ValueError(f"Cannot find snapshot date in '{path}'")
+        raise ValueError("Cannot find snapshot date in Amundi workbook")
     if header_row_index is None:
-        raise ValueError(f"Cannot find holdings header row in '{path}'")
+        raise ValueError("Cannot find holdings header row in Amundi workbook")
 
     rows = []
     for row in rows_iter:

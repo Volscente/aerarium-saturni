@@ -1,0 +1,23 @@
+.claude/13-holdings-data-visualisation/planning.md
+  s_0a7101fbb6f0ea::t_1fc075c5b534a7 1-12,14-55,57-63,65-69,71-150,152-163
+  s_0a7101fbb6f0ea::t_68fff9be6d897d 56
+  s_0a7101fbb6f0ea::t_3ffefcd77fa288 151
+  s_0a7101fbb6f0ea::t_e6f6316e59c9fc 13
+  s_0a7101fbb6f0ea::t_15666126161799 64,70
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "fb5f2808fdcf30f2c00e9feded72fee055cc13b5",
+  "prompts": {},
+  "sessions": {
+    "s_0a7101fbb6f0ea": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "38865b13-8afe-4f5b-883e-559d20d3d336",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Simone Porreca <porrecasimone@gmail.com>"
+    }
+  }
+}

@@ -1,0 +1,28 @@
+.claude/13-holdings-data-visualisation/proposal.md
+  s_0a7101fbb6f0ea::t_4f5cdc4ae97b57 10-15,17-21,23-24,26-27
+  h_68a16e6033d539 1-9,16,22,25,28-34,36-38,40-42,47-49,52-54,56-58
+  s_0a7101fbb6f0ea::t_3dceeae7c8f0dc 35
+  s_0a7101fbb6f0ea::t_7adfa0cad8a472 39,43-46,51,59-61
+  s_0a7101fbb6f0ea::t_d8cb67416e2d2b 50,55
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "1e2f5f9ebeec20ef714d3e47fd81bc0a7dcf880b",
+  "prompts": {},
+  "humans": {
+    "h_68a16e6033d539": {
+      "author": "Simone Porreca <porrecasimone@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_0a7101fbb6f0ea": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "38865b13-8afe-4f5b-883e-559d20d3d336",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Simone Porreca <porrecasimone@gmail.com>"
+    }
+  }
+}

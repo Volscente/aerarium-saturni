@@ -69,3 +69,26 @@ def test_isin_lowercase_normalised():
     """Lowercase ISIN is silently normalised to uppercase — no error raised."""
     row = EtfHoldingRow(**{**VALID_ROW, "stock_isin": "ie00b3rbwm25"})
     assert row.stock_isin == "IE00B3RBWM25"
+
+
+VALID_ROW_NO_ISIN = {k: v for k, v in VALID_ROW.items() if k != "stock_isin"}
+
+
+def test_valid_row_ticker_only():
+    """Row with stock_ticker and no stock_isin is accepted (iShares/Vanguard CSV format)."""
+    row = EtfHoldingRow(**{**VALID_ROW_NO_ISIN, "stock_ticker": "VWCE"})
+    assert row.stock_isin is None
+    assert row.stock_ticker == "VWCE"
+
+
+def test_valid_row_both_identifiers():
+    """Row with both stock_isin and stock_ticker is accepted."""
+    row = EtfHoldingRow(**{**VALID_ROW, "stock_ticker": "VWCE"})
+    assert row.stock_isin == "IE00B3RBWM25"
+    assert row.stock_ticker == "VWCE"
+
+
+def test_missing_both_identifiers():
+    """Row with neither stock_isin nor stock_ticker raises ValidationError."""
+    with pytest.raises(ValidationError):
+        EtfHoldingRow(**VALID_ROW_NO_ISIN)

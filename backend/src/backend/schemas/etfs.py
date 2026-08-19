@@ -154,34 +154,60 @@ class EtfHoldingRow(BaseModel):
 
     Used only at the CSV parse boundary (upload handler); not exposed as an API response
     model. Rejects malformed rows before any database write.
+
+    Exactly one of ``stock_isin`` or ``stock_ticker`` must be provided per row.
+    iShares and Vanguard CSVs supply a Ticker; Amundi CSVs supply an ISIN.
     """
 
     model_config = ConfigDict(str_strip_whitespace=True)
 
-    stock_isin: str
+    stock_isin: str | None = Field(default=None)
+    stock_ticker: str | None = Field(default=None, min_length=1, max_length=20)
     stock_name: str = Field(min_length=1, max_length=200)
     weight_percentage: Decimal = Field(gt=0)
     snapshot_date: date
 
-    @field_validator("stock_isin")
+    @field_validator("stock_isin", mode="before")
     @classmethod
-    def validate_isin(cls, v: str) -> str:
-        """Normalise and validate an ISIN.
+    def validate_isin(cls, v: object) -> str | None:
+        """Normalise and validate an ISIN, accepting None and empty string as absent.
 
-        Uppercases the input before validation so lowercase input (e.g.
-        ``ie00b4l5y983``) is accepted and stored as ``IE00B4L5Y983``.
+        Runs before type coercion (``mode="before"``) so that blank cells from
+        issuer CSVs that include the column but leave it empty are treated as
+        absent rather than triggering a format error.
 
         Args:
-            v: Raw ISIN string from the CSV row.
+            v: Raw value from the CSV row; may be ``None``, an empty string, or
+                a string ISIN candidate.
 
         Returns:
-            The validated, uppercased ISIN string.
+            The validated, uppercased ISIN string, or ``None`` when the value is
+            absent or blank.
 
         Raises:
-            ValueError: If the value is not exactly 12 alphanumeric characters
-                after uppercasing.
+            ValueError: If the value is non-empty but not exactly 12 alphanumeric
+                characters after uppercasing.
         """
-        v = v.upper()
+        if not v:
+            return None
+        v = str(v).upper()
         if len(v) != 12 or not v.isalnum():
             raise ValueError("ISIN must be exactly 12 alphanumeric characters")
         return v
+
+    @model_validator(mode="after")
+    def validate_identifier_present(self) -> "EtfHoldingRow":
+        """Enforce that at least one of stock_isin or stock_ticker is present.
+
+        Args:
+            self: Fully constructed model instance after field-level validation.
+
+        Returns:
+            The validated model instance.
+
+        Raises:
+            ValueError: If both ``stock_isin`` and ``stock_ticker`` are ``None``.
+        """
+        if self.stock_isin is None and self.stock_ticker is None:
+            raise ValueError("Either stock_isin or stock_ticker must be provided")
+        return self

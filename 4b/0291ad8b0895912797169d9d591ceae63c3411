@@ -1,0 +1,27 @@
+.claude/13-holdings-data-visualisation/rfc.md
+  s_0a7101fbb6f0ea::t_ce8a124a417dfb 100
+  s_0a7101fbb6f0ea::t_e3e20056e448b0 157
+  s_0a7101fbb6f0ea::t_5651b3d9839890 41
+  s_0a7101fbb6f0ea::t_4a19e051a11593 87-88
+  s_0a7101fbb6f0ea::t_88c06c71dfde8a 140
+  s_0a7101fbb6f0ea::t_af34e3d64b97f2 92-93
+  s_0a7101fbb6f0ea::t_f90ba5d65a0f11 1-40,42-67,69-78,80-86,89-91,94-99,101-139,141-156,158-165
+  s_0a7101fbb6f0ea::t_0fcab4e69dfbaa 79
+  s_0a7101fbb6f0ea::t_164140b4fe0693 68
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "4b0291ad8b0895912797169d9d591ceae63c3411",
+  "prompts": {},
+  "sessions": {
+    "s_0a7101fbb6f0ea": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "38865b13-8afe-4f5b-883e-559d20d3d336",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Simone Porreca <porrecasimone@gmail.com>"
+    }
+  }
+}

@@ -1,0 +1,47 @@
+.claude/13-holdings-data-visualisation/planning.md
+  s_0a7101fbb6f0ea::t_163cd7b1cfcb48 39-40
+  s_0a7101fbb6f0ea::t_7995802921a87f 132
+  s_0a7101fbb6f0ea::t_7fdfc6fdfb3ea5 24,26-27,31,35,41,45,49-51
+  s_0a7101fbb6f0ea::t_243c652ecd33b5 136,140,147
+  s_0a7101fbb6f0ea::t_2a4b357ccb4b9b 7
+  s_0a7101fbb6f0ea::t_c38d8702cff1be 144
+  s_0a7101fbb6f0ea::t_244e84f2eaa42f 13,42
+.claude/13-holdings-data-visualisation/proposal.md
+  s_0a7101fbb6f0ea::t_c0fa473096fd38 59
+.claude/13-holdings-data-visualisation/69-look-through-exposure-aggregation-engine.md
+  s_0a7101fbb6f0ea::t_1227c166226050 242
+  s_0a7101fbb6f0ea::t_194b0e137132ee 13-16,19-20,24-26,28,34-75,97-99,112,114-124,126,128-130,135-138,140,148-159,164-170,172-229,243-247,273-274,293-298,338-339,343-344,346-357,360,362,370-374,378,382-383,385,392-394
+  s_0a7101fbb6f0ea::t_4d789b2cd27b81 395
+  s_0a7101fbb6f0ea::t_c8f0171731f056 275
+  s_0a7101fbb6f0ea::t_c0f28d6626763d 125,127
+  s_0a7101fbb6f0ea::t_58153bcf11b767 391
+  s_0a7101fbb6f0ea::t_49365621486af3 1-12,17-18,21-23,27,29-33,76-96,100-111,113,131-134,139,141-147,160-163,171,230-241,248-272,276-292,299-337,340-342,345,358-359,363-369,375-377,379-381,384,386-390
+  s_0a7101fbb6f0ea::t_aa619de3d71649 361
+.claude/13-holdings-data-visualisation/rfc.md
+  s_0a7101fbb6f0ea::t_06b7e17956a16d 81-84,96
+  s_0a7101fbb6f0ea::t_03a2cab671ee16 167-168
+  s_0a7101fbb6f0ea::t_33c3017f98734b 113
+  s_0a7101fbb6f0ea::t_a55badcdc74b2c 144
+  s_0a7101fbb6f0ea::t_578cbfe11d3ad2 85-89
+  s_0a7101fbb6f0ea::t_0a6030d9a5261f 117
+  s_0a7101fbb6f0ea::t_e1479f502cb683 118
+  s_0a7101fbb6f0ea::t_b5f96ba84d5d7a 79
+  s_0a7101fbb6f0ea::t_d254eda8771e02 126
+  s_0a7101fbb6f0ea::t_5390b48fceebdc 80
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "69a18981d8a2c3e32ea96bd229042880d2226077",
+  "prompts": {},
+  "sessions": {
+    "s_0a7101fbb6f0ea": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "38865b13-8afe-4f5b-883e-559d20d3d336",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Simone Porreca <porrecasimone@gmail.com>"
+    }
+  }
+}

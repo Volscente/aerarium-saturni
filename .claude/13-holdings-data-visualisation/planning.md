@@ -4,13 +4,13 @@
 **GitHub repo:** [Volscente/aerarium-saturni](https://github.com/Volscente/aerarium-saturni)
 **GitHub Milestone:** [13-holdings-data-visualisation](https://github.com/Volscente/aerarium-saturni/milestone/11)
 **Notion page:** [13 - Holdings Data Visualisation](https://app.notion.com/p/13-Holdings-Data-Visualisation-3a45cc6c0f0780aa8c0cefdebc1eed9c)
-**Total estimated effort:** 7 FTE-days (1 FTE = 1 day)
+**Total estimated effort:** 9.0 FTE-days (1 FTE = 1 day)
 
 ---
 
 ## Overview
 
-This initiative adds look-through single-stock exposure analysis to the existing Portfolio page (`/tabularium/portfolio`): a new backend endpoint aggregates each stock's weighted exposure across all owned ETFs from already-stored holdings snapshots, and four new frontend components (Alert Badge, Bar Chart, Treemap, Detailed Table) render that data without introducing a new Tabularium route or a full charting library.
+This initiative adds look-through single-stock exposure analysis to the existing Portfolio page (`/tabularium/portfolio`): a holdings-upload fix resolves each stock's ISIN via the free OpenFIGI API so identity can be compared reliably across issuers, a new backend endpoint then aggregates each stock's weighted exposure across all owned ETFs, and four new frontend components (Alert Badge, Bar Chart, Treemap, Detailed Table) render that data without introducing a new Tabularium route or a full charting library.
 
 ### Dependency Order
 
@@ -21,28 +21,34 @@ TASK-1 ──► TASK-2 ──► TASK-3 (parallel)
 
 ---
 
-## TASK-1 — Look-through Exposure Aggregation Endpoint
+## TASK-1 — Look-through Exposure Aggregation Engine
 
-**GitHub Issue:** #{number}
-**Effort estimate:** 2.5 FTE-days
+**GitHub Issue:** #69
+**Effort estimate:** 4.5 FTE-days
 
 ### Scope
 
-Add a new backend endpoint that aggregates each stock's total look-through weight across all owned ETFs, including its response schemas and the multi-phase aggregation query.
+Two parts of one deliverable: an OpenFIGI-based reconciliation step (run after any holdings upload) that resolves Amundi's ISINs to their tickers and backfills matching ticker-only rows from the other ETFs, and the backend endpoint that aggregates each stock's total look-through weight across all owned ETFs on top of that reliable identity data.
 
 ### Goal
 
-Provide the single data source the entire dashboard renders from: a per-stock weighted exposure figure alongside the per-ETF contributions that produced it.
+Provide the single, correct data source the entire dashboard renders from — a per-stock weighted exposure figure alongside the per-ETF contributions that produced it — with stock identity resolved reliably across issuers rather than guessed from names.
 
 ### Deliverables
 
+- `backend/alembic/versions/004_add_etf_holdings_stock_country.py` — new migration adding a nullable `stock_country` (ISO 3166-1 alpha-2) column to `etf_holdings`
+- `src/backend/models.py` — `EtfHolding.stock_country: Mapped[str | None]`
+- `src/backend/converters/holdings_xlsx.py` — each converter now also emits `stock_country` (Amundi rows get it free from their own ISIN's first two characters; iShares rows are mapped from `Standort` via a small static lookup; Vanguard rows use `Region` directly); new `resolve_stock_isin_aliases()` reconciliation function, called from `upload_holdings` after any successful upload
+- `backend/pyproject.toml` — `httpx` moved from the `dev` dependency group to runtime `dependencies` (same precedent as `openpyxl`'s earlier move)
 - `src/backend/routers/portfolio.py` — new `GET /portfolio/holdings/exposure` route handler
 - `src/backend/schemas/portfolio.py` — new `HoldingExposureResponse` and `HoldingContribution` Pydantic schemas
-- `tests/routers/test_portfolio.py` — new tests covering aggregation correctness and ISIN/ticker fallback grouping
+- `tests/converters/test_holdings_xlsx.py`, `tests/routers/test_etfs.py`, `tests/routers/test_portfolio.py` — new tests covering ISIN resolution, order-independence, aggregation correctness, and residual ISIN/ticker fallback grouping
 
 ### Technical Overview
 
-Phase 1 reuses the net-holdings CTE pattern from `_build_portfolio_query` to derive each owned ETF's share of total portfolio value. Phase 2 selects each ETF's latest `EtfHolding` snapshot (`MAX(snapshot_date)` per `etf_id`, using the existing `(etf_id, snapshot_date)` composite index). Phase 3 combines `etf_portfolio_weight × holding.weight_percentage` and groups by stock identity, preferring `stock_isin` when present and falling back to `stock_ticker` otherwise.
+OpenFIGI's `/v3/mapping` endpoint only accepts an ISIN as input to resolve a ticker — never the reverse — so identity resolution runs from Amundi's (LYP6) ISINs outward: resolve each of its ~608 distinct ISINs to a ticker via OpenFIGI, then update any other ETF's row still missing `stock_isin` whose `(stock_ticker, stock_country)` matches. Matching on country (not just ticker) avoids merging unrelated companies that coincidentally share a ticker on different exchanges, without needing to parse Bloomberg's exchange codes — the country comes for free from the ISIN's own first two characters. The reconciliation re-runs after every holdings upload (any issuer), so it's insensitive to upload order, and is idempotent and cheap enough (OpenFIGI is free and unrate-limited at this volume) that no separate persistent cache table is needed.
+
+With `stock_isin` now reliably populated, the aggregation endpoint reuses the net-holdings CTE pattern from `_build_portfolio_query` to derive each owned ETF's share of total portfolio value (Phase 1), selects each ETF's latest `EtfHolding` snapshot (Phase 2, `MAX(snapshot_date)` per `etf_id` via the existing `(etf_id, snapshot_date)` composite index), and combines `etf_portfolio_weight × holding.weight_percentage` grouped by `COALESCE(stock_isin, stock_ticker)` (Phase 3) — now ISIN for the large majority of rows, with ticker remaining only as the residual fallback for the minority OpenFIGI could not resolve.
 
 ---
 
@@ -123,21 +129,22 @@ Mirrors the existing `EtfRegistryTable` expand-on-click pattern: search/sort ove
 ### Milestone 1 — Look-through Exposure Aggregation Engine
 
 **Tasks:** TASK-1
-**Effort:** 2.5 FTE-days
+**Effort:** 4.5 FTE-days
 
 #### Scope
 
-The backend aggregation endpoint that computes look-through single-stock exposure across all owned ETFs from already-stored holdings snapshots.
+Resolving stock identity reliably across issuers (OpenFIGI-based ISIN backfill at holdings upload) and the backend aggregation endpoint that computes look-through single-stock exposure across all owned ETFs from those holdings snapshots.
 
 #### Goal
 
-The dashboard has a correct, tested data source to render from before any frontend work begins.
+The dashboard has a correct, tested data source to render from before any frontend work begins — including reliable cross-issuer stock identity, not just the aggregation math.
 
 #### Deliverables
 
+- `stock_country` migration on `EtfHolding` and OpenFIGI-based ISIN resolution (ISIN → ticker, backfilled onto matching `(ticker, country)` rows)
 - `GET /portfolio/holdings/exposure` endpoint
 - `HoldingExposureResponse` / `HoldingContribution` schemas
-- Aggregation query tests (correctness, ISIN/ticker fallback grouping)
+- Aggregation query tests (correctness, residual ISIN/ticker fallback grouping)
 
 ---
 

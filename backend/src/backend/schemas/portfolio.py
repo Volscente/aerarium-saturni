@@ -1,3 +1,5 @@
+from datetime import date
+
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -24,4 +26,41 @@ class PortfolioRowResponse(BaseModel):
 class PortfolioOverviewResponse(BaseModel):
     rows: list[PortfolioRowResponse] = Field(
         description="One row per (owner, broker_platform) pair found in transactions."
+    )
+
+
+class HoldingContribution(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    etf_ticker: str = Field(description="Ticker of the contributing ETF.")
+    etf_name: str = Field(description="Name of the contributing ETF.")
+    contribution_weight_percentage: float = Field(
+        description="This ETF's contribution to the stock's total look-through weight, in percentage points."
+    )
+    snapshot_date: date = Field(
+        description="snapshot_date of the EtfHolding row this contribution was computed from."
+    )
+
+
+class HoldingExposureResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    stock_isin: str | None = Field(default=None, description="ISIN of the underlying stock, when reported by its ETF(s).")
+    stock_ticker: str | None = Field(default=None, description="Ticker of the underlying stock, when reported by its ETF(s).")
+    stock_name: str = Field(description="Display name of the underlying stock.")
+    total_weight_percentage: float = Field(
+        description="Σ (etf_portfolio_weight × holding.weight_percentage) across all contributing ETFs."
+    )
+    contributions: list[HoldingContribution] = Field(
+        description="Per-ETF breakdown of this stock's total look-through weight."
+    )
+
+
+class HoldingsExposureResponse(BaseModel):
+    holdings: list[HoldingExposureResponse] = Field(
+        description="One row per distinct stock identity (ISIN-priority, ticker-fallback), ordered by total_weight_percentage DESC."
+    )
+    skipped_etfs: list[str] = Field(
+        default_factory=list,
+        description="Tickers of owned ETFs excluded from the aggregation because they have no price record in etf_price_history.",
     )

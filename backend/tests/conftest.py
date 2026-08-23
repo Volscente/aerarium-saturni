@@ -216,6 +216,9 @@ def mock_session_with_etfs():
     result = MagicMock()
     result.scalars.return_value.all.return_value = rows
     result.scalar_one_or_none.return_value = rows[0]
+    # Also covers resolve_stock_isin_aliases's distinct-ISIN lookup during
+    # holdings upload: an empty list short-circuits it before any OpenFIGI call.
+    result.all.return_value = []
     session.execute = AsyncMock(return_value=result)
 
     async def mock_refresh(obj):
@@ -524,6 +527,214 @@ def client_portfolio_null_price(mock_session_portfolio_null_price):
 def client_portfolio_mixed(mock_session_portfolio_mixed):
     async def override_get_session():
         yield mock_session_portfolio_mixed
+
+    app.dependency_overrides[get_session] = override_get_session
+    mock_engine = MagicMock()
+    mock_conn = AsyncMock()
+    mock_conn.run_sync = AsyncMock()
+    mock_engine.begin.return_value = _make_async_cm(mock_conn)
+    with patch("backend.main.engine", mock_engine):
+        with TestClient(app) as c:
+            yield c
+    app.dependency_overrides.clear()
+
+
+def _make_holdings_exposure_row(**overrides) -> MagicMock:
+    row = MagicMock()
+    row.etf_id = overrides.get("etf_id", uuid4())
+    row.etf_ticker = overrides.get("etf_ticker", "EUNL")
+    row.etf_name = overrides.get("etf_name", "iShares Core MSCI World")
+    row.etf_current_value = overrides.get("etf_current_value", Decimal("1000.0000"))
+    row.stock_isin = overrides.get("stock_isin", None)
+    row.stock_ticker = overrides.get("stock_ticker", "RWE")
+    row.stock_name = overrides.get("stock_name", "RWE AG")
+    row.weight_percentage = overrides.get("weight_percentage", Decimal("5.0000"))
+    row.snapshot_date = overrides.get("snapshot_date", date(2026, 7, 23))
+    return row
+
+
+@pytest.fixture
+def mock_session_exposure_empty():
+    """Async session returning no holdings-exposure rows (no ETFs held)."""
+    session = AsyncMock()
+    result = MagicMock()
+    result.all.return_value = []
+    session.execute = AsyncMock(return_value=result)
+    return session
+
+
+@pytest.fixture
+def mock_session_exposure_merged_by_isin():
+    """Two different ETFs both holding the same stock, matched by stock_isin."""
+    session = AsyncMock()
+    result = MagicMock()
+    result.all.return_value = [
+        _make_holdings_exposure_row(
+            etf_ticker="EUNL",
+            etf_name="iShares Core MSCI World",
+            etf_current_value=Decimal("6000.0000"),
+            stock_isin="DE0007037129",
+            stock_ticker=None,
+            stock_name="RWE AG",
+            weight_percentage=Decimal("4.0000"),
+        ),
+        _make_holdings_exposure_row(
+            etf_ticker="LYP6",
+            etf_name="Amundi Stoxx Europe 600",
+            etf_current_value=Decimal("4000.0000"),
+            stock_isin="DE0007037129",
+            stock_ticker=None,
+            stock_name="RWE AG",
+            weight_percentage=Decimal("5.0000"),
+        ),
+    ]
+    session.execute = AsyncMock(return_value=result)
+    return session
+
+
+@pytest.fixture
+def mock_session_exposure_ticker_fallback():
+    """Two ETFs report the same stock only by matching ticker (no resolved ISIN)."""
+    session = AsyncMock()
+    result = MagicMock()
+    result.all.return_value = [
+        _make_holdings_exposure_row(
+            etf_ticker="EUNL",
+            etf_current_value=Decimal("5000.0000"),
+            stock_isin=None,
+            stock_ticker="RWE",
+            weight_percentage=Decimal("4.0000"),
+        ),
+        _make_holdings_exposure_row(
+            etf_ticker="VWCE",
+            etf_current_value=Decimal("5000.0000"),
+            stock_isin=None,
+            stock_ticker="RWE",
+            weight_percentage=Decimal("2.0000"),
+        ),
+    ]
+    session.execute = AsyncMock(return_value=result)
+    return session
+
+
+@pytest.fixture
+def mock_session_exposure_residual_gap():
+    """Same company: one row has a resolved ISIN, the other only a ticker -- not merged."""
+    session = AsyncMock()
+    result = MagicMock()
+    result.all.return_value = [
+        _make_holdings_exposure_row(
+            etf_ticker="LYP6",
+            etf_current_value=Decimal("5000.0000"),
+            stock_isin="DE0007037129",
+            stock_ticker=None,
+            weight_percentage=Decimal("4.0000"),
+        ),
+        _make_holdings_exposure_row(
+            etf_ticker="EUNL",
+            etf_current_value=Decimal("5000.0000"),
+            stock_isin=None,
+            stock_ticker="RWE",
+            weight_percentage=Decimal("2.0000"),
+        ),
+    ]
+    session.execute = AsyncMock(return_value=result)
+    return session
+
+
+@pytest.fixture
+def mock_session_exposure_missing_price():
+    """One ETF has no price record (etf_current_value=None) and must be skipped."""
+    session = AsyncMock()
+    result = MagicMock()
+    result.all.return_value = [
+        _make_holdings_exposure_row(
+            etf_ticker="EUNL",
+            etf_current_value=Decimal("5000.0000"),
+            stock_isin="DE0007037129",
+            stock_ticker=None,
+            weight_percentage=Decimal("4.0000"),
+        ),
+        _make_holdings_exposure_row(
+            etf_ticker="LYP6",
+            etf_current_value=None,
+            stock_isin="DE0007037129",
+            stock_ticker=None,
+            weight_percentage=Decimal("5.0000"),
+        ),
+    ]
+    session.execute = AsyncMock(return_value=result)
+    return session
+
+
+@pytest.fixture
+def client_exposure_empty(mock_session_exposure_empty):
+    async def override_get_session():
+        yield mock_session_exposure_empty
+
+    app.dependency_overrides[get_session] = override_get_session
+    mock_engine = MagicMock()
+    mock_conn = AsyncMock()
+    mock_conn.run_sync = AsyncMock()
+    mock_engine.begin.return_value = _make_async_cm(mock_conn)
+    with patch("backend.main.engine", mock_engine):
+        with TestClient(app) as c:
+            yield c
+    app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def client_exposure_merged_by_isin(mock_session_exposure_merged_by_isin):
+    async def override_get_session():
+        yield mock_session_exposure_merged_by_isin
+
+    app.dependency_overrides[get_session] = override_get_session
+    mock_engine = MagicMock()
+    mock_conn = AsyncMock()
+    mock_conn.run_sync = AsyncMock()
+    mock_engine.begin.return_value = _make_async_cm(mock_conn)
+    with patch("backend.main.engine", mock_engine):
+        with TestClient(app) as c:
+            yield c
+    app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def client_exposure_ticker_fallback(mock_session_exposure_ticker_fallback):
+    async def override_get_session():
+        yield mock_session_exposure_ticker_fallback
+
+    app.dependency_overrides[get_session] = override_get_session
+    mock_engine = MagicMock()
+    mock_conn = AsyncMock()
+    mock_conn.run_sync = AsyncMock()
+    mock_engine.begin.return_value = _make_async_cm(mock_conn)
+    with patch("backend.main.engine", mock_engine):
+        with TestClient(app) as c:
+            yield c
+    app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def client_exposure_residual_gap(mock_session_exposure_residual_gap):
+    async def override_get_session():
+        yield mock_session_exposure_residual_gap
+
+    app.dependency_overrides[get_session] = override_get_session
+    mock_engine = MagicMock()
+    mock_conn = AsyncMock()
+    mock_conn.run_sync = AsyncMock()
+    mock_engine.begin.return_value = _make_async_cm(mock_conn)
+    with patch("backend.main.engine", mock_engine):
+        with TestClient(app) as c:
+            yield c
+    app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def client_exposure_missing_price(mock_session_exposure_missing_price):
+    async def override_get_session():
+        yield mock_session_exposure_missing_price
 
     app.dependency_overrides[get_session] = override_get_session
     mock_engine = MagicMock()

@@ -3,12 +3,13 @@ import io
 from pathlib import Path
 from uuid import UUID
 
+import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile
 from pydantic import ValidationError
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.converters.holdings_xlsx import convert_holdings_xlsx
+from backend.converters.holdings_xlsx import convert_holdings_xlsx, resolve_stock_isin_aliases
 from backend.db import get_session
 from backend.models import Etf, EtfHolding, EtfPriceHistory
 from backend.schemas.etfs import (
@@ -218,6 +219,13 @@ async def upload_holdings(
     (language, layout, available identifier) to parse with one generic reader.
     Any other filename is read as CSV, unchanged from the original contract.
 
+    After the new holdings are committed, ``resolve_stock_isin_aliases`` runs
+    to backfill ``stock_isin`` on any ticker-only rows (across all ETFs, not
+    just this upload) now matched by a newly-seen ISIN, or vice versa. A
+    failure there (e.g. OpenFIGI unreachable) is non-fatal — the holdings are
+    already committed, and reconciliation is simply retried on the next
+    upload of any ETF.
+
     Args:
         id: UUID of the parent ETF; raises 404 if not found in ``etfs`` table.
         file: Uploaded CSV or issuer XLSX; CSV columns (or, for XLSX, the
@@ -248,7 +256,7 @@ async def upload_holdings(
     else:
         row_dicts = list(csv.DictReader(io.StringIO(content.decode("utf-8"))))
 
-    holdings: list[EtfHoldingRow] = []
+    holdings: list[tuple[EtfHoldingRow, dict]] = []
     for i, row_dict in enumerate(row_dicts, start=1):
         try:
             holding = EtfHoldingRow(**row_dict)
@@ -257,10 +265,21 @@ async def upload_holdings(
                 status_code=422,
                 detail={"row": i, "errors": exc.errors()},
             )
-        holdings.append(holding)
+        holdings.append((holding, row_dict))
 
     await session.execute(delete(EtfHolding).where(EtfHolding.etf_id == id))
-    session.add_all([EtfHolding(etf_id=id, **h.model_dump()) for h in holdings])
+    session.add_all(
+        [
+            EtfHolding(etf_id=id, stock_country=row_dict.get("stock_country"), **h.model_dump())
+            for h, row_dict in holdings
+        ]
+    )
     await session.commit()
+
+    try:
+        async with httpx.AsyncClient() as http_client:
+            await resolve_stock_isin_aliases(session, http_client)
+    except httpx.HTTPError:
+        pass
 
     return {"inserted_rows": len(holdings)}

@@ -1,6 +1,8 @@
 from pathlib import Path
+from unittest.mock import AsyncMock, patch
 from uuid import UUID
 
+import httpx
 import pytest
 
 from tests.conftest import VALID_ETF_PAYLOAD
@@ -161,6 +163,42 @@ def test_upload_holdings_xlsx_valid_with_browser_suffixed_filename(client_with_e
     )
     assert response.status_code == 200
     assert response.json() == {"inserted_rows": 1231}
+
+
+def test_upload_holdings_calls_isin_reconciliation(client_with_etfs):
+    """A successful holdings upload triggers the OpenFIGI-based ISIN reconciliation step."""
+    csv_content = (
+        "stock_isin,stock_name,weight_percentage,snapshot_date\n"
+        "IE00B3RBWM25,Vanguard FTSE All-World,5.0,2026-07-22"
+    )
+    with patch(
+        "backend.routers.etfs.resolve_stock_isin_aliases",
+        new=AsyncMock(return_value=2),
+    ) as mock_resolve:
+        response = client_with_etfs.post(
+            f"/etfs/{DUMMY_ETF_ID}/holdings/upload",
+            files={"file": ("holdings.csv", csv_content.encode(), "text/csv")},
+        )
+    assert response.status_code == 200
+    mock_resolve.assert_awaited_once()
+
+
+def test_upload_holdings_succeeds_when_reconciliation_fails(client_with_etfs):
+    """OpenFIGI being unreachable during reconciliation does not fail the upload."""
+    csv_content = (
+        "stock_isin,stock_name,weight_percentage,snapshot_date\n"
+        "IE00B3RBWM25,Vanguard FTSE All-World,5.0,2026-07-22"
+    )
+    with patch(
+        "backend.routers.etfs.resolve_stock_isin_aliases",
+        new=AsyncMock(side_effect=httpx.ConnectError("unreachable")),
+    ):
+        response = client_with_etfs.post(
+            f"/etfs/{DUMMY_ETF_ID}/holdings/upload",
+            files={"file": ("holdings.csv", csv_content.encode(), "text/csv")},
+        )
+    assert response.status_code == 200
+    assert response.json() == {"inserted_rows": 1}
 
 
 def test_upload_holdings_xlsx_unrecognised_ticker(client_with_etfs):

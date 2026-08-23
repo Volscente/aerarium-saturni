@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.4] - 2026-08-22
+
+### Added
+
+- **Backend**: New `POST /portfolio/holdings/exposure`-backing logic in `backend/src/backend/routers/portfolio.py` — `_build_holdings_exposure_query()` and `get_holdings_exposure()` aggregate look-through single-stock exposure across all owned ETFs: each ETF's share of total portfolio value (derived the same way as `_build_portfolio_query`, but grouped by ISIN alone rather than per owner/broker) is multiplied by each holding's `weight_percentage` in its latest `EtfHolding` snapshot, then summed per distinct stock across all contributing ETFs. An ETF with no price record is excluded from the aggregation and reported in `skipped_etfs` rather than nulling the whole response.
+- **Backend**: New `HoldingContribution`, `HoldingExposureResponse`, `HoldingsExposureResponse` Pydantic v2 schemas in `backend/src/backend/schemas/portfolio.py`.
+- **Backend**: `stock_country` column (nullable, ISO 3166-1 alpha-2) added to `etf_holdings` via `backend/alembic/versions/004_add_etf_holdings_stock_country.py` and `EtfHolding.stock_country` in `models.py` — used to disambiguate stock identity when reconciling identifiers across issuers.
+- **Backend**: `resolve_stock_isin_aliases(session, http_client)` in `backend/src/backend/converters/holdings_xlsx.py` — since iShares/Vanguard holdings only ever report a ticker and Amundi only ever reports an ISIN for the same underlying stocks, this resolves every distinct ISIN already stored in `etf_holdings` to its ticker via the free OpenFIGI mapping API (`POST /v3/mapping`, `idType=ID_ISIN` — the only direction OpenFIGI's API supports; a ticker cannot be resolved to an ISIN) and backfills `stock_isin` on any row across all ETFs still missing it whose `(stock_ticker, stock_country)` matches. Matching on country as well as ticker avoids merging unrelated companies that coincidentally share a ticker on different exchanges. Called from `upload_holdings` in `routers/etfs.py` after every successful holdings upload (any issuer), so it is insensitive to upload order; a failure (e.g. OpenFIGI unreachable) is caught and does not fail the upload.
+- **Backend**: Each converter in `holdings_xlsx.py` now also emits `stock_country`: Amundi rows get it free from their own ISIN's first two characters (`_country_from_isin`); iShares rows are mapped from the German `Standort` column via a new static `GERMAN_COUNTRY_TO_ISO` dict (`_german_country_to_iso`); Vanguard rows use the `Region` column directly (already ISO 3166-1 alpha-2).
+- **Backend**: `httpx>=0.27` moved from the `dev` dependency group to runtime `dependencies` in `backend/pyproject.toml`, since it is now used at request time to call OpenFIGI.
+- **Tests**: `backend/tests/converters/test_holdings_xlsx.py` — new tests for `_country_from_isin`, `_german_country_to_iso`, and `resolve_stock_isin_aliases` (successful backfill, country-mismatch not backfilled, unresolvable ISIN, no-ISINs short-circuit).
+- **Tests**: `backend/tests/routers/test_etfs.py` — new tests verifying `upload_holdings` calls the ISIN reconciliation step and that a reconciliation failure does not fail the upload.
+- **Tests**: `backend/tests/routers/test_portfolio.py` — 5 new tests for `GET /portfolio/holdings/exposure` covering ISIN-based merging, ticker-fallback merging, the residual ISIN/ticker gap, missing-price `skipped_etfs`, and the empty case.
+
+### Changed
+
+- **Backend**: `backend/tests/converters/test_holdings_xlsx.py` — the three `test_convert_*_valid` tests updated to expect `stock_country` in each converter's output.
+- **Backend**: `backend/tests/conftest.py` — `mock_session_with_etfs` now also stubs `result.all` so the new reconciliation step's distinct-ISIN lookup short-circuits harmlessly (no real network call) in existing upload tests.
+
 ## [0.4.3] - 2026-08-12
 
 ### Added

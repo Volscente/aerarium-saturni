@@ -1,9 +1,17 @@
+import asyncio
 from decimal import Decimal
 from pathlib import Path
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from backend.converters.holdings_xlsx import convert_holdings_xlsx, write_csv
+from backend.converters.holdings_xlsx import (
+    _country_from_isin,
+    _german_country_to_iso,
+    convert_holdings_xlsx,
+    resolve_stock_isin_aliases,
+    write_csv,
+)
 from backend.schemas.etfs import EtfHoldingRow
 
 FIXTURES_DIR = Path(__file__).resolve().parents[2] / "data" / "holdings" / "original"
@@ -20,10 +28,17 @@ def test_convert_ishares_valid():
     rows = convert_holdings_xlsx(FIXTURES_DIR / "EUNL.xlsx")
 
     assert len(rows) == 1231
-    assert set(rows[0].keys()) == {"stock_ticker", "stock_name", "weight_percentage", "snapshot_date"}
+    assert set(rows[0].keys()) == {
+        "stock_ticker",
+        "stock_name",
+        "stock_country",
+        "weight_percentage",
+        "snapshot_date",
+    }
     assert rows[0] == {
         "stock_ticker": "NVDA",
         "stock_name": "NVIDIA CORP",
+        "stock_country": "US",
         "weight_percentage": "5.4400",
         "snapshot_date": "2026-07-23",
     }
@@ -44,10 +59,17 @@ def test_convert_vanguard_valid():
     rows = convert_holdings_xlsx(FIXTURES_DIR / "VWCE.xlsx")
 
     assert len(rows) == 3697
-    assert set(rows[0].keys()) == {"stock_ticker", "stock_name", "weight_percentage", "snapshot_date"}
+    assert set(rows[0].keys()) == {
+        "stock_ticker",
+        "stock_name",
+        "stock_country",
+        "weight_percentage",
+        "snapshot_date",
+    }
     assert rows[0] == {
         "stock_ticker": "NVDA",
         "stock_name": "NVIDIA Corp",
+        "stock_country": "US",
         "weight_percentage": "4.4503",
         "snapshot_date": "2026-06-30",
     }
@@ -68,10 +90,17 @@ def test_convert_amundi_valid():
     rows = convert_holdings_xlsx(FIXTURES_DIR / "LYP6.xlsx")
 
     assert len(rows) == 609
-    assert set(rows[0].keys()) == {"stock_isin", "stock_name", "weight_percentage", "snapshot_date"}
+    assert set(rows[0].keys()) == {
+        "stock_isin",
+        "stock_name",
+        "stock_country",
+        "weight_percentage",
+        "snapshot_date",
+    }
     assert rows[0] == {
         "stock_isin": "NL0010273215",
         "stock_name": "ASML HOLDING NV",
+        "stock_country": "NL",
         "weight_percentage": "4.5914",
         "snapshot_date": "2026-07-22",
     }
@@ -121,6 +150,19 @@ def test_convert_resolves_ticker_from_renamed_or_suffixed_filenames(stem):
     assert rows[0]["stock_ticker"] == "NVDA"
 
 
+def test_country_from_isin():
+    """The country code is the ISIN's first two characters."""
+    assert _country_from_isin("DE0007037129") == "DE"
+    assert _country_from_isin("NL0010273215") == "NL"
+
+
+def test_german_country_to_iso_known_and_unknown():
+    """Known Standort values map to ISO alpha-2; unmapped names return None."""
+    assert _german_country_to_iso("Deutschland") == "DE"
+    assert _german_country_to_iso("Vereinigte Staaten") == "US"
+    assert _german_country_to_iso("Atlantis") is None
+
+
 def test_write_csv_roundtrip(tmp_path):
     """Rows written to CSV and re-read via csv.DictReader still validate against EtfHoldingRow."""
     import csv
@@ -135,3 +177,84 @@ def test_write_csv_roundtrip(tmp_path):
 
     assert len(reread_rows) == len(rows)
     _assert_all_rows_valid(reread_rows)
+
+
+def _make_openfigi_response(tickers: list[str | None]) -> MagicMock:
+    """Build a mocked httpx.Response mimicking OpenFIGI's /v3/mapping shape."""
+    response = MagicMock()
+    response.raise_for_status = MagicMock()
+    response.json.return_value = [
+        {"data": [{"ticker": ticker}]} if ticker else {"warning": "No identifier found."}
+        for ticker in tickers
+    ]
+    return response
+
+
+def test_resolve_stock_isin_aliases_backfills_matching_ticker_and_country():
+    """A LYP6-sourced ISIN resolving to ticker RWE/country DE backfills a matching EUNL row."""
+    session = AsyncMock()
+    isins_result = MagicMock()
+    isins_result.all.return_value = [("DE0007037129",)]
+    update_result = MagicMock()
+    update_result.rowcount = 1
+    session.execute = AsyncMock(side_effect=[isins_result, update_result])
+    session.commit = AsyncMock()
+
+    http_client = AsyncMock()
+    http_client.post = AsyncMock(return_value=_make_openfigi_response(["RWE"]))
+
+    updated = asyncio.run(resolve_stock_isin_aliases(session, http_client))
+
+    assert updated == 1
+    session.commit.assert_awaited_once()
+
+
+def test_resolve_stock_isin_aliases_country_mismatch_not_backfilled():
+    """A resolved ticker whose country doesn't match any row backfills nothing."""
+    session = AsyncMock()
+    isins_result = MagicMock()
+    isins_result.all.return_value = [("SE0012853455",)]
+    update_result = MagicMock()
+    update_result.rowcount = 0
+    session.execute = AsyncMock(side_effect=[isins_result, update_result])
+    session.commit = AsyncMock()
+
+    http_client = AsyncMock()
+    http_client.post = AsyncMock(return_value=_make_openfigi_response(["EQT"]))
+
+    updated = asyncio.run(resolve_stock_isin_aliases(session, http_client))
+
+    assert updated == 0
+    session.commit.assert_not_awaited()
+
+
+def test_resolve_stock_isin_aliases_unresolvable_isin_stays_none():
+    """An ISIN OpenFIGI can't resolve (no data in the response) backfills nothing."""
+    session = AsyncMock()
+    isins_result = MagicMock()
+    isins_result.all.return_value = [("XX0000000000",)]
+    session.execute = AsyncMock(return_value=isins_result)
+    session.commit = AsyncMock()
+
+    http_client = AsyncMock()
+    http_client.post = AsyncMock(return_value=_make_openfigi_response([None]))
+
+    updated = asyncio.run(resolve_stock_isin_aliases(session, http_client))
+
+    assert updated == 0
+    session.commit.assert_not_awaited()
+
+
+def test_resolve_stock_isin_aliases_no_isins_short_circuits():
+    """No stock_isin values in etf_holdings yet -> no OpenFIGI call is made."""
+    session = AsyncMock()
+    isins_result = MagicMock()
+    isins_result.all.return_value = []
+    session.execute = AsyncMock(return_value=isins_result)
+
+    http_client = AsyncMock()
+
+    updated = asyncio.run(resolve_stock_isin_aliases(session, http_client))
+
+    assert updated == 0
+    http_client.post.assert_not_called()

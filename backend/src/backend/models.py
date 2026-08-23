@@ -92,6 +92,7 @@ class EtfHolding(Base):
     )
     stock_isin: Mapped[str | None] = mapped_column(String(12), nullable=True)
     stock_ticker: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    stock_country: Mapped[str | None] = mapped_column(String(2), nullable=True)
     stock_name: Mapped[str] = mapped_column(String(200), nullable=False)
     weight_percentage: Mapped[Decimal] = mapped_column(Numeric(8, 4), nullable=False)
     snapshot_date: Mapped[date] = mapped_column(Date, nullable=False)

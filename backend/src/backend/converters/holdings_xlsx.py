@@ -1,3 +1,4 @@
+import asyncio
 import io
 import re
 import zipfile
@@ -64,6 +65,7 @@ GERMAN_COUNTRY_TO_ISO = {
 
 OPENFIGI_MAPPING_URL = "https://api.openfigi.com/v3/mapping"
 _OPENFIGI_JOBS_PER_REQUEST = 10
+_OPENFIGI_BATCH_DELAY_SECONDS = 2.5
 
 _ISIN_PATTERN = re.compile(r"[A-Z0-9]{12}")
 _GERMAN_DATE_PATTERN = re.compile(r"(\d{1,2})\.\s*([A-Za-zÀ-ÿ]+)\s*(\d{4})")
@@ -151,13 +153,18 @@ async def resolve_stock_isin_aliases(
     this queries every distinct stock_isin already stored in etf_holdings
     (i.e. every Amundi-sourced ISIN seen so far, from any upload), resolves
     each to its ticker via POST /v3/mapping (idType=ID_ISIN, batched up to the
-    API's per-request job limit), then updates any row across ALL ETFs still
-    missing stock_isin whose (stock_ticker, stock_country) matches the
-    resolved (ticker, country) pair. Matching on country as well as ticker
-    avoids merging unrelated companies that coincidentally share a ticker on
-    different exchanges. Re-running this after every upload (regardless of
-    issuer or order) is idempotent: the UPDATE's `stock_isin IS NULL` clause
-    is a no-op for rows already backfilled in a previous run.
+    API's per-request job limit, paced by _OPENFIGI_BATCH_DELAY_SECONDS to
+    stay under OpenFIGI's unauthenticated rate limit), then updates any row
+    across ALL ETFs still missing stock_isin whose (stock_ticker,
+    stock_country) matches the resolved (ticker, country) pair. Matching on
+    country as well as ticker avoids merging unrelated companies that
+    coincidentally share a ticker on different exchanges. Each batch is
+    applied to the database as soon as it resolves, rather than collecting
+    every batch first — a rate-limited or failed batch is skipped (logged
+    nowhere, simply retried on the next upload) without discarding the
+    batches that already succeeded. Re-running this after every upload
+    (regardless of issuer or order) is idempotent: the UPDATE's
+    `stock_isin IS NULL` clause is a no-op for rows already backfilled.
 
     Args:
         session: Async SQLAlchemy session.
@@ -165,11 +172,6 @@ async def resolve_stock_isin_aliases(
 
     Returns:
         Number of EtfHolding rows whose stock_isin was backfilled by this call.
-
-    Raises:
-        httpx.HTTPError: If OpenFIGI is unreachable. Callers should treat this
-            as non-fatal to the upload itself — the holdings are already
-            committed; reconciliation can be retried on the next upload.
     """
     isins_result = await session.execute(
         select(EtfHolding.stock_isin).where(EtfHolding.stock_isin.is_not(None)).distinct()
@@ -178,30 +180,35 @@ async def resolve_stock_isin_aliases(
     if not isins:
         return 0
 
-    resolved: dict[str, str] = {}
+    updated_rows = 0
     for i in range(0, len(isins), _OPENFIGI_JOBS_PER_REQUEST):
+        if i > 0:
+            await asyncio.sleep(_OPENFIGI_BATCH_DELAY_SECONDS)
         batch = isins[i : i + _OPENFIGI_JOBS_PER_REQUEST]
         jobs = [{"idType": "ID_ISIN", "idValue": isin} for isin in batch]
-        response = await http_client.post(OPENFIGI_MAPPING_URL, json=jobs)
-        response.raise_for_status()
-        for isin, mapping_result in zip(batch, response.json()):
+        try:
+            response = await http_client.post(OPENFIGI_MAPPING_URL, json=jobs)
+            response.raise_for_status()
+            mapping_results = response.json()
+        except httpx.HTTPError:
+            continue
+
+        for isin, mapping_result in zip(batch, mapping_results):
             data = mapping_result.get("data")
             ticker = data[0].get("ticker") if data else None
-            if ticker:
-                resolved[isin] = ticker
-
-    updated_rows = 0
-    for isin, ticker in resolved.items():
-        result = await session.execute(
-            update(EtfHolding)
-            .where(
-                EtfHolding.stock_ticker == ticker,
-                EtfHolding.stock_country == _country_from_isin(isin),
-                EtfHolding.stock_isin.is_(None),
+            if not ticker:
+                continue
+            result = await session.execute(
+                update(EtfHolding)
+                .where(
+                    EtfHolding.stock_ticker == ticker,
+                    EtfHolding.stock_country == _country_from_isin(isin),
+                    EtfHolding.stock_isin.is_(None),
+                )
+                .values(stock_isin=isin)
             )
-            .values(stock_isin=isin)
-        )
-        updated_rows += result.rowcount or 0
+            updated_rows += result.rowcount or 0
+
     if updated_rows:
         await session.commit()
     return updated_rows

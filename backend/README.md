@@ -108,6 +108,23 @@ curl -s -H "Origin: http://localhost:3000" \
 # Expected: access-control-allow-origin: http://localhost:3000
 ```
 
+### Querying the database directly
+
+The `database` service runs as container `aerarium_database`. Open a `psql` shell against it without needing `psql` installed on the host — the container already has the connection details as environment variables:
+
+```bash
+docker exec -it aerarium_database sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
+```
+
+```sql
+-- Example: check stock_country backfill coverage after a holdings upload
+SELECT stock_ticker, stock_isin, stock_country, stock_name
+FROM etf_holdings
+WHERE stock_ticker = 'RWE';
+```
+
+To connect from the host with a local `psql` or GUI client instead, the `database` service also publishes its port (`${POSTGRES_PORT:-5432}` → `5432`), so `localhost:5432` with the same `POSTGRES_USER`/`POSTGRES_DB`/`POSTGRES_PASSWORD` from your `.env` works directly — no container hostname rewriting needed (unlike the backend's `DATABASE_URL`, which points at the in-network `database` host; see Troubleshooting below).
+
 ### Troubleshooting: applying Alembic migrations against the Docker Compose database
 
 The `backend` container has no `alembic/` directory or `alembic.ini` (see Constraints / invariants), so migrations must run from the host, pointed at `localhost` instead of the in-network `database` hostname:

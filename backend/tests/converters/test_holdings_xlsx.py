@@ -3,9 +3,11 @@ from decimal import Decimal
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
 
+import httpx
 import pytest
 
 from backend.converters.holdings_xlsx import (
+    _OPENFIGI_JOBS_PER_REQUEST,
     _country_from_isin,
     _german_country_to_iso,
     convert_holdings_xlsx,
@@ -243,6 +245,37 @@ def test_resolve_stock_isin_aliases_unresolvable_isin_stays_none():
 
     assert updated == 0
     session.commit.assert_not_awaited()
+
+
+def test_resolve_stock_isin_aliases_continues_after_batch_failure(monkeypatch):
+    """A rate-limited/failing batch does not discard an earlier batch's successful resolution."""
+    monkeypatch.setattr(
+        "backend.converters.holdings_xlsx.asyncio.sleep",
+        AsyncMock(return_value=None),
+    )
+
+    isins = [f"DE00000000{i:02d}" for i in range(_OPENFIGI_JOBS_PER_REQUEST + 1)]
+    session = AsyncMock()
+    isins_result = MagicMock()
+    isins_result.all.return_value = [(isin,) for isin in isins]
+    update_result = MagicMock()
+    update_result.rowcount = 1
+    session.execute = AsyncMock(side_effect=[isins_result, update_result])
+    session.commit = AsyncMock()
+
+    first_batch_response = _make_openfigi_response(["RWE"] + [None] * (_OPENFIGI_JOBS_PER_REQUEST - 1))
+    http_client = AsyncMock()
+    http_client.post = AsyncMock(
+        side_effect=[
+            first_batch_response,
+            httpx.HTTPStatusError("429 Too Many Requests", request=MagicMock(), response=MagicMock()),
+        ]
+    )
+
+    updated = asyncio.run(resolve_stock_isin_aliases(session, http_client))
+
+    assert updated == 1
+    session.commit.assert_awaited_once()
 
 
 def test_resolve_stock_isin_aliases_no_isins_short_circuits():

@@ -1,0 +1,85 @@
+backend/src/backend/schemas/portfolio.py
+  s_0a7101fbb6f0ea::t_c16246874e181c 30-66
+  s_0a7101fbb6f0ea::t_57ede1224cb7f0 1-2
+backend/alembic/versions/004_add_etf_holdings_stock_country.py
+  s_0a7101fbb6f0ea::t_63a172f94189c4 1-36
+backend/tests/conftest.py
+  s_0a7101fbb6f0ea::t_1d2ae5a86fa011 542-749
+  s_0a7101fbb6f0ea::t_51a47f192f55af 219-221
+CHANGELOG.md
+  s_0a7101fbb6f0ea::t_7c876748f1da9b 8-26
+frontend/package.json
+  h_68a16e6033d539 3
+backend/README.md
+  s_0a7101fbb6f0ea::t_7df4615f495f75 57-58
+  s_0a7101fbb6f0ea::t_33bf25fcb15346 70-71
+  s_0a7101fbb6f0ea::t_40ed8e2b56c704 134-147
+  s_0a7101fbb6f0ea::t_5b5905e97caa05 22-24
+  s_0a7101fbb6f0ea::t_4e3aedafc3a6db 21
+  s_0a7101fbb6f0ea::t_251f8654eed7e2 44
+  s_0a7101fbb6f0ea::t_dfdecb34a2b618 17
+  s_0a7101fbb6f0ea::t_d1c784169ba559 11
+backend/tests/routers/test_portfolio.py
+  s_0a7101fbb6f0ea::t_45c0ecf48d6062 3-4
+  s_0a7101fbb6f0ea::t_6454e7f2d83501 66-112
+backend/src/backend/models.py
+  s_0a7101fbb6f0ea::t_ea2fd04f693a2e 95
+backend/tests/routers/test_etfs.py
+  s_0a7101fbb6f0ea::t_037205f62adb80 168-203
+  s_0a7101fbb6f0ea::t_10f6ab38b478f5 2,5
+backend/src/backend/routers/portfolio.py
+  s_0a7101fbb6f0ea::t_2ee6db5dc788c5 2,9-16
+  s_0a7101fbb6f0ea::t_e92b6f2c006f4b 189-373
+backend/pyproject.toml
+  s_0a7101fbb6f0ea::t_da3ee58ea9da0a 27
+  s_0a7101fbb6f0ea::t_f37b7a86069e45 16
+  s_0a7101fbb6f0ea::t_61abeee32a888c 3
+backend/src/backend/converters/holdings_xlsx.py
+  s_0a7101fbb6f0ea::t_6f4f7eecb534b6 9,11-14
+  s_0a7101fbb6f0ea::t_86a57351337380 406-408,416-417,428
+  s_0a7101fbb6f0ea::t_83c97f789d1067 486,489,491
+  s_0a7101fbb6f0ea::t_23f134366ffc6b 313-343
+  s_0a7101fbb6f0ea::t_5993f024632806 454-456
+  s_0a7101fbb6f0ea::t_d6033ee372936a 99-105
+  s_0a7101fbb6f0ea::t_e4b8b4c9d08d77 356-358,365-377,387
+  s_0a7101fbb6f0ea::t_0f6cec455d8802 39-67
+  s_0a7101fbb6f0ea::t_55a86a5c4e36c5 144-209
+pyproject.toml
+  h_68a16e6033d539 3
+backend/tests/converters/test_holdings_xlsx.py
+  s_0a7101fbb6f0ea::t_c191b70df2a290 1,4,12
+  s_0a7101fbb6f0ea::t_4d17ce0c3e4ef1 8-11,13-14
+  s_0a7101fbb6f0ea::t_65a9d8270e471f 153-165
+  s_0a7101fbb6f0ea::t_478af9593922ec 180-260
+  s_0a7101fbb6f0ea::t_8272e1f2870858 31-37,41
+  s_0a7101fbb6f0ea::t_ce8b6c6cd22bc7 62-68,72
+  s_0a7101fbb6f0ea::t_898f968b583bd7 93-99,103
+backend/src/backend/routers/etfs.py
+  s_0a7101fbb6f0ea::t_852338bb28d6f3 259,268,271-276,279-283
+  s_0a7101fbb6f0ea::t_43276a0c1ad054 6,12
+  s_0a7101fbb6f0ea::t_4f2e0429bd40e4 222-228
+  s_0a7101fbb6f0ea::t_81ae547b964f7d 284
+uv.lock
+  s_0a7101fbb6f0ea::t_bf44c15b2d6395 62,67,85,95
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "21e68d812d117dcddd7e4b6d86872e5efdccb79b",
+  "prompts": {},
+  "humans": {
+    "h_68a16e6033d539": {
+      "author": "Simone Porreca <porrecasimone@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_0a7101fbb6f0ea": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "38865b13-8afe-4f5b-883e-559d20d3d336",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Simone Porreca <porrecasimone@gmail.com>"
+    }
+  }
+}

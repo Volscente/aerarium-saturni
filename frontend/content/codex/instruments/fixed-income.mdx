@@ -22,6 +22,39 @@ Bond coupon rates at issuance are influenced by:
 - The prevailing government interest rate
 - The credit quality of the issuer
 
+## Yield to Maturity (YTM)
+
+Current Yield measures the annual cash return relative to the price paid, but it ignores any capital gain or loss realised at maturity:
+
+```
+Current Yield = Annual Coupon Payment ÷ Current Market Price
+```
+
+A €1,000 bond with a 4% coupon (€40/year) bought at a discounted price of €800 has a Current Yield of 40 ÷ 800 = 5%, not the 4% printed on the coupon.
+
+YTM goes further: it factors in all coupon payments, the compounding on those payments, and any capital gain or loss when the principal is repaid at maturity. A bond's price relative to par determines whether its YTM sits above, at, or below the coupon rate:
+
+| Bond Status | Price vs. Par | YTM vs. Coupon Rate | Strategic Objective |
+| --- | --- | --- | --- |
+| Discount Bond | Below par (< 100%) | YTM > Coupon Rate | Lower immediate cash flow, but capital appreciation at maturity; often more tax-efficient |
+| Par Bond | At par (= 100%) | YTM = Coupon Rate | Cash return matches the stated interest rate exactly |
+| Premium Bond | Above par (> 100%) | YTM < Coupon Rate | Maximum immediate cash flow, offset by a capital loss at maturity |
+
+**Approximating YTM** - solving for the exact YTM requires a financial calculator or a spreadsheet `YIELD()` function, but the following approximation is accurate enough for comparing bonds:
+
+```
+YTM ≈ [C + (F − P) ÷ n] ÷ [(F + P) ÷ 2]
+```
+
+Where `C` is the annual coupon payment, `F` is the face value, `P` is the current market price, and `n` is the number of years to maturity.
+
+**Worked example** - a 5-year bond with a 1% coupon (C = €10), a €1,000 face value (F), trading at 88% (P = €880):
+1. Annualised capital gain: (1000 − 880) ÷ 5 = €24/year
+2. Average book value: (1000 + 880) ÷ 2 = €940
+3. YTM ≈ (10 + 24) ÷ 940 ≈ 3.62%
+
+A low-coupon bond at a deep discount can yield about the same as a high-coupon bond trading at a premium - e.g., a 1% coupon at 88% and a 5% coupon at 106% both approximate to a 3.6-3.7% YTM. The choice then comes down to whether the investor wants capital growth (discount bond) or immediate cash flow (premium bond).
+
 ## Types
 
 ### By Issuer
@@ -59,12 +92,25 @@ Duration is the time-weighted average of the present value of future cash flows.
 - Long-maturity bonds have higher duration and are therefore more sensitive to rate changes
 - **Interpretation**: if a bond fund shows an Average Duration of 6.6 years, a 1% rise in rates decreases its value by approximately 6.6%; a 1% fall increases it by 6.6%
 
+## Real vs. Nominal Yield
+
+A bond's coupon or YTM is a **nominal** figure - it doesn't account for inflation eroding purchasing power. The **real yield** approximates as:
+
+```
+Real Yield ≈ Nominal Yield − Inflation Rate
+```
+
+A bond yielding a nominal 3% held during 4% inflation has a real yield of roughly −1%: the investor loses purchasing power despite earning a positive nominal return. The exact figure uses the Fisher equation, `Real Yield = [(1 + Nominal) ÷ (1 + Inflation)] − 1`, which gives −0.96% in this example.
+
 ## Evaluation
 
 - Credit ratings (Moody's, S&P) run from AAA (highest quality) downward. These ratings compare bonds against each other, not against the market in general
 - Avoid **High Yield** bonds (also called Junk Bonds): these are issued by companies with very low credit scores. The label "High Yield" refers to the coupon required to attract investors, not to dividend yield - do not confuse the two
 - Government bonds are generally preferred for safety
 - Long-term bond ETFs (7-10 or 20+ years) can act as a counterweight during equity market downturns
+- **Positioning for rate expectations**:
+  - If rates are expected to fall, favour long-term bonds with a high YTM today - as market rates drop, the higher-yielding bond becomes more desirable and its price rises
+  - If rates are expected to rise, favour short-term instruments (e.g., BOTs) - they mature quickly, avoiding capital loss, and proceeds can be reinvested at the new, higher rates
 
 ## Advantages
 

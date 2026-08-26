@@ -1,0 +1,20 @@
+frontend/content/codex/instruments/fixed-income.mdx
+  s_9658b153052263::t_61be1b747420ab 95-104,111-113
+  s_9658b153052263::t_dbb806681be12a 25-57
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "53617a80ad5091778e38a49d3230dc1c136a4a0a",
+  "prompts": {},
+  "sessions": {
+    "s_9658b153052263": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "1faf8261-3857-49d6-808d-b808a374715a",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Simone Porreca <porrecasimone@gmail.com>"
+    }
+  }
+}

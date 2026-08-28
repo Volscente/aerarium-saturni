@@ -1,0 +1,37 @@
+frontend/app/(tabularium)/tabularium/portfolio/page.tsx
+  s_845f7ff3ec8b42::t_c31a1e3ea73ec8 4-7,22-34,36-45
+CHANGELOG.md
+  s_845f7ff3ec8b42::t_a6cb65af3f2391 8-16
+backend/pyproject.toml
+  s_845f7ff3ec8b42::t_37b80e5138bda2 3
+frontend/package.json
+  s_845f7ff3ec8b42::t_e668d9dda716d8 3
+frontend/app/(tabularium)/tabularium/portfolio/components/PortfolioPageClient.tsx
+  s_845f7ff3ec8b42::t_53bae253fdf9f8 4-5,20-39,42,45,49-56
+frontend/README.md
+  s_845f7ff3ec8b42::t_f4f41406b0f099 55
+  s_845f7ff3ec8b42::t_94eb37da7992a5 162-168
+  s_845f7ff3ec8b42::t_ad897fff5dde39 18-19,21-22
+pyproject.toml
+  s_845f7ff3ec8b42::t_6b4f0f1440d5b8 3
+frontend/app/(tabularium)/tabularium/portfolio/components/ConcentrationAlertBadge.tsx
+  s_845f7ff3ec8b42::t_9189f214588918 1-74
+frontend/app/(tabularium)/tabularium/portfolio/components/HoldingsBarChart.tsx
+  s_845f7ff3ec8b42::t_346bb9baa56275 1-120
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "5323051071f34fb9aa737c0e46024186eca1e86c",
+  "prompts": {},
+  "sessions": {
+    "s_845f7ff3ec8b42": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7383f8ae-7a16-4ff8-9a08-e690866fdaeb",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Simone Porreca <porrecasimone@gmail.com>"
+    }
+  }
+}

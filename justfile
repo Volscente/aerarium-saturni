@@ -71,6 +71,32 @@ run_database: check_root
 stop_database: check_root
     docker-compose stop database
 
+# Register the EUNL, VWCE, and LYP6 ETFs against a running backend (POST /etfs from backend/data/etfs/*.json)
+create_etfs: check_root
+    #!/usr/bin/env bash
+    for ticker in EUNL VWCE LYP6; do
+        echo "Creating $ticker..."
+        curl -s -X POST http://localhost:8000/etfs \
+            -H "Content-Type: application/json" \
+            -d @"{{ ROOT_DIR }}/backend/data/etfs/$ticker.json"
+        echo
+    done
+
+# Upload the EUNL, VWCE, and LYP6 holdings XLSX files against a running backend (requires the ETFs to already exist — see create_etfs)
+upload_holdings: check_root
+    #!/usr/bin/env bash
+    for ticker in EUNL VWCE LYP6; do
+        id=$(curl -s "http://localhost:8000/etfs?ticker=$ticker" | python3 -c "import sys, json; rows = json.load(sys.stdin); print(rows[0]['id'] if rows else '')")
+        if [ -z "$id" ]; then
+            echo "Skipping $ticker: no matching ETF found (run 'just create_etfs' first)"
+            continue
+        fi
+        echo "Uploading holdings for $ticker ($id)..."
+        curl -s -X POST "http://localhost:8000/etfs/$id/holdings/upload" \
+            -F "file=@{{ ROOT_DIR }}/backend/data/holdings/original/$ticker.xlsx;filename=$ticker.xlsx"
+        echo
+    done
+
 # ----------------------------------------
 # ---------------- Full Stack ----------------
 

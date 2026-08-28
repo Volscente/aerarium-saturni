@@ -3,13 +3,14 @@ import io
 from pathlib import Path
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile
+import httpx
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, UploadFile
 from pydantic import ValidationError
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.converters.holdings_xlsx import convert_holdings_xlsx
-from backend.db import get_session
+from backend.converters.holdings_xlsx import convert_holdings_xlsx, resolve_stock_isin_aliases
+from backend.db import AsyncSessionLocal, get_session
 from backend.models import Etf, EtfHolding, EtfPriceHistory
 from backend.schemas.etfs import (
     EtfCreate,
@@ -199,10 +200,36 @@ async def create_price(
     return EtfPriceResponse.model_validate(row)
 
 
+async def _reconcile_stock_isin_aliases_in_background() -> None:
+    """Run resolve_stock_isin_aliases decoupled from any single upload request.
+
+    Scheduled as a FastAPI BackgroundTask so a slow or rate-limited OpenFIGI
+    reconciliation (a couple of minutes at full holdings volume, since
+    OpenFIGI's unauthenticated tier is paced to ~25 requests/minute) never
+    blocks the upload response or ties up the request connection — a
+    connection held open that long is fragile (a container restart, reverse
+    proxy timeout, or client-side timeout during that window silently drops
+    the whole reconciliation, as opposed to just delaying it).
+
+    Uses its own session and http client rather than the upload request's,
+    since the request-scoped session may already be closed by the time a
+    background task runs. Any failure (OpenFIGI unreachable, a transient DB
+    issue) is swallowed — the holdings are already committed by the caller,
+    and reconciliation is simply retried on the next holdings upload of any
+    ETF.
+    """
+    try:
+        async with AsyncSessionLocal() as session, httpx.AsyncClient() as http_client:
+            await resolve_stock_isin_aliases(session, http_client)
+    except Exception:
+        pass
+
+
 @router.post("/{id}/holdings/upload", status_code=200)
 async def upload_holdings(
     id: UUID,
     file: UploadFile,
+    background_tasks: BackgroundTasks,
     session: AsyncSession = Depends(get_session),
 ) -> dict[str, int]:
     """Replace all holdings for an ETF atomically from a CSV or issuer XLSX upload.
@@ -218,10 +245,19 @@ async def upload_holdings(
     (language, layout, available identifier) to parse with one generic reader.
     Any other filename is read as CSV, unchanged from the original contract.
 
+    After the new holdings are committed, ``_reconcile_stock_isin_aliases_in_background``
+    is scheduled as a ``BackgroundTask`` — it runs *after* this response is
+    sent, so the client gets ``inserted_rows`` back immediately rather than
+    waiting on OpenFIGI reconciliation (which can take a couple of minutes at
+    full holdings volume). See its own docstring for why it uses an
+    independent session rather than this request's.
+
     Args:
         id: UUID of the parent ETF; raises 404 if not found in ``etfs`` table.
         file: Uploaded CSV or issuer XLSX; CSV columns (or, for XLSX, the
             converter's output) must match ``EtfHoldingRow`` field names.
+        background_tasks: FastAPI-injected; used to schedule the ISIN
+            reconciliation after the response is sent.
         session: Async SQLAlchemy session injected by ``Depends(get_session)``.
 
     Returns:
@@ -248,7 +284,7 @@ async def upload_holdings(
     else:
         row_dicts = list(csv.DictReader(io.StringIO(content.decode("utf-8"))))
 
-    holdings: list[EtfHoldingRow] = []
+    holdings: list[tuple[EtfHoldingRow, dict]] = []
     for i, row_dict in enumerate(row_dicts, start=1):
         try:
             holding = EtfHoldingRow(**row_dict)
@@ -257,10 +293,17 @@ async def upload_holdings(
                 status_code=422,
                 detail={"row": i, "errors": exc.errors()},
             )
-        holdings.append(holding)
+        holdings.append((holding, row_dict))
 
     await session.execute(delete(EtfHolding).where(EtfHolding.etf_id == id))
-    session.add_all([EtfHolding(etf_id=id, **h.model_dump()) for h in holdings])
+    session.add_all(
+        [
+            EtfHolding(etf_id=id, stock_country=row_dict.get("stock_country"), **h.model_dump())
+            for h, row_dict in holdings
+        ]
+    )
     await session.commit()
+
+    background_tasks.add_task(_reconcile_stock_isin_aliases_in_background)
 
     return {"inserted_rows": len(holdings)}

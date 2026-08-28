@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 _database_url = os.environ["DATABASE_URL"]
 
 engine = create_async_engine(_database_url)
-_AsyncSessionLocal = async_sessionmaker(engine, expire_on_commit=False)
+AsyncSessionLocal = async_sessionmaker(engine, expire_on_commit=False)
 
 
 async def get_session() -> AsyncGenerator[AsyncSession, None]:
@@ -23,5 +23,5 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
         sqlalchemy.exc.OperationalError: If the database is unreachable when
             the session is first used (not when the generator is entered).
     """
-    async with _AsyncSessionLocal() as session:
+    async with AsyncSessionLocal() as session:
         yield session

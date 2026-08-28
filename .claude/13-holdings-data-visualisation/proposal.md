@@ -56,6 +56,7 @@ The dashboard should live inside the existing `/tabularium/portfolio` page, alon
 
 ## Known risks / concerns
 
+- iShares/Vanguard holdings exports report a stock's ticker but never its ISIN, while Amundi's export reports only the ISIN; grouping naively by whichever identifier is present would fail to merge the same company's exposure across issuers (confirmed empirically: ~30-45% of Amundi's holdings also appear, under a different identifier, in the other two funds). Mitigation: the free OpenFIGI mapping API only accepts an ISIN as input and returns a ticker (never the reverse), so Amundi's ISINs are resolved to their tickers once at holdings-upload time and used to backfill `stock_isin` on any other ETF's matching ticker-only rows — matched on ticker *and* country (derived free from the ISIN's own first two characters) to avoid merging unrelated companies that happen to share a ticker on different exchanges.
 - Look-through aggregation must join holdings across potentially many ETFs and snapshot dates; query cost and correctness (handling missing/partial snapshots) is unproven at this stage.
 - `EtfHolding` data is snapshot-based (`snapshot_date`), not live, so the dashboard reflects the last uploaded holdings snapshot rather than real-time positions.
 - Introducing a treemap/chart-capable component is untested against the platform's ≥ 90 Lighthouse budget.

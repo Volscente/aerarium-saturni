@@ -1,3 +1,4 @@
+import asyncio
 import io
 import re
 import zipfile
@@ -6,7 +7,12 @@ from decimal import Decimal
 from pathlib import Path
 from typing import BinaryIO
 
+import httpx
 import openpyxl
+from sqlalchemy import select, update
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from backend.models import EtfHolding
 
 XlsxSource = Path | BinaryIO
 
@@ -30,6 +36,36 @@ ISSUER_BY_TICKER = {
     "VWCE": "vanguard",
     "LYP6": "amundi",
 }
+
+GERMAN_COUNTRY_TO_ISO = {
+    "Australien": "AU",
+    "Belgien": "BE",
+    "Deutschland": "DE",
+    "Dänemark": "DK",
+    "Finnland": "FI",
+    "Frankreich": "FR",
+    "Hongkong": "HK",
+    "Irland": "IE",
+    "Israel": "IL",
+    "Italien": "IT",
+    "Japan": "JP",
+    "Kanada": "CA",
+    "Neuseeland": "NZ",
+    "Niederlande": "NL",
+    "Norwegen": "NO",
+    "Portugal": "PT",
+    "Schweden": "SE",
+    "Schweiz": "CH",
+    "Singapur": "SG",
+    "Spanien": "ES",
+    "Vereinigte Staaten": "US",
+    "Vereinigtes Königreich": "GB",
+    "Österreich": "AT",
+}
+
+OPENFIGI_MAPPING_URL = "https://api.openfigi.com/v3/mapping"
+_OPENFIGI_JOBS_PER_REQUEST = 10
+_OPENFIGI_BATCH_DELAY_SECONDS = 2.5
 
 _ISIN_PATTERN = re.compile(r"[A-Z0-9]{12}")
 _GERMAN_DATE_PATTERN = re.compile(r"(\d{1,2})\.\s*([A-Za-zÀ-ÿ]+)\s*(\d{4})")
@@ -62,9 +98,13 @@ def convert_holdings_xlsx(source: XlsxSource, ticker: str | None = None) -> list
         iShares/Vanguard, ``stock_isin`` for Amundi — never both, so a blank
         cell for the other identifier is never produced (``EtfHoldingRow``
         only normalises a blank/absent *ISIN* to ``None``; a blank
-        ``stock_ticker`` would fail its ``min_length=1`` constraint). Cash,
-        money-market, derivative, and zero-weight lines are dropped, since
-        ``EtfHoldingRow`` models discrete stock constituents only and requires
+        ``stock_ticker`` would fail its ``min_length=1`` constraint). Each
+        dict also carries ``stock_country`` (an ISO 3166-1 alpha-2 code, or
+        ``None`` if it couldn't be derived) — this field is not part of
+        ``EtfHoldingRow`` and is read directly off the dict by the upload
+        handler when constructing ``EtfHolding`` rows. Cash, money-market,
+        derivative, and zero-weight lines are dropped, since ``EtfHoldingRow``
+        models discrete stock constituents only and requires
         ``weight_percentage > 0``.
 
     Raises:
@@ -101,6 +141,77 @@ def write_csv(rows: list[dict[str, str]], output_path: Path) -> None:
         writer = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
         writer.writeheader()
         writer.writerows(rows)
+
+
+async def resolve_stock_isin_aliases(
+    session: AsyncSession,
+    http_client: httpx.AsyncClient,
+) -> int:
+    """Backfill stock_isin on ticker-only EtfHolding rows via OpenFIGI.
+
+    OpenFIGI's mapping API only resolves ISIN -> ticker, never the reverse, so
+    this queries every distinct stock_isin already stored in etf_holdings
+    (i.e. every Amundi-sourced ISIN seen so far, from any upload), resolves
+    each to its ticker via POST /v3/mapping (idType=ID_ISIN, batched up to the
+    API's per-request job limit, paced by _OPENFIGI_BATCH_DELAY_SECONDS to
+    stay under OpenFIGI's unauthenticated rate limit), then updates any row
+    across ALL ETFs still missing stock_isin whose (stock_ticker,
+    stock_country) matches the resolved (ticker, country) pair. Matching on
+    country as well as ticker avoids merging unrelated companies that
+    coincidentally share a ticker on different exchanges. Each batch is
+    applied to the database as soon as it resolves, rather than collecting
+    every batch first — a rate-limited or failed batch is skipped (logged
+    nowhere, simply retried on the next upload) without discarding the
+    batches that already succeeded. Re-running this after every upload
+    (regardless of issuer or order) is idempotent: the UPDATE's
+    `stock_isin IS NULL` clause is a no-op for rows already backfilled.
+
+    Args:
+        session: Async SQLAlchemy session.
+        http_client: Shared httpx.AsyncClient used to call OpenFIGI.
+
+    Returns:
+        Number of EtfHolding rows whose stock_isin was backfilled by this call.
+    """
+    isins_result = await session.execute(
+        select(EtfHolding.stock_isin).where(EtfHolding.stock_isin.is_not(None)).distinct()
+    )
+    isins = [row[0] for row in isins_result.all()]
+    if not isins:
+        return 0
+
+    updated_rows = 0
+    for i in range(0, len(isins), _OPENFIGI_JOBS_PER_REQUEST):
+        if i > 0:
+            await asyncio.sleep(_OPENFIGI_BATCH_DELAY_SECONDS)
+        batch = isins[i : i + _OPENFIGI_JOBS_PER_REQUEST]
+        jobs = [{"idType": "ID_ISIN", "idValue": isin} for isin in batch]
+        try:
+            response = await http_client.post(OPENFIGI_MAPPING_URL, json=jobs)
+            response.raise_for_status()
+            mapping_results = response.json()
+        except httpx.HTTPError:
+            continue
+
+        for isin, mapping_result in zip(batch, mapping_results):
+            data = mapping_result.get("data")
+            ticker = data[0].get("ticker") if data else None
+            if not ticker:
+                continue
+            result = await session.execute(
+                update(EtfHolding)
+                .where(
+                    EtfHolding.stock_ticker == ticker,
+                    EtfHolding.stock_country == _country_from_isin(isin),
+                    EtfHolding.stock_isin.is_(None),
+                )
+                .values(stock_isin=isin)
+            )
+            updated_rows += result.rowcount or 0
+
+    if updated_rows:
+        await session.commit()
+    return updated_rows
 
 
 def _load_workbook(source: XlsxSource):
@@ -206,6 +317,37 @@ def _clean_weight(value: object) -> Decimal | None:
     return quantized
 
 
+def _country_from_isin(isin: str) -> str:
+    """Extract the ISO 3166-1 alpha-2 country code from an ISIN's first two characters.
+
+    Args:
+        isin: A 12-character ISIN, e.g. "DE0007037129".
+
+    Returns:
+        The two-letter country code, e.g. "DE". No validation beyond slicing —
+        callers already validate ISIN format upstream (see EtfHoldingRow / the
+        Amundi converter's _ISIN_PATTERN check).
+    """
+    return isin[:2]
+
+
+def _german_country_to_iso(country_name: str) -> str | None:
+    """Map a German country name from an iShares export to its ISO alpha-2 code.
+
+    Backed by a small static dict covering the country names observed in
+    EUNL.xlsx's Standort column. Extend the dict as new countries appear in
+    future holdings uploads.
+
+    Args:
+        country_name: The raw Standort cell value.
+
+    Returns:
+        The ISO alpha-2 code, or None if the country name isn't in the
+        static mapping — the row still converts, just without stock_country.
+    """
+    return GERMAN_COUNTRY_TO_ISO.get(country_name)
+
+
 def _convert_ishares(source: XlsxSource) -> list[dict[str, str]]:
     """Convert an iShares holdings export (e.g. EUNL.xlsx) to holding rows.
 
@@ -218,16 +360,28 @@ def _convert_ishares(source: XlsxSource) -> list[dict[str, str]]:
         source: Path or open binary file-like object of the iShares XLSX export.
 
     Returns:
-        Converted holding rows keyed by ``stock_ticker`` (no ISIN available).
+        Converted holding rows keyed by ``stock_ticker`` (no ISIN available),
+        with ``stock_country`` derived from the ``Standort`` column via
+        ``_german_country_to_iso`` (``None`` if the country name isn't mapped).
     """
     wb = _load_workbook(source)
     ws = wb.active
     snapshot_date = _parse_german_date(str(ws.cell(row=1, column=2).value))
 
     rows = []
-    for ticker, name, _sector, asset_class, *_rest, weight_pct in (
-        row[:6] for row in ws.iter_rows(min_row=4, values_only=True)
-    ):
+    for (
+        ticker,
+        name,
+        _sector,
+        asset_class,
+        _market_value,
+        weight_pct,
+        _nominal_value,
+        _nominale,
+        _kurs,
+        location,
+        *_rest,
+    ) in (row[:11] for row in ws.iter_rows(min_row=4, values_only=True)):
         if asset_class != "Aktien" or not ticker or not name:
             continue
         weight = _clean_weight(weight_pct)
@@ -237,6 +391,7 @@ def _convert_ishares(source: XlsxSource) -> list[dict[str, str]]:
             {
                 "stock_ticker": str(ticker).strip(),
                 "stock_name": str(name).strip(),
+                "stock_country": _german_country_to_iso(str(location).strip()) if location else None,
                 "weight_percentage": str(weight),
                 "snapshot_date": snapshot_date.isoformat(),
             }
@@ -255,7 +410,9 @@ def _convert_vanguard(source: XlsxSource) -> list[dict[str, str]]:
         source: Path or open binary file-like object of the Vanguard XLSX export.
 
     Returns:
-        Converted holding rows keyed by ``stock_ticker`` (no ISIN available).
+        Converted holding rows keyed by ``stock_ticker`` (no ISIN available),
+        with ``stock_country`` taken directly from the ``Region`` column
+        (already ISO 3166-1 alpha-2, unlike iShares' German country names).
     """
     wb = _load_workbook(source)
     ws = wb.active
@@ -263,8 +420,8 @@ def _convert_vanguard(source: XlsxSource) -> list[dict[str, str]]:
     snapshot_date = _parse_german_date(title_row)
 
     rows = []
-    for ticker, name, weight_pct, *_rest in (
-        row[:3] for row in ws.iter_rows(min_row=8, values_only=True)
+    for ticker, name, weight_pct, _sector, region, *_rest in (
+        row[:5] for row in ws.iter_rows(min_row=8, values_only=True)
     ):
         if not ticker or not name:
             continue
@@ -275,6 +432,7 @@ def _convert_vanguard(source: XlsxSource) -> list[dict[str, str]]:
             {
                 "stock_ticker": str(ticker).strip(),
                 "stock_name": str(name).strip(),
+                "stock_country": str(region).strip().upper() if region else None,
                 "weight_percentage": str(weight),
                 "snapshot_date": snapshot_date.isoformat(),
             }
@@ -300,7 +458,9 @@ def _convert_amundi(source: XlsxSource) -> list[dict[str, str]]:
         source: Path or open binary file-like object of the Amundi XLSX export.
 
     Returns:
-        Converted holding rows keyed by ``stock_isin`` (no ticker available).
+        Converted holding rows keyed by ``stock_isin`` (no ticker available),
+        with ``stock_country`` derived for free from the ISIN's own first two
+        characters (``_country_from_isin``).
     """
     wb = _load_workbook(source)
     ws = wb.active
@@ -330,10 +490,12 @@ def _convert_amundi(source: XlsxSource) -> list[dict[str, str]]:
         weight = _clean_weight(Decimal(str(weight_pct)) * 100 if weight_pct is not None else None)
         if weight is None:
             continue
+        normalised_isin = str(isin).strip().upper()
         rows.append(
             {
-                "stock_isin": str(isin).strip().upper(),
+                "stock_isin": normalised_isin,
                 "stock_name": str(name).strip(),
+                "stock_country": _country_from_isin(normalised_isin),
                 "weight_percentage": str(weight),
                 "snapshot_date": snapshot_date.isoformat(),
             }

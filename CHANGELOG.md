@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.5] - 2026-08-28
+
+### Added
+
+- **Frontend**: New `ConcentrationAlertBadge` component (`frontend/app/(tabularium)/tabularium/portfolio/components/ConcentrationAlertBadge.tsx`) — always-visible badge showing the largest single-stock look-through exposure across all owned ETFs; warning styling (`roman-terracotta` + `TriangleAlert` icon) when the top exposure is strictly greater than 10%.
+- **Frontend**: New `HoldingsBarChart` component (`frontend/app/(tabularium)/tabularium/portfolio/components/HoldingsBarChart.tsx`) — plain HTML/CSS horizontal bar chart (no charting library) of the top 15 holdings by look-through exposure, with a shared 10% threshold marker; bars above the threshold use the warning colour.
+- **Frontend**: `frontend/app/(tabularium)/tabularium/portfolio/page.tsx` now also fetches `GET /portfolio/holdings/exposure` (`holdings-exposure` cache tag) in parallel with the existing `GET /portfolio/overview` fetch, and passes the result to `PortfolioPageClient` as a new `exposureData` prop.
+- **Frontend**: `PortfolioPageClient` exports `HoldingContribution`, `HoldingExposureResponse`, and `HoldingsExposureResponse` TypeScript interfaces mirroring the backend's Pydantic schemas; renders a one-line advisory when `skipped_etfs` is non-empty, so an ETF excluded from the aggregation for lacking a price record is never silently invisible.
+
 ## [0.4.4] - 2026-08-22
 
 ### Added

@@ -15,9 +15,11 @@ The Frontend is the Next.js 15 + Nextra 4 application for the Aerarium Saturni p
 - **`app/(tabularium)/tabularium/layout.tsx`** — Tabularium layout shell: `CustomNavbar` + `AddTransactionButton` action bar + `TabulariumSubNav` + `CustomFooter`, no Nextra chrome, full-width content area
 - **`app/(tabularium)/tabularium/components/TabulariumSubNav.tsx`** — `'use client'` persistent sub-navigation bar; two nav links (`/tabularium/portfolio`, `/tabularium/transactions`) with `usePathname()` prefix-match active state; `roman-*` token styling; no Nextra imports
 - **`app/(tabularium)/tabularium/page.tsx`** — Tabularium landing page
-- **`app/(tabularium)/tabularium/portfolio/page.tsx`** — Portfolio tab shell: Next.js Server Component; parallel-fetches `GET /portfolio/overview` (`portfolio-overview` cache tag) and `GET /etfs` (`etfs` cache tag); renders `<PortfolioPageClient>` with both datasets as props
-- **`app/(tabularium)/tabularium/portfolio/components/PortfolioPageClient.tsx`** — `'use client'` tab container; owns `activeTab: 'portfolio' | 'etf-registry'` state; renders two-tab header (roman-* tokens) and the active tab body; exports `PortfolioRowResponse` and `PortfolioOverviewResponse` TypeScript interfaces
+- **`app/(tabularium)/tabularium/portfolio/page.tsx`** — Portfolio page Server Component; parallel-fetches `GET /portfolio/overview` (`portfolio-overview` cache tag) and `GET /portfolio/holdings/exposure` (`holdings-exposure` cache tag) via `Promise.all`; renders `<PortfolioPageClient>` with both datasets as props
+- **`app/(tabularium)/tabularium/portfolio/components/PortfolioPageClient.tsx`** — `'use client'` page container; renders (in order) a `skipped_etfs` advisory line when non-empty, `<ConcentrationAlertBadge>`, `<HoldingsBarChart>`, then the existing `<PortfolioOverviewTable>`; exports `PortfolioRowResponse`, `PortfolioOverviewResponse`, `HoldingContribution`, `HoldingExposureResponse`, and `HoldingsExposureResponse` TypeScript interfaces (the latter three mirror `backend/src/backend/schemas/portfolio.py`)
 - **`app/(tabularium)/tabularium/portfolio/components/PortfolioOverviewTable.tsx`** — `'use client'` interactive overview table; owns `selected` (`Set<string>`), `sortColumn`, and `sortDirection` state; derives `selectedRows`, `selectedTotal`, `sortedRows`, and `totals` footer via `useMemo`; renders 7 columns: checkbox, Owner, Broker (logo + `Building2` fallback), Invested, Value, Performance (abs + pct, colour-coded), Share; `<tfoot>` Total row uses weighted return for `performance_pct`
+- **`app/(tabularium)/tabularium/portfolio/components/ConcentrationAlertBadge.tsx`** — `'use client'` always-visible badge; picks the `holdings` row with the maximum `total_weight_percentage` (reduced defensively, not assuming backend sort order); renders nothing when `holdings` is empty; applies `roman-terracotta` warning styling (plus a `TriangleAlert` icon) when the top exposure is strictly greater than 10%
+- **`app/(tabularium)/tabularium/portfolio/components/HoldingsBarChart.tsx`** — `'use client'` horizontal bar chart; sorts and slices `holdings` to the top 15 by `total_weight_percentage`; x-axis scales to the nearest multiple of 5 above the largest bar (never below 10); renders a shared vertical marker at the 10% mark; bars strictly above 10% render in `roman-terracotta`, others in `roman-gold`
 - **`app/(tabularium)/tabularium/portfolio/utils/brokerLogo.ts`** — `brokerLogoPath(platform: string): string | null` — normalises broker platform name to lowercase with no spaces/hyphens and returns the static asset path under `/brokers/`, or `null` for unknown platforms
 - **`app/(tabularium)/tabularium/portfolio/utils/perfClass.ts`** — `perfClass(value: number | null): string` — returns `'text-green-600'` (positive), `'text-red-600'` (negative), or `'text-neutral-500'` (zero/null)
 - **`app/(tabularium)/tabularium/etf-schema.ts`** — Shared Zod schema (`EtfFormSchema`, `EtfFormValues`); no directive; JSONB distribution fields validated as JSON strings; importable by `etf-actions.ts` (server) and `EtfForm.tsx` (client)
@@ -50,7 +52,7 @@ The Frontend is the Next.js 15 + Nextra 4 application for the Aerarium Saturni p
 
 - `GET /` — Home page (sidebar-free welcome interface; Nextra `[[...slug]]` route)
 - `GET /tabularium` — Tabularium landing page (App Router route group; no Nextra chrome)
-- `GET /tabularium/portfolio` — Portfolio tab shell: "Portfolio" tab (Overview visualisation, default) and "ETF Registry" tab (live filterable ETF table with create, edit, delete, price logging, and CSV holdings upload actions)
+- `GET /tabularium/portfolio` — Portfolio dashboard: Concentration Alert Badge and Holdings Bar Chart (look-through single-stock exposure, from `GET /portfolio/holdings/exposure`), followed by the Portfolio Overview table (from `GET /portfolio/overview`)
 - `POST /api/etfs/{id}/holdings/upload` — Internal Next.js route handler; proxies CSV multipart upload from the browser to the FastAPI backend
 - `GET /tabularium/transactions` — Transaction Ledger; server-rendered chronological table of all recorded transactions fetched from `GET /transactions` on the FastAPI backend
 - `GET /codex` — Codex section landing (financial theory wiki; Nextra route)
@@ -156,6 +158,13 @@ just frontend-dev       # rebuild then start server
 ---
 
 ### Changelog
+
+#### 2026-08-28 (v0.4.5)
+
+- `app/(tabularium)/tabularium/portfolio/page.tsx` — Added parallel `fetchHoldingsExposure()` fetching `GET /portfolio/holdings/exposure` with the `holdings-exposure` cache tag; both fetches now run via `Promise.all` alongside the existing `fetchPortfolioOverview()`; result passed to `PortfolioPageClient` as a new `exposureData` prop.
+- `app/(tabularium)/tabularium/portfolio/components/PortfolioPageClient.tsx` — Added `exposureData: HoldingsExposureResponse` prop; exported `HoldingContribution`, `HoldingExposureResponse`, `HoldingsExposureResponse` TypeScript interfaces mirroring the backend Pydantic schemas; renders a `skipped_etfs` advisory line, then `ConcentrationAlertBadge` and `HoldingsBarChart`, above the existing `PortfolioOverviewTable`.
+- Added `app/(tabularium)/tabularium/portfolio/components/ConcentrationAlertBadge.tsx` — always-visible badge for the largest single-stock look-through exposure; warning styling (`roman-terracotta` + `TriangleAlert` icon) when strictly above 10%.
+- Added `app/(tabularium)/tabularium/portfolio/components/HoldingsBarChart.tsx` — horizontal bar chart of the top 15 holdings by look-through exposure, plain HTML/CSS (no charting library), with a shared 10% threshold marker.
 
 #### 2026-07-08 (v0.3.7)
 

@@ -1,7 +1,10 @@
 export const dynamic = 'force-dynamic'
 
 import { PortfolioPageClient } from './components/PortfolioPageClient'
-import type { PortfolioOverviewResponse } from './components/PortfolioPageClient'
+import type {
+  PortfolioOverviewResponse,
+  HoldingsExposureResponse,
+} from './components/PortfolioPageClient'
 
 async function fetchPortfolioOverview(): Promise<PortfolioOverviewResponse> {
   try {
@@ -16,7 +19,28 @@ async function fetchPortfolioOverview(): Promise<PortfolioOverviewResponse> {
   }
 }
 
+async function fetchHoldingsExposure(): Promise<HoldingsExposureResponse> {
+  try {
+    const res = await fetch(
+      `${process.env.BACKEND_URL}/portfolio/holdings/exposure`,
+      { next: { tags: ['holdings-exposure'] } }
+    )
+    if (!res.ok) return { holdings: [], skipped_etfs: [] }
+    return res.json()
+  } catch {
+    return { holdings: [], skipped_etfs: [] }
+  }
+}
+
 export default async function PortfolioPage() {
-  const overviewData = await fetchPortfolioOverview()
-  return <PortfolioPageClient overviewData={overviewData} />
+  const [overviewData, exposureData] = await Promise.all([
+    fetchPortfolioOverview(),
+    fetchHoldingsExposure(),
+  ])
+  return (
+    <PortfolioPageClient
+      overviewData={overviewData}
+      exposureData={exposureData}
+    />
+  )
 }

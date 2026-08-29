@@ -3,6 +3,7 @@
 import { PortfolioOverviewTable } from './PortfolioOverviewTable'
 import { ConcentrationAlertBadge } from './ConcentrationAlertBadge'
 import { HoldingsBarChart } from './HoldingsBarChart'
+import { HoldingsTreemap } from './HoldingsTreemap'
 
 export interface PortfolioRowResponse {
   owner: string
@@ -54,6 +55,7 @@ export function PortfolioPageClient({
       )}
       <ConcentrationAlertBadge holdings={exposureData.holdings} />
       <HoldingsBarChart holdings={exposureData.holdings} />
+      <HoldingsTreemap holdings={exposureData.holdings} />
       <PortfolioOverviewTable rows={overviewData.rows} />
     </div>
   )

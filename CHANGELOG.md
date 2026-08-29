@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.6] - 2026-08-29
+
+### Added
+
+- **Frontend**: New `HoldingsTreemap` component (`frontend/app/(tabularium)/tabularium/portfolio/components/HoldingsTreemap.tsx`) — full-portfolio treemap of look-through holdings exposure, area-scaled by `total_weight_percentage`, using only `d3-hierarchy`'s `treemap()` layout algorithm (no rendering/animation runtime, protecting the ≥ 90 Lighthouse budget). Measures its own container width via `ResizeObserver` and renders a fluid `<svg viewBox>` with no fixed or mobile-specific breakpoint. Cells strictly above 10% render in `roman-terracotta`, others in `roman-gold` — the same rule already used by `ConcentrationAlertBadge`/`HoldingsBarChart`. Every rectangle carries a native `<title>` hover tooltip (stock name, ticker/ISIN, exact percentage); rectangles too small for a legible `<text>` label simply omit it while keeping their true proportional area and the tooltip.
+- **Frontend**: `d3-hierarchy` added to `frontend/package.json` runtime dependencies; `@types/d3-hierarchy` added to dev dependencies (the package ships no bundled TypeScript types).
+
+### Changed
+
+- **Frontend**: `PortfolioPageClient` now mounts `<HoldingsTreemap>` below `HoldingsBarChart` and above `PortfolioOverviewTable`.
+
 ## [0.4.5] - 2026-08-28
 
 ### Added

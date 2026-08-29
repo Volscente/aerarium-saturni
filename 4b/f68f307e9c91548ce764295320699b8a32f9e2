@@ -1,0 +1,19 @@
+.claude/13-holdings-data-visualisation/validation-scenarios.md
+  s_845f7ff3ec8b42::t_af8610bf983551 1-248
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "4bf68f307e9c91548ce764295320699b8a32f9e2",
+  "prompts": {},
+  "sessions": {
+    "s_845f7ff3ec8b42": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7383f8ae-7a16-4ff8-9a08-e690866fdaeb",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Simone Porreca <porrecasimone@gmail.com>"
+    }
+  }
+}

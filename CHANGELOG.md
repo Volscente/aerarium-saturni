@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.7] - 2026-08-29
+
+### Added
+
+- **Frontend**: New `HoldingsExposureTable` component (`frontend/app/(tabularium)/tabularium/portfolio/components/HoldingsExposureTable.tsx`) — completes the Concentration Dashboard UI (Milestone 2) with a searchable/sortable stock-level table. A single search box matches `stock_name`/`stock_ticker`/`stock_isin` (one identity dimension, unlike `EtfRegistryTable`'s three separate category filters); clicking the Ticker/ISIN/Name/Total Weight % column headers sorts with nulls-last, mirroring `PortfolioOverviewTable`'s existing sort pattern (`EtfRegistryTable` has no header-click sorting). Clicking a row expands its `HoldingContribution` breakdown (source ETF, contribution weight, snapshot date) using `EtfRegistryTable`'s `Fragment`/chevron expand structure, but independently per row (`expandedKeys: Set<string>`) since `contributions` is already present in props — there is no per-row network fetch to bound, unlike `EtfRegistryTable`'s single-expand price history lookup.
+
+### Changed
+
+- **Frontend**: `PortfolioPageClient` now mounts `<HoldingsExposureTable>` below `HoldingsTreemap` and above `PortfolioOverviewTable`.
+
 ## [0.4.6] - 2026-08-29
 
 ### Added

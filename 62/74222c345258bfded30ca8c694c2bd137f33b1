@@ -1,0 +1,22 @@
+.claude/13-holdings-data-visualisation/70-detailed-table.md
+  s_845f7ff3ec8b42::t_a760b1662e2208 220
+  s_845f7ff3ec8b42::t_774ca3c1f121f2 234,236-237
+  s_845f7ff3ec8b42::t_9eccac22fb8c1a 1-161,165-166,174-219,221-233,235
+  s_845f7ff3ec8b42::t_75a478a827c3b8 162-164,167-173
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "6274222c345258bfded30ca8c694c2bd137f33b1",
+  "prompts": {},
+  "sessions": {
+    "s_845f7ff3ec8b42": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7383f8ae-7a16-4ff8-9a08-e690866fdaeb",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Simone Porreca <porrecasimone@gmail.com>"
+    }
+  }
+}

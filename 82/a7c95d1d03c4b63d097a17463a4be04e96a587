@@ -1,0 +1,23 @@
+.claude/13-holdings-data-visualisation/70-interactive-tree-map.md
+  s_845f7ff3ec8b42::t_a7fdb33a5330e1 221,223-226
+  s_845f7ff3ec8b42::t_c42459394a30c1 146-181
+  s_845f7ff3ec8b42::t_a163cc515e27ae 202-205,207,213,216-217
+  s_845f7ff3ec8b42::t_9aad7cf06ebf7e 1-46,48-49,51,57-145,182-201,206,208-212,214-215,218-220,222
+  s_845f7ff3ec8b42::t_2379854c2a4d5d 47,50,52-56
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "82a7c95d1d03c4b63d097a17463a4be04e96a587",
+  "prompts": {},
+  "sessions": {
+    "s_845f7ff3ec8b42": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7383f8ae-7a16-4ff8-9a08-e690866fdaeb",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Simone Porreca <porrecasimone@gmail.com>"
+    }
+  }
+}

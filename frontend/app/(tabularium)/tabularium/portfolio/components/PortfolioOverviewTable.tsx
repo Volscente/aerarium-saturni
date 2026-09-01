@@ -213,11 +213,11 @@ export function PortfolioOverviewTable({
   }
 
   if (rows.length === 0) {
-    return <p className="text-roman-stone">No portfolio data available.</p>
+    return <p className="mb-6 text-roman-stone">No portfolio data available.</p>
   }
 
   return (
-    <div className="rounded-2xl border border-roman-stone/10 bg-white/5 dark:bg-roman-obsidian/50 p-6 backdrop-blur-sm">
+    <div className="mb-6 rounded-2xl border border-roman-stone/10 bg-white/5 dark:bg-roman-obsidian/50 p-6 backdrop-blur-sm">
       <h1 className="mb-6 font-roman text-3xl font-bold text-roman-gold">
         Portfolio Overview
       </h1>

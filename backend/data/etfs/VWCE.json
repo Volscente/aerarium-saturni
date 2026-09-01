@@ -1,0 +1,29 @@
+{
+  "ticker": "VWCE",
+  "isin": "IE00BK5BQT80",
+  "name": "Vanguard FTSE All-World UCITS ETF (USD) Accumulating",
+  "issuer": "Vanguard",
+  "asset_class": "Equities",
+  "tracked_index": "FTSE All-World",
+  "ter": "0.0022",
+  "domicile": "Ireland",
+  "currency_hedged": false,
+  "fiscal_year_end": "31-Dec",
+  "german_tax_classification": "Aktienfonds",
+  "replication_strategy": "Full replication",
+  "dividend_policy": "Accumulating",
+  "geographical_distribution": {
+    "US": 63.0,
+    "Japan": 5.5,
+    "United Kingdom": 3.5,
+    "China": 3.0,
+    "Other": 25.0
+  },
+  "sector_distribution": {
+    "Technology": 24.0,
+    "Financials": 16.0,
+    "Healthcare": 11.0,
+    "Industrials": 11.0,
+    "Other": 38.0
+  }
+}

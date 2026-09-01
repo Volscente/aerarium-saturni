@@ -22,13 +22,13 @@ export default defineConfig({
     {
       name: 'mobile-chrome',
       use: {
-        ...devices['iPhone SE'],
+        ...devices['Pixel 5'],
       },
     },
   ],
 
   webServer: {
-    command: 'npm run start',
+    command: 'node .next/standalone/server.js',
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
     timeout: 60_000,

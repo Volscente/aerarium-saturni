@@ -1,0 +1,29 @@
+{
+  "ticker": "LYP6",
+  "isin": "LU0908500753",
+  "name": "Amundi Core Stoxx Europe 600 UCITS ETF Acc",
+  "issuer": "Amundi",
+  "asset_class": "Equities",
+  "tracked_index": "STOXX Europe 600",
+  "ter": "0.0007",
+  "domicile": "Luxembourg",
+  "currency_hedged": false,
+  "fiscal_year_end": "31-Dec",
+  "german_tax_classification": "Aktienfonds",
+  "replication_strategy": "Full replication",
+  "dividend_policy": "Accumulating",
+  "geographical_distribution": {
+    "United Kingdom": 20.0,
+    "France": 17.0,
+    "Germany": 15.0,
+    "Switzerland": 14.0,
+    "Other Europe": 34.0
+  },
+  "sector_distribution": {
+    "Financials": 17.0,
+    "Industrials": 15.0,
+    "Healthcare": 14.0,
+    "Consumer Staples": 12.0,
+    "Other": 42.0
+  }
+}

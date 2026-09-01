@@ -1,6 +1,10 @@
 'use client'
 
 import { PortfolioOverviewTable } from './PortfolioOverviewTable'
+import { ConcentrationAlertBadge } from './ConcentrationAlertBadge'
+import { HoldingsBarChart } from './HoldingsBarChart'
+import { HoldingsTreemap } from './HoldingsTreemap'
+import { HoldingsExposureTable } from './HoldingsExposureTable'
 
 export interface PortfolioRowResponse {
   owner: string
@@ -15,14 +19,48 @@ export interface PortfolioOverviewResponse {
   rows: PortfolioRowResponse[]
 }
 
+export interface HoldingContribution {
+  etf_ticker: string
+  etf_name: string
+  etf_portfolio_weight_percentage: number
+  stock_weight_in_etf_percentage: number
+  contribution_weight_percentage: number
+  snapshot_date: string
+}
+
+export interface HoldingExposureResponse {
+  stock_isin: string | null
+  stock_ticker: string | null
+  stock_name: string
+  total_weight_percentage: number
+  contributions: HoldingContribution[]
+}
+
+export interface HoldingsExposureResponse {
+  holdings: HoldingExposureResponse[]
+  skipped_etfs: string[]
+}
+
 export function PortfolioPageClient({
   overviewData,
+  exposureData,
 }: {
   overviewData: PortfolioOverviewResponse
+  exposureData: HoldingsExposureResponse
 }): JSX.Element {
   return (
     <div className="px-6 py-8">
       <PortfolioOverviewTable rows={overviewData.rows} />
+      {exposureData.skipped_etfs.length > 0 && (
+        <p className="mb-4 text-sm text-roman-stone">
+          Excluded from concentration analysis (no price data):{' '}
+          {exposureData.skipped_etfs.join(', ')}
+        </p>
+      )}
+      <ConcentrationAlertBadge holdings={exposureData.holdings} />
+      <HoldingsBarChart holdings={exposureData.holdings} />
+      <HoldingsTreemap holdings={exposureData.holdings} />
+      <HoldingsExposureTable holdings={exposureData.holdings} />
     </div>
   )
 }

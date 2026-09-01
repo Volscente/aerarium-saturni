@@ -226,3 +226,89 @@ export async function addPriceSnapshot(
     return { error: err instanceof Error ? err.message : 'Network error' }
   }
 }
+
+export async function updatePriceSnapshot(
+  etfId: string,
+  priceId: string,
+  price: number,
+  currency: string,
+  timestamp: string
+): Promise<{ success: true } | { error: string }> {
+  /**
+   * Server Action: partially update an existing price snapshot.
+   *
+   * PUTs to ${BACKEND_URL}/etfs/{etfId}/price/{priceId} with
+   * { price, currency, timestamp }. On HTTP 200, calls revalidateTag('etfs')
+   * and revalidateTag('portfolio-overview'), mirroring addPriceSnapshot.
+   *
+   * Args:
+   *   etfId: UUID string of the parent ETF.
+   *   priceId: UUID string of the price snapshot to update.
+   *   price: Positive numeric price in the given currency.
+   *   currency: ISO 4217 3-character code (e.g. "EUR").
+   *   timestamp: ISO 8601 datetime string for the observation point.
+   *
+   * Returns:
+   *   { success: true } on HTTP 200, or { error: string } on any failure.
+   */
+  try {
+    const res = await fetch(
+      `${process.env.BACKEND_URL}/etfs/${etfId}/price/${priceId}`,
+      {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ price, currency, timestamp }),
+      }
+    )
+
+    if (res.status === 404) return { error: 'Price snapshot not found' }
+    if (res.status !== 200) {
+      const text = await res.text()
+      return { error: `Backend error ${res.status}: ${text}` }
+    }
+
+    revalidateTag('etfs')
+    revalidateTag('portfolio-overview')
+    return { success: true }
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : 'Network error' }
+  }
+}
+
+export async function deletePriceSnapshot(
+  etfId: string,
+  priceId: string
+): Promise<{ success: true } | { error: string }> {
+  /**
+   * Server Action: permanently delete a price snapshot.
+   *
+   * DELETEs ${BACKEND_URL}/etfs/{etfId}/price/{priceId}. On HTTP 204, calls
+   * revalidateTag('etfs') and revalidateTag('portfolio-overview'), mirroring
+   * deleteEtf.
+   *
+   * Args:
+   *   etfId: UUID string of the parent ETF.
+   *   priceId: UUID string of the price snapshot to delete.
+   *
+   * Returns:
+   *   { success: true } on HTTP 204, or { error: string } on 404 or network failure.
+   */
+  try {
+    const res = await fetch(
+      `${process.env.BACKEND_URL}/etfs/${etfId}/price/${priceId}`,
+      { method: 'DELETE' }
+    )
+
+    if (res.status === 404) return { error: 'Price snapshot not found' }
+    if (res.status !== 204) {
+      const text = await res.text()
+      return { error: `Backend error ${res.status}: ${text}` }
+    }
+
+    revalidateTag('etfs')
+    revalidateTag('portfolio-overview')
+    return { success: true }
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : 'Network error' }
+  }
+}

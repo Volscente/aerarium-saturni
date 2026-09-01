@@ -1,10 +1,14 @@
+from pathlib import Path
+from unittest.mock import AsyncMock, patch
 from uuid import UUID
 
+import httpx
 import pytest
 
 from tests.conftest import VALID_ETF_PAYLOAD
 
 DUMMY_ETF_ID = "00000000-0000-0000-0000-000000000001"
+FIXTURES_DIR = Path(__file__).resolve().parents[2] / "data" / "holdings" / "original"
 
 
 def test_create_etf_valid(client):
@@ -88,9 +92,9 @@ def test_create_price_valid(client_with_etfs):
 def test_upload_holdings_valid(client_with_etfs):
     """POST /etfs/{id}/holdings/upload with valid CSV returns 200 and inserted_rows count."""
     csv_content = (
-        "company_name,weight_pct,sector,region\n"
-        "Apple Inc,5.0,Technology,US\n"
-        "Microsoft Corp,4.5,Technology,US"
+        "stock_isin,stock_name,weight_percentage,snapshot_date\n"
+        "IE00B3RBWM25,Vanguard FTSE All-World,5.0,2026-07-22\n"
+        "IE00B5BMR087,iShares Core S&P 500,4.5,2026-07-22"
     )
     response = client_with_etfs.post(
         f"/etfs/{DUMMY_ETF_ID}/holdings/upload",
@@ -103,8 +107,8 @@ def test_upload_holdings_valid(client_with_etfs):
 def test_upload_holdings_invalid_row(client_with_etfs):
     """POST /etfs/{id}/holdings/upload with an unparseable row returns 422 with row number."""
     csv_content = (
-        "company_name,weight_pct,sector,region\n"
-        "Apple Inc,not_a_number,Technology,US"
+        "stock_isin,stock_name,weight_percentage,snapshot_date\n"
+        "IE00B3RBWM25,Vanguard FTSE All-World,not_a_number,2026-07-22"
     )
     response = client_with_etfs.post(
         f"/etfs/{DUMMY_ETF_ID}/holdings/upload",
@@ -112,3 +116,102 @@ def test_upload_holdings_invalid_row(client_with_etfs):
     )
     assert response.status_code == 422
     assert response.json()["detail"]["row"] == 1
+
+
+def test_upload_holdings_etf_not_found(client_etf_not_found):
+    """POST /etfs/{unknown-id}/holdings/upload returns 404 when the ETF does not exist."""
+    csv_content = (
+        "stock_isin,stock_name,weight_percentage,snapshot_date\n"
+        "IE00B3RBWM25,Vanguard FTSE All-World,5.0,2026-07-22"
+    )
+    response = client_etf_not_found.post(
+        f"/etfs/{DUMMY_ETF_ID}/holdings/upload",
+        files={"file": ("holdings.csv", csv_content.encode(), "text/csv")},
+    )
+    assert response.status_code == 404
+
+
+def test_upload_holdings_xlsx_valid(client_with_etfs):
+    """POST /etfs/{id}/holdings/upload with a real issuer XLSX (EUNL.xlsx) converts and inserts."""
+    xlsx_bytes = (FIXTURES_DIR / "EUNL.xlsx").read_bytes()
+    response = client_with_etfs.post(
+        f"/etfs/{DUMMY_ETF_ID}/holdings/upload",
+        files={
+            "file": (
+                "EUNL.xlsx",
+                xlsx_bytes,
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            )
+        },
+    )
+    assert response.status_code == 200
+    assert response.json() == {"inserted_rows": 1231}
+
+
+def test_upload_holdings_xlsx_valid_with_browser_suffixed_filename(client_with_etfs):
+    """A repeat download suffixed by the browser (e.g. 'EUNL (1).xlsx') still resolves to iShares."""
+    xlsx_bytes = (FIXTURES_DIR / "EUNL.xlsx").read_bytes()
+    response = client_with_etfs.post(
+        f"/etfs/{DUMMY_ETF_ID}/holdings/upload",
+        files={
+            "file": (
+                "EUNL (1).xlsx",
+                xlsx_bytes,
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            )
+        },
+    )
+    assert response.status_code == 200
+    assert response.json() == {"inserted_rows": 1231}
+
+
+def test_upload_holdings_calls_isin_reconciliation(client_with_etfs):
+    """A successful holdings upload triggers the OpenFIGI-based ISIN reconciliation step."""
+    csv_content = (
+        "stock_isin,stock_name,weight_percentage,snapshot_date\n"
+        "IE00B3RBWM25,Vanguard FTSE All-World,5.0,2026-07-22"
+    )
+    with patch(
+        "backend.routers.etfs.resolve_stock_isin_aliases",
+        new=AsyncMock(return_value=2),
+    ) as mock_resolve:
+        response = client_with_etfs.post(
+            f"/etfs/{DUMMY_ETF_ID}/holdings/upload",
+            files={"file": ("holdings.csv", csv_content.encode(), "text/csv")},
+        )
+    assert response.status_code == 200
+    mock_resolve.assert_awaited_once()
+
+
+def test_upload_holdings_succeeds_when_reconciliation_fails(client_with_etfs):
+    """OpenFIGI being unreachable during reconciliation does not fail the upload."""
+    csv_content = (
+        "stock_isin,stock_name,weight_percentage,snapshot_date\n"
+        "IE00B3RBWM25,Vanguard FTSE All-World,5.0,2026-07-22"
+    )
+    with patch(
+        "backend.routers.etfs.resolve_stock_isin_aliases",
+        new=AsyncMock(side_effect=httpx.ConnectError("unreachable")),
+    ):
+        response = client_with_etfs.post(
+            f"/etfs/{DUMMY_ETF_ID}/holdings/upload",
+            files={"file": ("holdings.csv", csv_content.encode(), "text/csv")},
+        )
+    assert response.status_code == 200
+    assert response.json() == {"inserted_rows": 1}
+
+
+def test_upload_holdings_xlsx_unrecognised_ticker(client_with_etfs):
+    """POST /etfs/{id}/holdings/upload with an XLSX filename that isn't a known issuer ticker returns 422."""
+    response = client_with_etfs.post(
+        f"/etfs/{DUMMY_ETF_ID}/holdings/upload",
+        files={
+            "file": (
+                "UNKNOWN.xlsx",
+                b"not a real workbook",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            )
+        },
+    )
+    assert response.status_code == 422
+    assert "Unrecognised ETF ticker" in response.json()["detail"]["error"]

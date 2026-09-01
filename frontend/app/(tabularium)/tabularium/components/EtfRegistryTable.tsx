@@ -5,6 +5,7 @@ import { deleteEtf, fetchPriceHistory } from '../etf-actions'
 import type { EtfPriceEntry } from '../etf-actions'
 import { EtfDrawer } from './EtfDrawer'
 import { PriceUpdateButton } from './PriceUpdateButton'
+import { PriceHistoryRow } from './PriceHistoryRow'
 import { HoldingsUpload } from './HoldingsUpload'
 import type { EtfResponse } from './EtfForm'
 
@@ -59,13 +60,7 @@ export function EtfRegistryTable({ etfs }: EtfRegistryTableProps): JSX.Element {
     return tickerMatch && assetClassMatch && issuerMatch
   })
 
-  const handleRowClick = (etfId: string) => {
-    if (expandedEtfId === etfId) {
-      setExpandedEtfId(null)
-      return
-    }
-    setExpandedEtfId(etfId)
-    if (priceHistoryMap[etfId] !== undefined) return
+  const refreshPriceHistory = (etfId: string) => {
     setPriceHistoryMap((prev) => ({ ...prev, [etfId]: 'loading' }))
     fetchPriceHistory(etfId).then((result) => {
       setPriceHistoryMap((prev) => ({
@@ -73,6 +68,16 @@ export function EtfRegistryTable({ etfs }: EtfRegistryTableProps): JSX.Element {
         [etfId]: 'error' in result ? 'error' : result,
       }))
     })
+  }
+
+  const handleRowClick = (etfId: string) => {
+    if (expandedEtfId === etfId) {
+      setExpandedEtfId(null)
+      return
+    }
+    setExpandedEtfId(etfId)
+    if (priceHistoryMap[etfId] !== undefined) return
+    refreshPriceHistory(etfId)
   }
 
   const handleDelete = (etf: EtfResponse) => {
@@ -216,30 +221,19 @@ export function EtfRegistryTable({ etfs }: EtfRegistryTableProps): JSX.Element {
                                   <th className="pb-2 pr-6 font-medium text-roman-gold">Date</th>
                                   <th className="pb-2 pr-6 font-medium text-roman-gold">Time</th>
                                   <th className="pb-2 pr-6 font-medium text-roman-gold">Price</th>
-                                  <th className="pb-2 font-medium text-roman-gold">Currency</th>
+                                  <th className="pb-2 pr-6 font-medium text-roman-gold">Currency</th>
+                                  <th className="pb-2 font-medium text-roman-gold">Actions</th>
                                 </tr>
                               </thead>
                               <tbody>
-                                {history.map((entry) => {
-                                  const dt = new Date(entry.timestamp)
-                                  const day = String(dt.getDate()).padStart(2, '0')
-                                  const month = String(dt.getMonth() + 1).padStart(2, '0')
-                                  const year = dt.getFullYear()
-                                  return (
-                                    <tr key={entry.id} className="border-b border-roman-stone/10">
-                                      <td className="py-1.5 pr-6 tabular-nums">
-                                        {`${day}.${month}.${year}`}
-                                      </td>
-                                      <td className="py-1.5 pr-6 tabular-nums">
-                                        {dt.toLocaleTimeString()}
-                                      </td>
-                                      <td className="py-1.5 pr-6 tabular-nums font-mono">
-                                        {parseFloat(entry.price).toFixed(4)}
-                                      </td>
-                                      <td className="py-1.5 font-mono">{entry.currency}</td>
-                                    </tr>
-                                  )
-                                })}
+                                {history.map((entry) => (
+                                  <PriceHistoryRow
+                                    key={entry.id}
+                                    etfId={etf.id}
+                                    entry={entry}
+                                    onChanged={() => refreshPriceHistory(etf.id)}
+                                  />
+                                ))}
                               </tbody>
                             </table>
                           )}

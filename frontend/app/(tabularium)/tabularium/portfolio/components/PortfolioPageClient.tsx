@@ -22,6 +22,8 @@ export interface PortfolioOverviewResponse {
 export interface HoldingContribution {
   etf_ticker: string
   etf_name: string
+  etf_portfolio_weight_percentage: number
+  stock_weight_in_etf_percentage: number
   contribution_weight_percentage: number
   snapshot_date: string
 }

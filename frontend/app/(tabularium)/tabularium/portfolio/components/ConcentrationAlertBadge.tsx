@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { TriangleAlert } from 'lucide-react'
 import type { HoldingExposureResponse } from './PortfolioPageClient'
 
@@ -36,8 +37,10 @@ export function ConcentrationAlertBadge({
   /**
    * Renders the single largest look-through exposure across all holdings.
    *
-   * Always mounted at the top of the Portfolio page body so the user's
-   * top concentration risk is visible with no interaction required.
+   * Collapsible via a clickable header (▸/▾), matching the expand/collapse
+   * pattern already used by EtfRegistryTable and HoldingsExposureTable —
+   * defaults to open so the top concentration risk is still visible with
+   * no interaction required; collapsing is an opt-out, not the default.
    * Applies warning styling when the top exposure is strictly greater
    * than 10% — a stock sitting exactly at the 10% line is at the limit,
    * not yet over it.
@@ -50,6 +53,7 @@ export function ConcentrationAlertBadge({
    * Returns:
    *   JSX badge, or null when holdings is empty.
    */
+  const [isOpen, setIsOpen] = useState(true)
   const top = maxExposure(holdings)
   if (!top) return null
 
@@ -58,17 +62,28 @@ export function ConcentrationAlertBadge({
   const label = top.stock_ticker ?? top.stock_isin ?? top.stock_name
 
   return (
-    <div className="mb-6 flex items-center gap-4 rounded-2xl border border-roman-stone/10 bg-white/5 dark:bg-roman-obsidian/50 p-6 backdrop-blur-sm">
-      {isWarning && (
-        <TriangleAlert className="h-8 w-8 shrink-0 text-roman-terracotta" />
+    <div className="mb-6 rounded-2xl border border-roman-stone/10 bg-white/5 dark:bg-roman-obsidian/50 p-6 backdrop-blur-sm">
+      <h2
+        onClick={() => setIsOpen((prev) => !prev)}
+        className="flex cursor-pointer select-none items-center gap-2 font-roman text-xl font-bold text-roman-gold"
+      >
+        <span className="text-roman-stone/40">{isOpen ? '▾' : '▸'}</span>
+        Concentration Alert
+      </h2>
+      {isOpen && (
+        <div className="mt-4 flex items-center gap-4">
+          {isWarning && (
+            <TriangleAlert className="h-8 w-8 shrink-0 text-roman-terracotta" />
+          )}
+          <div>
+            <p className="text-sm text-roman-stone">Largest single-stock exposure</p>
+            <p className={`text-2xl font-bold ${accentClass}`}>
+              {label} — {top.total_weight_percentage.toFixed(2)}%
+            </p>
+            <p className="text-sm text-roman-stone">{top.stock_name}</p>
+          </div>
+        </div>
       )}
-      <div>
-        <p className="text-sm text-roman-stone">Largest single-stock exposure</p>
-        <p className={`text-2xl font-bold ${accentClass}`}>
-          {label} — {top.total_weight_percentage.toFixed(2)}%
-        </p>
-        <p className="text-sm text-roman-stone">{top.stock_name}</p>
-      </div>
     </div>
   )
 }

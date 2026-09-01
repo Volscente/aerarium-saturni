@@ -34,8 +34,15 @@ class HoldingContribution(BaseModel):
 
     etf_ticker: str = Field(description="Ticker of the contributing ETF.")
     etf_name: str = Field(description="Name of the contributing ETF.")
+    etf_portfolio_weight_percentage: float = Field(
+        description="This ETF's own share of total portfolio value (etf_current_value / total_portfolio_value), in percentage points."
+    )
+    stock_weight_in_etf_percentage: float = Field(
+        description="The stock's raw weight_percentage within this ETF's latest holdings snapshot, unmultiplied by portfolio weight."
+    )
     contribution_weight_percentage: float = Field(
-        description="This ETF's contribution to the stock's total look-through weight, in percentage points."
+        description="This ETF's contribution to the stock's total look-through weight, in percentage points. "
+        "Equal to etf_portfolio_weight_percentage * stock_weight_in_etf_percentage / 100."
     )
     snapshot_date: date = Field(
         description="snapshot_date of the EtfHolding row this contribution was computed from."

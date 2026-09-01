@@ -83,6 +83,16 @@ def test_get_holdings_exposure_merges_by_isin(client_exposure_merged_by_isin):
     assert holding["total_weight_percentage"] == pytest.approx(4.4)
     assert len(holding["contributions"]) == 2
 
+    by_ticker = {c["etf_ticker"]: c for c in holding["contributions"]}
+    # EUNL: current_value 6000 / total 10000 = 60% portfolio weight, 4% stock weight in EUNL
+    assert by_ticker["EUNL"]["etf_portfolio_weight_percentage"] == pytest.approx(60.0)
+    assert by_ticker["EUNL"]["stock_weight_in_etf_percentage"] == pytest.approx(4.0)
+    assert by_ticker["EUNL"]["contribution_weight_percentage"] == pytest.approx(2.4)
+    # LYP6: current_value 4000 / total 10000 = 40% portfolio weight, 5% stock weight in LYP6
+    assert by_ticker["LYP6"]["etf_portfolio_weight_percentage"] == pytest.approx(40.0)
+    assert by_ticker["LYP6"]["stock_weight_in_etf_percentage"] == pytest.approx(5.0)
+    assert by_ticker["LYP6"]["contribution_weight_percentage"] == pytest.approx(2.0)
+
 
 def test_get_holdings_exposure_merges_by_ticker_fallback(client_exposure_ticker_fallback):
     """Two ETFs reporting the same stock only by ticker (no ISIN) still merge via the ticker fallback."""

@@ -91,7 +91,17 @@ export function HoldingsTreemap({
   /**
    * Renders all holdings as a treemap, area-scaled by total_weight_percentage.
    *
-   * Complements HoldingsBarChart (top 15 only) with a full-portfolio view.
+   * Collapsible via a clickable header (▸/▾), matching the expand/collapse
+   * pattern already used by EtfRegistryTable and HoldingsExposureTable —
+   * defaults to collapsed, since with few ETFs held this view tends to
+   * duplicate HoldingsBarChart's top-15 view rather than add new
+   * information; it becomes more useful as the number of distinct
+   * holdings grows and the full-portfolio "shape" of concentration is no
+   * longer visible in a top-15 list. The ResizeObserver effect re-runs on
+   * `isOpen` (not just on mount) so re-expanding after a collapse
+   * re-attaches the observer to the (re-mounted) container div and
+   * recovers a real width rather than staying stuck at 0.
+   *
    * Measures its own container width via ResizeObserver (no fixed pixel
    * width hardcoded) and renders a fluid <svg viewBox>, so the layout
    * reflows at any viewport with no special-cased mobile behaviour.
@@ -108,10 +118,12 @@ export function HoldingsTreemap({
    * Returns:
    *   JSX treemap, or an empty-state message when there is no data to show.
    */
+  const [isOpen, setIsOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const [width, setWidth] = useState(0)
 
   useEffect(() => {
+    if (!isOpen) return
     const el = containerRef.current
     if (!el) return
     const observer = new ResizeObserver((entries) => {
@@ -120,7 +132,7 @@ export function HoldingsTreemap({
     })
     observer.observe(el)
     return () => observer.disconnect()
-  }, [])
+  }, [isOpen])
 
   const hasHoldings = holdings.some((h) => h.total_weight_percentage > 0)
 
@@ -131,50 +143,56 @@ export function HoldingsTreemap({
 
   return (
     <div className="mb-6 rounded-2xl border border-roman-stone/10 bg-white/5 dark:bg-roman-obsidian/50 p-6 backdrop-blur-sm">
-      <h2 className="mb-6 font-roman text-xl font-bold text-roman-gold">
+      <h2
+        onClick={() => setIsOpen((prev) => !prev)}
+        className="flex cursor-pointer select-none items-center gap-2 font-roman text-xl font-bold text-roman-gold"
+      >
+        <span className="text-roman-stone/40">{isOpen ? '▾' : '▸'}</span>
         Portfolio Holdings Treemap
       </h2>
-      <div ref={containerRef} className="w-full">
-        {!hasHoldings ? (
-          <p className="text-roman-stone">No holdings data available.</p>
-        ) : (
-          <svg
-            viewBox={`0 0 ${width} ${TREEMAP_HEIGHT_PX}`}
-            width="100%"
-            height={TREEMAP_HEIGHT_PX}
-            role="img"
-            aria-label="Treemap of look-through holdings exposure"
-          >
-            {leaves.map((leaf) => {
-              const holding = leaf.data
-              const key = holding.stock_isin ?? holding.stock_ticker ?? holding.stock_name
-              const label = holding.stock_ticker ?? holding.stock_isin ?? holding.stock_name
-              return (
-                <g key={key} transform={`translate(${leaf.x0}, ${leaf.y0})`}>
-                  <rect
-                    width={leaf.x1 - leaf.x0}
-                    height={leaf.y1 - leaf.y0}
-                    className={`${treemapCellFill(holding.total_weight_percentage)} stroke-1 stroke-roman-obsidian/20`}
-                  >
-                    <title>
-                      {`${holding.stock_name} (${label}) — ${holding.total_weight_percentage.toFixed(2)}%`}
-                    </title>
-                  </rect>
-                  {canFitLabel(leaf) && (
-                    <text
-                      x={6}
-                      y={16}
-                      className="pointer-events-none fill-roman-parchment text-xs font-medium"
+      {isOpen && (
+        <div ref={containerRef} className="mt-6 w-full">
+          {!hasHoldings ? (
+            <p className="text-roman-stone">No holdings data available.</p>
+          ) : (
+            <svg
+              viewBox={`0 0 ${width} ${TREEMAP_HEIGHT_PX}`}
+              width="100%"
+              height={TREEMAP_HEIGHT_PX}
+              role="img"
+              aria-label="Treemap of look-through holdings exposure"
+            >
+              {leaves.map((leaf) => {
+                const holding = leaf.data
+                const key = holding.stock_isin ?? holding.stock_ticker ?? holding.stock_name
+                const label = holding.stock_ticker ?? holding.stock_isin ?? holding.stock_name
+                return (
+                  <g key={key} transform={`translate(${leaf.x0}, ${leaf.y0})`}>
+                    <rect
+                      width={leaf.x1 - leaf.x0}
+                      height={leaf.y1 - leaf.y0}
+                      className={`${treemapCellFill(holding.total_weight_percentage)} stroke-1 stroke-roman-obsidian/20`}
                     >
-                      {label}
-                    </text>
-                  )}
-                </g>
-              )
-            })}
-          </svg>
-        )}
-      </div>
+                      <title>
+                        {`${holding.stock_name} (${label}) — ${holding.total_weight_percentage.toFixed(2)}%`}
+                      </title>
+                    </rect>
+                    {canFitLabel(leaf) && (
+                      <text
+                        x={6}
+                        y={16}
+                        className="pointer-events-none fill-roman-parchment text-xs font-medium"
+                      >
+                        {label}
+                      </text>
+                    )}
+                  </g>
+                )
+              })}
+            </svg>
+          )}
+        </div>
+      )}
     </div>
   )
 }

@@ -350,6 +350,8 @@ async def get_holdings_exposure(
             HoldingContribution(
                 etf_ticker=row.etf_ticker,
                 etf_name=row.etf_name,
+                etf_portfolio_weight_percentage=etf_portfolio_weight * 100,
+                stock_weight_in_etf_percentage=row.weight_percentage,
                 contribution_weight_percentage=contribution_weight,
                 snapshot_date=row.snapshot_date,
             )

@@ -317,6 +317,12 @@ export function HoldingsExposureTable({
                                         ETF
                                       </th>
                                       <th className="pb-2 pr-6 font-medium text-roman-gold">
+                                        Portfolio Share
+                                      </th>
+                                      <th className="pb-2 pr-6 font-medium text-roman-gold">
+                                        Fund Weight
+                                      </th>
+                                      <th className="pb-2 pr-6 font-medium text-roman-gold">
                                         Contribution
                                       </th>
                                       <th className="pb-2 font-medium text-roman-gold">
@@ -333,7 +339,13 @@ export function HoldingsExposureTable({
                                         <td className="py-1.5 pr-6" title={c.etf_name}>
                                           {c.etf_ticker}
                                         </td>
-                                        <td className="py-1.5 pr-6 tabular-nums">
+                                        <td className="py-1.5 pr-6 tabular-nums text-roman-stone/70">
+                                          {c.etf_portfolio_weight_percentage.toFixed(2)}%
+                                        </td>
+                                        <td className="py-1.5 pr-6 tabular-nums text-roman-stone/70">
+                                          {c.stock_weight_in_etf_percentage.toFixed(2)}%
+                                        </td>
+                                        <td className="py-1.5 pr-6 tabular-nums font-medium">
                                           {c.contribution_weight_percentage.toFixed(2)}%
                                         </td>
                                         <td className="py-1.5 tabular-nums">

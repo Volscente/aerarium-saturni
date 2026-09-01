@@ -39,6 +39,8 @@ RWE is the deliberate stress-test for TASK-1's cross-issuer identity resolution:
 
 **Cleanup safety note:** transactions created below use `owner: "qa-validation"` so they can be deleted individually afterward via `DELETE /transactions/{id}` (Scenario cleanup, at the end). Price snapshots have **no delete endpoint** — logging a test price on `EUNL`/`VWCE`/`LYP6` leaves a permanent (but harmless) extra row in that ETF's real price history. If you'd rather not touch real ETF price history at all, skip straight to **Scenario 7**, which uses a fully synthetic, fully deletable test ETF instead.
 
+**Collapsible sections note (added after the initial UAT pass):** the Badge and Treemap cards are now collapsible via a clickable `▸`/`▾` header, matching the row-expansion pattern already used elsewhere on this page. The **Badge defaults to expanded** (its whole point is being visible with no interaction), but the **Treemap now defaults to collapsed** — with only two largely-overlapping ETFs held, it added little over the Bar Chart, so it's tucked away by default and becomes more useful once more, less-overlapping ETFs are added. Any scenario below that checks Treemap content assumes you've clicked its header open first.
+
 ---
 
 ## Scenario 0 — Empty state
@@ -49,9 +51,9 @@ RWE is the deliberate stress-test for TASK-1's cross-issuer identity resolution:
 1. Open `http://localhost:3000/tabularium/portfolio`.
 
 **Expected:**
-- No Concentration Alert Badge renders at all (not an empty badge — nothing).
+- No Concentration Alert Badge renders at all (not an empty badge — nothing; it still returns null before any card/header when there's no top holding to show).
 - Bar chart card shows "No holdings data available."
-- Treemap card shows "No holdings data available."
+- Treemap card renders collapsed by default; expand it (click the header) → "No holdings data available."
 - Detailed table card shows "No holdings data available." (not the "no search matches" message — that's a different state, see Scenario 5).
 - Existing "Portfolio Overview" table below still shows its own "No portfolio data available." independently.
 
@@ -76,7 +78,7 @@ curl -s -X POST http://localhost:8000/transactions -H "Content-Type: application
 
 **In the browser:**
 - A one-line advisory appears above the badge: *"Excluded from concentration analysis (no price data): EUNL"*.
-- Badge, bar chart, treemap, and detailed table all still show their empty states — a priceless ETF must not crash or half-render the dashboard.
+- No badge renders, bar chart and detailed table show their empty states, and the (collapsed-by-default) treemap shows its empty state once expanded — a priceless ETF must not crash or half-render the dashboard.
 
 ---
 
@@ -102,8 +104,8 @@ curl -s -X POST http://localhost:8000/etfs/97a1d7cc-5e12-4c51-94ea-cff91b3124f8/
 - Advisory line disappears (no more `skipped_etfs`).
 - **Badge:** "Largest single-stock exposure — NVDA — 5.44% — NVIDIA CORP", no warning color (well under 10%).
 - **Bar chart:** NVDA is the tallest bar at 5.44%, all bars in the default (non-warning) color, comfortably left of the 10% threshold marker.
-- **Treemap:** NVDA's rectangle is visibly the largest area; hovering it shows a tooltip with "NVIDIA CORP (NVDA) — 5.44%".
-- **Detailed table:** search "NVDA" → one row, `Total Weight % = 5.44`; expand it → exactly one contribution row: `EUNL`, `5.44%`, `2026-07-23`.
+- **Treemap** (click its header to expand — collapsed by default): NVDA's rectangle is visibly the largest area; hovering it shows a tooltip with "NVIDIA CORP (NVDA) — 5.44%".
+- **Detailed table:** search "NVDA" → one row, `Total Weight % = 5.44`; expand it → exactly one contribution row: `EUNL`, Portfolio Share `100.00%`, Fund Weight `5.44%`, Contribution `5.44%`, `2026-07-23`. (Portfolio Share × Fund Weight = Contribution — this is the breakdown added after the initial UAT pass, so the math is checkable at a glance instead of only showing the final product.)
 
 ---
 
@@ -138,7 +140,11 @@ curl -s -X POST http://localhost:8000/etfs/2872f137-ed3a-485f-a3f8-79b657119cd4/
 **In the browser:**
 - **Badge** updates to "NVDA — 5.11%" — a *lower* number than Scenario 2, because VWCE's own NVDA weight (4.45%) is lower than EUNL's (5.44%) and now dilutes the combined figure. This is the single most important number in this whole script to eyeball-check: if it doesn't move to ~5.11%, the aggregation math is wrong.
 - **Bar chart** re-ranks: NVDA still tallest at 5.11%, but every bar has shifted down slightly from Scenario 2's values.
-- **Detailed table:** expand NVDA → now **two** contributions: `EUNL, 3.63%, 2026-07-23` and `VWCE, 1.48%, 2026-06-30`, summing to 5.11%.
+- **Detailed table:** expand NVDA → now **two** contributions, each showing Portfolio Share × Fund Weight = Contribution:
+  - `EUNL` — Portfolio Share `66.67%`, Fund Weight `5.44%`, Contribution `3.63%`, `2026-07-23`
+  - `VWCE` — Portfolio Share `33.33%`, Fund Weight `4.45%`, Contribution `1.48%`, `2026-06-30`
+
+  summing to 5.11%.
 
 ---
 
@@ -166,7 +172,12 @@ curl -s -X POST http://localhost:8000/etfs/36b22cdb-45e0-4a49-b9a0-a3351ecff989/
 
 **In the browser — RWE is the critical check:**
 - Search "RWE" in the detailed table → **exactly one row** (not three). If you see three separate RWE rows, the ISIN backfill/merge is broken.
-- Expand that row → **three** contributions: `EUNL`, `VWCE`, `LYP6`, each with its own small weight, summing to ≈0.10%.
+- Expand that row → **three** contributions, each showing Portfolio Share × Fund Weight = Contribution:
+  - `EUNL` — Portfolio Share `50.00%`, Fund Weight `0.04%`, Contribution `0.02%`
+  - `VWCE` — Portfolio Share `25.00%`, Fund Weight `0.05%`, Contribution `0.01%`
+  - `LYP6` — Portfolio Share `25.00%`, Fund Weight `0.28%`, Contribution `0.07%`
+
+  summing to ≈0.10%.
 - Search `DE0007037129` (RWE's ISIN) in the same search box → the same single row appears, proving the search matches on ISIN too, not just name/ticker.
 
 ---
@@ -226,7 +237,7 @@ curl -s -X POST http://localhost:8000/etfs/{QATEST_ID}/price -H "Content-Type: a
 **In the browser:**
 - Badge flips to red/warning styling, showing "QA Concentration Stock — ~79%".
 - Bar chart's top bar is almost entirely red, far past the dashed 10% threshold line.
-- Treemap's largest rectangle fills most of the canvas in `roman-terracotta`.
+- Treemap (expand its header first — collapsed by default): largest rectangle fills most of the canvas in `roman-terracotta`.
 
 **Cleanup for this scenario only:** `DELETE /etfs/{QATEST_ID}` — cascades to delete both the holding and the price snapshot, leaving zero residue (unlike touching EUNL/VWCE/LYP6 directly).
 

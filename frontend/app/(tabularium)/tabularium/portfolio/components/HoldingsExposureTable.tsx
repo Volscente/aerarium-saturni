@@ -5,6 +5,9 @@ import type { HoldingContribution, HoldingExposureResponse } from './PortfolioPa
 
 type SortColumn = 'stock_ticker' | 'stock_isin' | 'stock_name' | 'total_weight_percentage'
 
+const PAGE_SIZE_OPTIONS = [10, 25, 50, 100]
+const DEFAULT_PAGE_SIZE = 25
+
 function holdingKey(holding: HoldingExposureResponse): string {
   /**
    * Returns the stable identity key for a holding.
@@ -87,6 +90,26 @@ function sortHoldings(
   })
 }
 
+function paginateHoldings(
+  holdings: HoldingExposureResponse[],
+  page: number,
+  pageSize: number,
+): HoldingExposureResponse[] {
+  /**
+   * Slices holdings to the given 1-indexed page.
+   *
+   * Args:
+   *   holdings: Holdings to paginate (the already-searched-and-sorted list).
+   *   page: 1-indexed page number.
+   *   pageSize: Number of rows per page.
+   *
+   * Returns:
+   *   The rows for that page; empty array if page is beyond the last page.
+   */
+  const start = (page - 1) * pageSize
+  return holdings.slice(start, start + pageSize)
+}
+
 export function HoldingsExposureTable({
   holdings,
 }: {
@@ -96,11 +119,18 @@ export function HoldingsExposureTable({
    * Searchable, sortable table of all look-through holdings, with
    * per-row expansion revealing the contributing ETFs.
    *
-   * Owns searchQuery, sortColumn/sortDirection, and expandedKeys
-   * (Set<string>) state — independent multi-row expansion, not a single
-   * expandedId, since there is no fetch cost here to bound (contributions
-   * are already present on each holding). Search and sort are applied
-   * client-side via useMemo. Renders its own card with its own heading,
+   * Owns searchQuery, sortColumn/sortDirection, expandedKeys (Set<string>),
+   * and pageSize/currentPage state — independent multi-row expansion, not a
+   * single expandedId, since there is no fetch cost here to bound
+   * (contributions are already present on each holding). Search, sort, and
+   * pagination are applied client-side via useMemo, in that order (paginate
+   * runs on the already-searched-and-sorted list). Changing the search
+   * query, sort column/direction, or page size resets to page 1; currentPage
+   * is additionally clamped to the current total page count on every render
+   * so a shrinking result set (e.g. holdings itself changing) never strands
+   * the view on a page that no longer exists. The row table body scrolls
+   * independently (vertical + horizontal) so a large page size doesn't blow
+   * out the page's height. Renders its own card with its own heading,
    * matching HoldingsBarChart/HoldingsTreemap/PortfolioOverviewTable's
    * convention. Renders an empty-state message when holdings is empty,
    * and a distinct "no matches" message when a search query matches
@@ -118,6 +148,13 @@ export function HoldingsExposureTable({
   const [sortColumn, setSortColumn] = useState<SortColumn | null>(null)
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
   const [expandedKeys, setExpandedKeys] = useState<Set<string>>(new Set())
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
+  const [currentPage, setCurrentPage] = useState(1)
+
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value)
+    setCurrentPage(1)
+  }
 
   const handleSort = (column: SortColumn) => {
     if (sortColumn === column) {
@@ -126,6 +163,12 @@ export function HoldingsExposureTable({
       setSortColumn(column)
       setSortDirection('asc')
     }
+    setCurrentPage(1)
+  }
+
+  const handlePageSizeChange = (value: number) => {
+    setPageSize(value)
+    setCurrentPage(1)
   }
 
   const toggleExpanded = (key: string) => {
@@ -150,8 +193,22 @@ export function HoldingsExposureTable({
     [filteredHoldings, sortColumn, sortDirection],
   )
 
+  const totalPages = Math.max(1, Math.ceil(sortedHoldings.length / pageSize))
+  const safePage = Math.min(currentPage, totalPages)
+
+  const paginatedHoldings = useMemo(
+    () => paginateHoldings(sortedHoldings, safePage, pageSize),
+    [sortedHoldings, safePage, pageSize],
+  )
+
   const inputClass =
     'rounded border border-roman-stone/40 bg-transparent px-3 py-1.5 text-sm text-roman-stone placeholder:text-roman-stone/50 focus:border-roman-gold focus:outline-none transition-colors dark:text-roman-parchment'
+
+  const selectClass =
+    'rounded border border-roman-stone/40 bg-roman-parchment px-3 py-1.5 text-sm text-roman-stone focus:border-roman-gold focus:outline-none transition-colors dark:bg-roman-obsidian dark:text-roman-parchment'
+
+  const pageButtonClass =
+    'rounded border border-roman-stone/30 px-2 py-1 text-xs text-roman-stone hover:border-roman-gold/50 hover:text-roman-gold transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-roman-stone/30 disabled:hover:text-roman-stone'
 
   const thBase = 'py-3 pr-4 font-medium text-roman-gold text-left'
   const thSortable = `${thBase} cursor-pointer select-none hover:text-roman-parchment transition-colors`
@@ -170,17 +227,34 @@ export function HoldingsExposureTable({
         <p className="text-roman-stone">No holdings data available.</p>
       ) : (
         <>
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search by name, ticker, or ISIN…"
-            className={`${inputClass} mb-4 w-full max-w-sm`}
-          />
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              placeholder="Search by name, ticker, or ISIN…"
+              className={`${inputClass} w-full max-w-sm`}
+            />
+            <div className="flex items-center gap-2 text-sm text-roman-stone">
+              <label htmlFor="holdings-page-size">Rows per page</label>
+              <select
+                id="holdings-page-size"
+                value={pageSize}
+                onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+                className={selectClass}
+              >
+                {PAGE_SIZE_OPTIONS.map((size) => (
+                  <option key={size} value={size}>
+                    {size}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
           {sortedHoldings.length === 0 ? (
             <p className="text-roman-stone">No stocks match your search.</p>
           ) : (
-            <div className="w-full overflow-x-auto">
+            <div className="w-full max-h-[32rem] overflow-x-auto overflow-y-auto">
               <table className="w-full border-collapse text-sm text-roman-stone">
                 <thead>
                   <tr className="border-b border-roman-stone/20 text-left">
@@ -202,7 +276,7 @@ export function HoldingsExposureTable({
                   </tr>
                 </thead>
                 <tbody>
-                  {sortedHoldings.map((holding) => {
+                  {paginatedHoldings.map((holding) => {
                     const key = holdingKey(holding)
                     const isExpanded = expandedKeys.has(key)
                     return (
@@ -278,6 +352,27 @@ export function HoldingsExposureTable({
                   })}
                 </tbody>
               </table>
+            </div>
+          )}
+          {sortedHoldings.length > 0 && (
+            <div className="mt-4 flex items-center justify-end gap-3 text-sm text-roman-stone">
+              <button
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={safePage <= 1}
+                className={pageButtonClass}
+              >
+                Previous
+              </button>
+              <span className="tabular-nums">
+                Page {safePage} of {totalPages}
+              </span>
+              <button
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={safePage >= totalPages}
+                className={pageButtonClass}
+              >
+                Next
+              </button>
             </div>
           )}
         </>

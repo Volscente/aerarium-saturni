@@ -17,6 +17,7 @@ from backend.schemas.etfs import (
     EtfHoldingRow,
     EtfPriceCreate,
     EtfPriceResponse,
+    EtfPriceUpdate,
     EtfResponse,
     EtfUpdate,
 )
@@ -198,6 +199,84 @@ async def create_price(
     await session.commit()
     await session.refresh(row)
     return EtfPriceResponse.model_validate(row)
+
+
+@router.put("/{id}/price/{price_id}", response_model=EtfPriceResponse)
+async def update_price(
+    id: UUID,
+    price_id: UUID,
+    body: EtfPriceUpdate,
+    session: AsyncSession = Depends(get_session),
+) -> EtfPriceResponse:
+    """Apply a partial update to an existing price snapshot and return the result.
+
+    Fetches the ``EtfPriceHistory`` row scoped to both the parent ETF and its
+    own id, so a ``price_id`` belonging to a different ETF 404s rather than
+    silently updating the wrong ETF's price history. Applies only the
+    non-``None`` fields from ``body`` via a ``setattr`` loop. Mirrors
+    ``update_transaction`` in ``routers/transactions.py``.
+
+    Args:
+        id: UUID of the parent ETF.
+        price_id: UUID primary key of the price snapshot to update.
+        body: Partial update payload; only non-None fields are written.
+        session: Async SQLAlchemy session injected by ``Depends(get_session)``.
+
+    Returns:
+        The updated ``EtfPriceResponse``.
+
+    Raises:
+        HTTPException 404: If no price snapshot with the given ``price_id``
+            exists for the given ETF ``id``.
+    """
+    result = await session.execute(
+        select(EtfPriceHistory).where(
+            EtfPriceHistory.id == price_id, EtfPriceHistory.etf_id == id
+        )
+    )
+    row = result.scalar_one_or_none()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Price snapshot not found")
+    for field, value in body.model_dump(exclude_none=True).items():
+        setattr(row, field, value)
+    await session.commit()
+    await session.refresh(row)
+    return EtfPriceResponse.model_validate(row)
+
+
+@router.delete("/{id}/price/{price_id}", status_code=204, response_model=None)
+async def delete_price(
+    id: UUID,
+    price_id: UUID,
+    session: AsyncSession = Depends(get_session),
+) -> None:
+    """Permanently delete a price snapshot.
+
+    Scoped to both the parent ETF and its own id (see ``update_price``).
+    Mirrors ``delete_transaction`` in ``routers/transactions.py``.
+
+    Args:
+        id: UUID of the parent ETF.
+        price_id: UUID primary key of the price snapshot to delete.
+        session: Async SQLAlchemy session injected by ``Depends(get_session)``.
+
+    Returns:
+        None — HTTP 204 No Content.
+
+    Raises:
+        HTTPException 404: If no price snapshot with the given ``price_id``
+            exists for the given ETF ``id``.
+    """
+    result = await session.execute(
+        select(EtfPriceHistory).where(
+            EtfPriceHistory.id == price_id, EtfPriceHistory.etf_id == id
+        )
+    )
+    row = result.scalar_one_or_none()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Price snapshot not found")
+    await session.delete(row)
+    await session.commit()
 
 
 async def _reconcile_stock_isin_aliases_in_background() -> None:

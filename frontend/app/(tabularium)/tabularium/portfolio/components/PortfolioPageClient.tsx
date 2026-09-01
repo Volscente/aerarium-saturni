@@ -48,6 +48,7 @@ export function PortfolioPageClient({
 }): JSX.Element {
   return (
     <div className="px-6 py-8">
+      <PortfolioOverviewTable rows={overviewData.rows} />
       {exposureData.skipped_etfs.length > 0 && (
         <p className="mb-4 text-sm text-roman-stone">
           Excluded from concentration analysis (no price data):{' '}
@@ -58,7 +59,6 @@ export function PortfolioPageClient({
       <HoldingsBarChart holdings={exposureData.holdings} />
       <HoldingsTreemap holdings={exposureData.holdings} />
       <HoldingsExposureTable holdings={exposureData.holdings} />
-      <PortfolioOverviewTable rows={overviewData.rows} />
     </div>
   )
 }

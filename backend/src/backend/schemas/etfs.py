@@ -139,6 +139,12 @@ class EtfPriceCreate(BaseModel):
     timestamp: datetime
 
 
+class EtfPriceUpdate(BaseModel):
+    price: Decimal | None = Field(default=None, gt=0)
+    currency: str | None = Field(default=None, min_length=3, max_length=3)
+    timestamp: datetime | None = Field(default=None)
+
+
 class EtfPriceResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

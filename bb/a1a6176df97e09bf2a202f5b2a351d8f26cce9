@@ -1,0 +1,42 @@
+frontend/app/(tabularium)/tabularium/portfolio/components/HoldingsExposureTable.tsx
+  s_845f7ff3ec8b42::t_387556a91bdedc 319-324,342-348
+backend/src/backend/schemas/portfolio.py
+  s_845f7ff3ec8b42::t_9fecbc351feb11 37-42,44-45
+backend/tests/routers/test_portfolio.py
+  s_845f7ff3ec8b42::t_14529586369978 86-95
+frontend/app/(tabularium)/tabularium/portfolio/components/ConcentrationAlertBadge.tsx
+  s_845f7ff3ec8b42::t_419d394186dced 3
+  s_845f7ff3ec8b42::t_9348ca4fb77c17 40-43,56,65-85
+backend/src/backend/routers/portfolio.py
+  s_845f7ff3ec8b42::t_8ae00cf99dc358 353-354
+.claude/13-holdings-data-visualisation/validation-scenarios.md
+  s_845f7ff3ec8b42::t_0d982f9cc7904c 42-43
+  s_845f7ff3ec8b42::t_5b612cdb60b91e 56
+  s_845f7ff3ec8b42::t_d1802f49753776 54
+  s_845f7ff3ec8b42::t_002fa0ddbaf602 81
+  s_845f7ff3ec8b42::t_9130356c6e1d59 107
+  s_845f7ff3ec8b42::t_3010a51a54162d 108
+  s_845f7ff3ec8b42::t_47bf87cc98b116 240
+  s_845f7ff3ec8b42::t_845e593c0c423d 175-180
+  s_845f7ff3ec8b42::t_b4a3bae49b2d75 143-147
+frontend/app/(tabularium)/tabularium/portfolio/components/PortfolioPageClient.tsx
+  s_845f7ff3ec8b42::t_9ebf248e329eee 25-26
+frontend/app/(tabularium)/tabularium/portfolio/components/HoldingsTreemap.tsx
+  s_845f7ff3ec8b42::t_bc6bbb38ff797c 94-104,121,126,135,146-150,153-174,176-195
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "bba1a6176df97e09bf2a202f5b2a351d8f26cce9",
+  "prompts": {},
+  "sessions": {
+    "s_845f7ff3ec8b42": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7383f8ae-7a16-4ff8-9a08-e690866fdaeb",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Simone Porreca <porrecasimone@gmail.com>"
+    }
+  }
+}

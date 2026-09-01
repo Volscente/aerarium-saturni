@@ -1,0 +1,48 @@
+frontend/app/(tabularium)/tabularium/etf-actions.ts
+  s_845f7ff3ec8b42::t_a6958b8e56746f 229-314
+frontend/app/(tabularium)/tabularium/components/EtfRegistryTable.tsx
+  s_845f7ff3ec8b42::t_d1fee1f5481b9a 224-225,229-236
+  s_845f7ff3ec8b42::t_d5067c632a0b71 63,73-80
+  s_845f7ff3ec8b42::t_004ee2c612c3d8 8
+  s_845f7ff3ec8b42::t_60e660320ac36a 81-82
+backend/src/backend/schemas/etfs.py
+  s_845f7ff3ec8b42::t_4668e9779a6720 142-147
+frontend/app/(tabularium)/tabularium/portfolio/components/PortfolioOverviewTable.tsx
+  s_845f7ff3ec8b42::t_80b49c094bfe20 216
+  s_845f7ff3ec8b42::t_5dd9d9c3f1e339 220
+backend/src/backend/routers/etfs.py
+  s_845f7ff3ec8b42::t_5d3164a7ac73db 20
+  s_845f7ff3ec8b42::t_ec74dcd4cdf66d 204-281
+frontend/app/(tabularium)/tabularium/portfolio/components/PortfolioPageClient.tsx
+  s_845f7ff3ec8b42::t_17c71da772d366 51
+frontend/app/(tabularium)/tabularium/portfolio/components/HoldingsExposureTable.tsx
+  s_845f7ff3ec8b42::t_3613effd09a068 357-377
+  s_845f7ff3ec8b42::t_297f8d67191ed0 93-112
+  s_845f7ff3ec8b42::t_95d5de109e5d49 8-10
+  s_845f7ff3ec8b42::t_4c0286a64cb262 279
+  s_845f7ff3ec8b42::t_cd3e24b8d49312 230-253,257
+  s_845f7ff3ec8b42::t_c44840fd6a36b7 196-203,207-211
+  s_845f7ff3ec8b42::t_1eb97c5d98b0ac 122-133
+  s_845f7ff3ec8b42::t_d5d7b03e81ba81 151-157,166-171
+  s_845f7ff3ec8b42::t_b4d6822d0cc573 212
+frontend/app/(tabularium)/tabularium/components/PriceHistoryRow.tsx
+  s_845f7ff3ec8b42::t_b9815ef85d5f6c 1-190
+uv.lock
+  s_845f7ff3ec8b42::t_3de21adf48adbb 13,62
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "c5b4a113cbf31a49e0c95eb14838785f4d538192",
+  "prompts": {},
+  "sessions": {
+    "s_845f7ff3ec8b42": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7383f8ae-7a16-4ff8-9a08-e690866fdaeb",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Simone Porreca <porrecasimone@gmail.com>"
+    }
+  }
+}

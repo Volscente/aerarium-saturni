@@ -1,0 +1,115 @@
+backend/tests/routers/test_portfolio.py
+  s_845f7ff3ec8b42::t_b24d729f51c4ce 123-183
+  s_845f7ff3ec8b42::t_4c6c3b9cb535d2 72
+frontend/README.md
+  s_845f7ff3ec8b42::t_a6b48a1bae4bff 30
+  s_845f7ff3ec8b42::t_59adbcd9253538 167-176
+  s_845f7ff3ec8b42::t_8cc2d59c4044b4 19
+  s_845f7ff3ec8b42::t_f982414e6b94e5 37
+  s_845f7ff3ec8b42::t_86ffcf87cc7d2c 91
+  s_845f7ff3ec8b42::t_b06ca1310c18e7 21-25
+  s_845f7ff3ec8b42::t_80f56ac356e0b5 177-183
+  s_845f7ff3ec8b42::t_013eda3efa9621 40
+backend/pyproject.toml
+  s_845f7ff3ec8b42::t_85ec3fdf55b320 3
+.claude/14-holdings-risk-alerts/issue-000-dashboard-alert-banner-badge.md
+  s_845f7ff3ec8b42::t_c5ea49b90cfa43 1-203
+frontend/app/(tabularium)/tabularium/portfolio/components/HoldingsTreemap.tsx
+  s_845f7ff3ec8b42::t_456e64cad9a44b 118-122,127
+  s_845f7ff3ec8b42::t_e90e628dcfc95a 5-6
+  s_845f7ff3ec8b42::t_4a4f58bdf66f56 149
+  s_845f7ff3ec8b42::t_f78934ef4bc66c 91,94
+  s_845f7ff3ec8b42::t_3906bb1e15a12e 186
+  s_845f7ff3ec8b42::t_dbbaa6034f91dc 71,73-77,80-81,84,86
+pyproject.toml
+  s_845f7ff3ec8b42::t_85ec3fdf55b320 3
+.claude/14-holdings-risk-alerts/rfc.md
+  s_845f7ff3ec8b42::t_8a537bfe4de6ca 1-166
+.claude/14-holdings-risk-alerts/proposal.md
+  s_845f7ff3ec8b42::t_d4ca0dca3b7da1 1-66
+frontend/app/(tabularium)/tabularium/actions.ts
+  s_845f7ff3ec8b42::t_1e726b018dba2f 12-14
+  s_845f7ff3ec8b42::t_26e0ea546b140b 50,83,137
+  s_845f7ff3ec8b42::t_3a0812f08d3630 61-62
+  s_845f7ff3ec8b42::t_60806e320d5c3b 98-101
+backend/src/backend/schemas/portfolio.py
+  s_845f7ff3ec8b42::t_6ef93dce10cb3a 67-87,96-99
+  s_845f7ff3ec8b42::t_341ad1b0ec3869 2
+backend/src/backend/routers/portfolio.py
+  s_845f7ff3ec8b42::t_24c6344718a592 1
+  s_845f7ff3ec8b42::t_f3c6c59097afea 402,406
+  s_845f7ff3ec8b42::t_afb14a776adfa4 417
+  s_845f7ff3ec8b42::t_8472e92e42cbdf 17,22-23
+  s_845f7ff3ec8b42::t_238047b6492132 411
+  s_845f7ff3ec8b42::t_a487d736c110dc 459-461
+  s_845f7ff3ec8b42::t_fcb67b4d9d6ebf 378-384,391-393
+  s_845f7ff3ec8b42::t_957fbe47ea4bfc 288-358
+  s_845f7ff3ec8b42::t_36d7ceb96a4b4d 24
+backend/README.md
+  s_845f7ff3ec8b42::t_9eeb9c18932255 24
+  s_845f7ff3ec8b42::t_13f05bf7ff1ced 151-159
+  s_845f7ff3ec8b42::t_940951fa2aeef7 23
+  s_845f7ff3ec8b42::t_fe157676698396 44
+CHANGELOG.md
+  s_845f7ff3ec8b42::t_b36ad833f730a8 8-22
+  s_845f7ff3ec8b42::t_105272209200c5 23-34
+  s_845f7ff3ec8b42::t_e5f06fc5c9a010 35-44
+backend/tests/conftest.py
+  s_845f7ff3ec8b42::t_09f6c1b5109359 672,849-928
+  s_845f7ff3ec8b42::t_9db1bd0c1b519b 5
+  s_845f7ff3ec8b42::t_d681a04a324085 673-768
+  s_845f7ff3ec8b42::t_10c0388053358e 580,590
+.claude/14-holdings-risk-alerts/issue-000-risk-rule-evaluation-engine.md
+  s_845f7ff3ec8b42::t_b6f3cc6fbd1285 1-218
+frontend/app/(tabularium)/tabularium/portfolio/components/PortfolioPageClient.tsx
+  s_845f7ff3ec8b42::t_45881ead5a872e 4
+  s_845f7ff3ec8b42::t_562116cf6f9ea8 40-52,56
+  s_845f7ff3ec8b42::t_4bdde754f5afed 75-78
+frontend/app/(tabularium)/tabularium/portfolio/components/RiskAlertPanel.tsx
+  s_845f7ff3ec8b42::t_0bb4a7442f4afd 1-71
+frontend/app/(tabularium)/tabularium/portfolio/components/HoldingsBarChart.tsx
+  s_845f7ff3ec8b42::t_61eee40c7ff270 3-5,7
+  s_845f7ff3ec8b42::t_08de3c1d34ca6a 95
+  s_845f7ff3ec8b42::t_a67da216ffd409 34,43,49,52,57-63,69,75,86
+frontend/package.json
+  s_845f7ff3ec8b42::t_85ec3fdf55b320 3
+.claude/14-holdings-risk-alerts/planning.md
+  s_845f7ff3ec8b42::t_099f6c2e3ded41 1-138
+.claude/14-holdings-risk-alerts/issue-000-cache-invalidation-fix.md
+  s_845f7ff3ec8b42::t_166be13b759189 1-147
+frontend/app/(tabularium)/tabularium/etf-actions.ts
+  s_845f7ff3ec8b42::t_5f9bd029dbeaf5 71,129,166,231,281,320
+  s_845f7ff3ec8b42::t_9050da9298afd4 249-251
+  s_845f7ff3ec8b42::t_49d8e583d11c7a 86-87
+  s_845f7ff3ec8b42::t_496a78e42ccb54 142-143
+  s_845f7ff3ec8b42::t_b9a250c06968bb 23-25
+  s_845f7ff3ec8b42::t_6ead74d8864c34 204-205
+  s_845f7ff3ec8b42::t_7929b70ee51389 296-297
+frontend/app/(tabularium)/tabularium/portfolio/page.tsx
+  s_845f7ff3ec8b42::t_200b60fca354b5 28,31
+frontend/app/(tabularium)/tabularium/portfolio/utils/concentrationAlerts.ts
+  s_845f7ff3ec8b42::t_00c7ede1af0c15 1-20
+frontend/app/api/etfs/[id]/holdings/upload/route.ts
+  s_845f7ff3ec8b42::t_09544867c3024b 2,17-22
+frontend/app/(tabularium)/tabularium/portfolio/components/ConcentrationAlertBadge.tsx
+  s_845f7ff3ec8b42::t_71095d190ef5a5 33,36,45-48,54,63-64
+  s_845f7ff3ec8b42::t_48d00c56020f00 5-6
+uv.lock
+  s_845f7ff3ec8b42::t_decfcf12480c21 13,62
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "875a971bace53f2865675eced90805e33d3b53e6",
+  "prompts": {},
+  "sessions": {
+    "s_845f7ff3ec8b42": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7383f8ae-7a16-4ff8-9a08-e690866fdaeb",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Simone Porreca <porrecasimone@gmail.com>"
+    }
+  }
+}

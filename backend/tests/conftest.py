@@ -2,7 +2,7 @@ import os
 
 os.environ["DATABASE_URL"] = "postgresql+psycopg://test:test@localhost/test"
 
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
@@ -577,6 +577,7 @@ def mock_session_exposure_merged_by_isin():
             stock_ticker=None,
             stock_name="RWE AG",
             weight_percentage=Decimal("4.0000"),
+            snapshot_date=date.today(),
         ),
         _make_holdings_exposure_row(
             etf_ticker="LYP6",
@@ -586,6 +587,7 @@ def mock_session_exposure_merged_by_isin():
             stock_ticker=None,
             stock_name="RWE AG",
             weight_percentage=Decimal("5.0000"),
+            snapshot_date=date.today(),
         ),
     ]
     session.execute = AsyncMock(return_value=result)
@@ -668,6 +670,103 @@ def mock_session_exposure_missing_price():
 
 
 @pytest.fixture
+def mock_session_exposure_concentration_alert_above_threshold():
+    """A single ETF's only holding is 12% of the (100%-owned) portfolio — above CONCENTRATION_THRESHOLD_PCT."""
+    session = AsyncMock()
+    result = MagicMock()
+    result.all.return_value = [
+        _make_holdings_exposure_row(
+            etf_ticker="EUNL",
+            etf_current_value=Decimal("1000.0000"),
+            stock_isin=None,
+            stock_ticker="NVDA",
+            stock_name="NVIDIA CORP",
+            weight_percentage=Decimal("12.0000"),
+            snapshot_date=date.today(),
+        ),
+    ]
+    session.execute = AsyncMock(return_value=result)
+    return session
+
+
+@pytest.fixture
+def mock_session_exposure_concentration_at_exactly_threshold():
+    """A single ETF's only holding is exactly 10% — must NOT trigger a concentration alert (strict >)."""
+    session = AsyncMock()
+    result = MagicMock()
+    result.all.return_value = [
+        _make_holdings_exposure_row(
+            etf_ticker="EUNL",
+            etf_current_value=Decimal("1000.0000"),
+            stock_isin=None,
+            stock_ticker="NVDA",
+            stock_name="NVIDIA CORP",
+            weight_percentage=Decimal("10.0000"),
+            snapshot_date=date.today(),
+        ),
+    ]
+    session.execute = AsyncMock(return_value=result)
+    return session
+
+
+@pytest.fixture
+def mock_session_exposure_freshness_alert_stale():
+    """A held ETF's latest holdings snapshot is 61 days old — above FRESHNESS_THRESHOLD_DAYS."""
+    session = AsyncMock()
+    result = MagicMock()
+    result.all.return_value = [
+        _make_holdings_exposure_row(
+            etf_ticker="EUNL",
+            etf_current_value=Decimal("1000.0000"),
+            stock_isin=None,
+            stock_ticker="NVDA",
+            weight_percentage=Decimal("5.0000"),
+            snapshot_date=date.today() - timedelta(days=61),
+        ),
+    ]
+    session.execute = AsyncMock(return_value=result)
+    return session
+
+
+@pytest.fixture
+def mock_session_exposure_freshness_at_exactly_threshold():
+    """A held ETF's latest holdings snapshot is exactly 60 days old — must NOT trigger a freshness alert (strict >)."""
+    session = AsyncMock()
+    result = MagicMock()
+    result.all.return_value = [
+        _make_holdings_exposure_row(
+            etf_ticker="EUNL",
+            etf_current_value=Decimal("1000.0000"),
+            stock_isin=None,
+            stock_ticker="NVDA",
+            weight_percentage=Decimal("5.0000"),
+            snapshot_date=date.today() - timedelta(days=60),
+        ),
+    ]
+    session.execute = AsyncMock(return_value=result)
+    return session
+
+
+@pytest.fixture
+def mock_session_exposure_multiple_alerts():
+    """One ETF is simultaneously concentrated (15% weight) and stale (65 days) — both alert types fire together."""
+    session = AsyncMock()
+    result = MagicMock()
+    result.all.return_value = [
+        _make_holdings_exposure_row(
+            etf_ticker="EUNL",
+            etf_current_value=Decimal("1000.0000"),
+            stock_isin=None,
+            stock_ticker="NVDA",
+            weight_percentage=Decimal("15.0000"),
+            snapshot_date=date.today() - timedelta(days=65),
+        ),
+    ]
+    session.execute = AsyncMock(return_value=result)
+    return session
+
+
+@pytest.fixture
 def client_exposure_empty(mock_session_exposure_empty):
     async def override_get_session():
         yield mock_session_exposure_empty
@@ -735,6 +834,86 @@ def client_exposure_residual_gap(mock_session_exposure_residual_gap):
 def client_exposure_missing_price(mock_session_exposure_missing_price):
     async def override_get_session():
         yield mock_session_exposure_missing_price
+
+    app.dependency_overrides[get_session] = override_get_session
+    mock_engine = MagicMock()
+    mock_conn = AsyncMock()
+    mock_conn.run_sync = AsyncMock()
+    mock_engine.begin.return_value = _make_async_cm(mock_conn)
+    with patch("backend.main.engine", mock_engine):
+        with TestClient(app) as c:
+            yield c
+    app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def client_exposure_concentration_alert_above_threshold(mock_session_exposure_concentration_alert_above_threshold):
+    async def override_get_session():
+        yield mock_session_exposure_concentration_alert_above_threshold
+
+    app.dependency_overrides[get_session] = override_get_session
+    mock_engine = MagicMock()
+    mock_conn = AsyncMock()
+    mock_conn.run_sync = AsyncMock()
+    mock_engine.begin.return_value = _make_async_cm(mock_conn)
+    with patch("backend.main.engine", mock_engine):
+        with TestClient(app) as c:
+            yield c
+    app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def client_exposure_concentration_at_exactly_threshold(mock_session_exposure_concentration_at_exactly_threshold):
+    async def override_get_session():
+        yield mock_session_exposure_concentration_at_exactly_threshold
+
+    app.dependency_overrides[get_session] = override_get_session
+    mock_engine = MagicMock()
+    mock_conn = AsyncMock()
+    mock_conn.run_sync = AsyncMock()
+    mock_engine.begin.return_value = _make_async_cm(mock_conn)
+    with patch("backend.main.engine", mock_engine):
+        with TestClient(app) as c:
+            yield c
+    app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def client_exposure_freshness_alert_stale(mock_session_exposure_freshness_alert_stale):
+    async def override_get_session():
+        yield mock_session_exposure_freshness_alert_stale
+
+    app.dependency_overrides[get_session] = override_get_session
+    mock_engine = MagicMock()
+    mock_conn = AsyncMock()
+    mock_conn.run_sync = AsyncMock()
+    mock_engine.begin.return_value = _make_async_cm(mock_conn)
+    with patch("backend.main.engine", mock_engine):
+        with TestClient(app) as c:
+            yield c
+    app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def client_exposure_freshness_at_exactly_threshold(mock_session_exposure_freshness_at_exactly_threshold):
+    async def override_get_session():
+        yield mock_session_exposure_freshness_at_exactly_threshold
+
+    app.dependency_overrides[get_session] = override_get_session
+    mock_engine = MagicMock()
+    mock_conn = AsyncMock()
+    mock_conn.run_sync = AsyncMock()
+    mock_engine.begin.return_value = _make_async_cm(mock_conn)
+    with patch("backend.main.engine", mock_engine):
+        with TestClient(app) as c:
+            yield c
+    app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def client_exposure_multiple_alerts(mock_session_exposure_multiple_alerts):
+    async def override_get_session():
+        yield mock_session_exposure_multiple_alerts
 
     app.dependency_overrides[get_session] = override_get_session
     mock_engine = MagicMock()

@@ -2,9 +2,9 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { hierarchy, treemap, type HierarchyRectangularNode } from 'd3-hierarchy'
-import type { HoldingExposureResponse } from './PortfolioPageClient'
+import type { HoldingExposureResponse, RiskAlert } from './PortfolioPageClient'
+import { concentratedStockKeys } from '../utils/concentrationAlerts'
 
-const WARNING_THRESHOLD_PCT = 10
 const LABEL_MIN_WIDTH_PX = 48
 const LABEL_MIN_HEIGHT_PX = 24
 const TREEMAP_HEIGHT_PX = 400
@@ -68,25 +68,30 @@ function canFitLabel(node: HierarchyRectangularNode<HoldingExposureResponse>): b
   return node.x1 - node.x0 >= LABEL_MIN_WIDTH_PX && node.y1 - node.y0 >= LABEL_MIN_HEIGHT_PX
 }
 
-function treemapCellFill(totalWeightPercentage: number): string {
+function treemapCellFill(isConcentrationAlert: boolean): string {
   /**
-   * Returns the Tailwind fill class for a leaf, matching the same
-   * `> 10` warning rule already applied by ConcentrationAlertBadge and
-   * HoldingsBarChart.
+   * Returns the Tailwind fill class for a leaf.
+   *
+   * Was: compared totalWeightPercentage against a local WARNING_THRESHOLD_PCT.
+   * Now: takes the caller's precomputed alert-membership check directly, so
+   * the >10 comparison itself lives only in the backend's RiskAlert derivation.
    *
    * Args:
-   *   totalWeightPercentage: The holding's total_weight_percentage.
+   *   isConcentrationAlert: Whether this holding's key is present in
+   *                         concentratedStockKeys(alerts).
    *
    * Returns:
-   *   'fill-roman-terracotta' when strictly above the warning threshold, else 'fill-roman-gold'.
+   *   'fill-roman-terracotta' when flagged, else 'fill-roman-gold'.
    */
-  return totalWeightPercentage > WARNING_THRESHOLD_PCT ? 'fill-roman-terracotta' : 'fill-roman-gold'
+  return isConcentrationAlert ? 'fill-roman-terracotta' : 'fill-roman-gold'
 }
 
 export function HoldingsTreemap({
   holdings,
+  alerts,
 }: {
   holdings: HoldingExposureResponse[]
+  alerts: RiskAlert[]
 }): JSX.Element {
   /**
    * Renders all holdings as a treemap, area-scaled by total_weight_percentage.
@@ -110,10 +115,16 @@ export function HoldingsTreemap({
    * library. Renders an empty-state message when holdings has no
    * positive-weight rows, matching HoldingsBarChart's pattern.
    *
+   * Cells whose key is flagged by a concentration_risk alert (see
+   * concentratedStockKeys) render in roman-terracotta instead of
+   * roman-gold — the backend's RiskAlert list is now the single source
+   * of truth for the 10% limit, not a locally duplicated comparison.
+   *
    * Args:
    *   holdings: Full look-through exposure list from
    *             GET /portfolio/holdings/exposure, passed by
    *             PortfolioPageClient.
+   *   alerts: Full alert list from the same response.
    *
    * Returns:
    *   JSX treemap, or an empty-state message when there is no data to show.
@@ -135,6 +146,7 @@ export function HoldingsTreemap({
   }, [isOpen])
 
   const hasHoldings = holdings.some((h) => h.total_weight_percentage > 0)
+  const concentratedKeys = useMemo(() => concentratedStockKeys(alerts), [alerts])
 
   const leaves = useMemo(
     () => buildTreemapLayout(holdings, width, TREEMAP_HEIGHT_PX),
@@ -171,7 +183,7 @@ export function HoldingsTreemap({
                     <rect
                       width={leaf.x1 - leaf.x0}
                       height={leaf.y1 - leaf.y0}
-                      className={`${treemapCellFill(holding.total_weight_percentage)} stroke-1 stroke-roman-obsidian/20`}
+                      className={`${treemapCellFill(concentratedKeys.has(key))} stroke-1 stroke-roman-obsidian/20`}
                     >
                       <title>
                         {`${holding.stock_name} (${label}) — ${holding.total_weight_percentage.toFixed(2)}%`}

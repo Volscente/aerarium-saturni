@@ -2,9 +2,8 @@
 
 import { useState } from 'react'
 import { TriangleAlert } from 'lucide-react'
-import type { HoldingExposureResponse } from './PortfolioPageClient'
-
-const WARNING_THRESHOLD_PCT = 10
+import type { HoldingExposureResponse, RiskAlert } from './PortfolioPageClient'
+import { concentratedStockKeys } from '../utils/concentrationAlerts'
 
 function maxExposure(
   holdings: HoldingExposureResponse[],
@@ -31,8 +30,10 @@ function maxExposure(
 
 export function ConcentrationAlertBadge({
   holdings,
+  alerts,
 }: {
   holdings: HoldingExposureResponse[]
+  alerts: RiskAlert[]
 }): JSX.Element | null {
   /**
    * Renders the single largest look-through exposure across all holdings.
@@ -41,14 +42,16 @@ export function ConcentrationAlertBadge({
    * pattern already used by EtfRegistryTable and HoldingsExposureTable —
    * defaults to open so the top concentration risk is still visible with
    * no interaction required; collapsing is an opt-out, not the default.
-   * Applies warning styling when the top exposure is strictly greater
-   * than 10% — a stock sitting exactly at the 10% line is at the limit,
-   * not yet over it.
+   * Applies warning styling when the top holding's key is flagged by a
+   * concentration_risk alert (see concentratedStockKeys) — the backend's
+   * RiskAlert list is now the single source of truth for the 10% limit,
+   * not a locally-duplicated comparison.
    *
    * Args:
    *   holdings: Full look-through exposure list from
    *             GET /portfolio/holdings/exposure, passed by
    *             PortfolioPageClient.
+   *   alerts: Full alert list from the same response.
    *
    * Returns:
    *   JSX badge, or null when holdings is empty.
@@ -57,7 +60,8 @@ export function ConcentrationAlertBadge({
   const top = maxExposure(holdings)
   if (!top) return null
 
-  const isWarning = top.total_weight_percentage > WARNING_THRESHOLD_PCT
+  const topKey = top.stock_isin ?? top.stock_ticker ?? top.stock_name
+  const isWarning = concentratedStockKeys(alerts).has(topKey)
   const accentClass = isWarning ? 'text-roman-terracotta' : 'text-roman-gold'
   const label = top.stock_ticker ?? top.stock_isin ?? top.stock_name
 

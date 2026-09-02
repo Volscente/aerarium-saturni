@@ -1,3 +1,4 @@
+from datetime import date
 from decimal import Decimal
 from uuid import UUID
 
@@ -13,9 +14,13 @@ from backend.schemas.portfolio import (
     HoldingsExposureResponse,
     PortfolioOverviewResponse,
     PortfolioRowResponse,
+    RiskAlert,
 )
 
 router = APIRouter()
+
+CONCENTRATION_THRESHOLD_PCT = Decimal("10")
+FRESHNESS_THRESHOLD_DAYS = 60
 
 
 def _build_portfolio_query() -> Select:
@@ -280,6 +285,77 @@ def _build_holdings_exposure_query() -> Select:
     )
 
 
+def _build_concentration_alerts(holdings: list[HoldingExposureResponse]) -> list[RiskAlert]:
+    """Builds one RiskAlert per holding whose total_weight_percentage exceeds CONCENTRATION_THRESHOLD_PCT.
+
+    Strict `>`, matching the same convention already established across the
+    frontend's badge/bar-chart/treemap warning coloring (a holding sitting
+    exactly at the threshold is at the limit, not yet over it).
+
+    Args:
+        holdings: The already-built, already-sorted holdings list.
+
+    Returns:
+        Zero or more RiskAlert objects with rule='concentration_risk'.
+    """
+    alerts = []
+    for holding in holdings:
+        if holding.total_weight_percentage > CONCENTRATION_THRESHOLD_PCT:
+            label = holding.stock_ticker or holding.stock_isin or holding.stock_name
+            alerts.append(
+                RiskAlert(
+                    rule="concentration_risk",
+                    message=f"{label} is {holding.total_weight_percentage:.2f}% of the combined portfolio, "
+                    f"above the {CONCENTRATION_THRESHOLD_PCT}% concentration limit.",
+                    stock_isin=holding.stock_isin,
+                    stock_ticker=holding.stock_ticker,
+                    stock_name=holding.stock_name,
+                    total_weight_percentage=holding.total_weight_percentage,
+                )
+            )
+    return alerts
+
+
+def _build_freshness_alerts(
+    etf_values: dict[UUID, tuple[str, str, Decimal | None, date | None]],
+) -> list[RiskAlert]:
+    """Builds one RiskAlert per distinct owned ETF whose latest snapshot_date is more than FRESHNESS_THRESHOLD_DAYS days before today.
+
+    An ETF with no holdings snapshot at all (snapshot_date is None — not
+    structurally possible today since every row in etf_values comes from a
+    join against EtfHolding, but defensively skipped rather than raising)
+    produces no alert; a priceless ETF (already excluded from etf_values'
+    weighting elsewhere) can still be evaluated for freshness independently,
+    since freshness is about the holdings snapshot, not the price record.
+
+    Args:
+        etf_values: The existing per-etf_id dedup dict, extended with each
+            ETF's name and snapshot_date.
+
+    Returns:
+        Zero or more RiskAlert objects with rule='data_freshness_risk'.
+    """
+    alerts = []
+    today = date.today()
+    for etf_ticker, etf_name, _, snapshot_date in etf_values.values():
+        if snapshot_date is None:
+            continue
+        days_stale = (today - snapshot_date).days
+        if days_stale > FRESHNESS_THRESHOLD_DAYS:
+            alerts.append(
+                RiskAlert(
+                    rule="data_freshness_risk",
+                    message=f"{etf_ticker}'s holdings snapshot is {days_stale} days old "
+                    f"(last updated {snapshot_date.isoformat()}), above the {FRESHNESS_THRESHOLD_DAYS}-day freshness limit.",
+                    etf_ticker=etf_ticker,
+                    etf_name=etf_name,
+                    snapshot_date=snapshot_date,
+                    days_stale=days_stale,
+                )
+            )
+    return alerts
+
+
 @router.get("/holdings/exposure", response_model=HoldingsExposureResponse)
 async def get_holdings_exposure(
     session: AsyncSession = Depends(get_session),
@@ -299,14 +375,22 @@ async def get_holdings_exposure(
     Missing-price handling is a settled decision (not an open question): a
     priceless ETF is skipped rather than nulling the whole response.
 
+    Also derives ``alerts``: a Concentration Risk ``RiskAlert`` for every
+    holding whose ``total_weight_percentage`` exceeds ``CONCENTRATION_THRESHOLD_PCT``
+    (``_build_concentration_alerts``), and a Data Freshness Risk ``RiskAlert``
+    for every distinct owned ETF whose latest holdings ``snapshot_date`` is
+    more than ``FRESHNESS_THRESHOLD_DAYS`` days old (``_build_freshness_alerts``).
+    Both reuse data already computed above — no additional query.
+
     Args:
         session: Async SQLAlchemy session injected by ``Depends(get_session)``.
 
     Returns:
         A ``HoldingsExposureResponse`` with one ``HoldingExposureResponse`` per
         distinct stock identity found across all owned ETFs' latest holdings
-        snapshots, plus the tickers of any ETFs excluded for lacking a price
-        record. Returns ``holdings=[]`` when no ETFs are held.
+        snapshots, the tickers of any ETFs excluded for lacking a price
+        record, and any active Concentration Risk / Data Freshness Risk
+        alerts. Returns ``holdings=[]``/``alerts=[]`` when no ETFs are held.
 
     Raises:
         sqlalchemy.exc.OperationalError: If the database is unreachable at query time.
@@ -315,22 +399,22 @@ async def get_holdings_exposure(
     result = await session.execute(stmt)
     rows = result.all()
 
-    etf_values: dict[UUID, tuple[str, Decimal | None]] = {}
+    etf_values: dict[UUID, tuple[str, str, Decimal | None, date | None]] = {}
     skipped_etfs: set[str] = set()
     for row in rows:
         if row.etf_id not in etf_values:
-            etf_values[row.etf_id] = (row.etf_ticker, row.etf_current_value)
+            etf_values[row.etf_id] = (row.etf_ticker, row.etf_name, row.etf_current_value, row.snapshot_date)
             if row.etf_current_value is None:
                 skipped_etfs.add(row.etf_ticker)
 
     total_portfolio_value = sum(
-        (value for _, value in etf_values.values() if value is not None),
+        (value for _, _, value, _ in etf_values.values() if value is not None),
         Decimal("0"),
     )
 
     groups: dict[str, dict] = {}
     for row in rows:
-        _, etf_current_value = etf_values[row.etf_id]
+        _, _, etf_current_value, _ = etf_values[row.etf_id]
         if etf_current_value is None or total_portfolio_value == 0:
             continue
         etf_portfolio_weight = etf_current_value / total_portfolio_value
@@ -372,4 +456,6 @@ async def get_holdings_exposure(
         reverse=True,
     )
 
-    return HoldingsExposureResponse(holdings=holdings, skipped_etfs=sorted(skipped_etfs))
+    alerts = _build_concentration_alerts(holdings) + _build_freshness_alerts(etf_values)
+
+    return HoldingsExposureResponse(holdings=holdings, skipped_etfs=sorted(skipped_etfs), alerts=alerts)

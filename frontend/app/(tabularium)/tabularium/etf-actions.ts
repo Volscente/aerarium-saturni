@@ -20,8 +20,9 @@ export async function createEtf(
    *
    * Parses payload with EtfFormSchema. On success, transforms the JSONB string
    * fields back to Record<string, number> by JSON.parse before POSTing to
-   * ${BACKEND_URL}/etfs. On HTTP 201, calls revalidateTag('etfs') and returns
-   * { success: true }. Mirrors createTransaction in actions.ts.
+   * ${BACKEND_URL}/etfs. On HTTP 201, calls revalidateTag('etfs'),
+   * revalidateTag('portfolio-overview'), and revalidateTag('holdings-exposure'),
+   * then returns { success: true }. Mirrors createTransaction in actions.ts.
    *
    * Args:
    *   payload: EtfFormValues from EtfForm; validated client-side, re-validated
@@ -67,6 +68,7 @@ export async function createEtf(
 
     revalidateTag('etfs')
     revalidateTag('portfolio-overview')
+    revalidateTag('holdings-exposure')
     return { success: true }
   } catch (err) {
     return { error: err instanceof Error ? err.message : 'Network error' }
@@ -81,7 +83,8 @@ export async function updateEtf(
    * Server Action: partially update an ETF and invalidate the registry cache.
    *
    * PUTs to ${BACKEND_URL}/etfs/{id} sending only non-undefined fields. On
-   * HTTP 200, calls revalidateTag('etfs'). On 404, returns a descriptive error.
+   * HTTP 200, calls revalidateTag('etfs'), revalidateTag('portfolio-overview'),
+   * and revalidateTag('holdings-exposure'). On 404, returns a descriptive error.
    *
    * Args:
    *   id: UUID string of the ETF to update.
@@ -123,6 +126,7 @@ export async function updateEtf(
 
     revalidateTag('etfs')
     revalidateTag('portfolio-overview')
+    revalidateTag('holdings-exposure')
     return { success: true }
   } catch (err) {
     return { error: err instanceof Error ? err.message : 'Network error' }
@@ -135,7 +139,8 @@ export async function deleteEtf(
   /**
    * Server Action: delete an ETF and its cascaded holdings and price history.
    *
-   * DELETEs ${BACKEND_URL}/etfs/{id}. On HTTP 204, calls revalidateTag('etfs').
+   * DELETEs ${BACKEND_URL}/etfs/{id}. On HTTP 204, calls revalidateTag('etfs'),
+   * revalidateTag('portfolio-overview'), and revalidateTag('holdings-exposure').
    * Cascade deletion of etf_holdings and etf_price_history rows is handled by
    * the database ON DELETE CASCADE constraint established in TASK-1.
    *
@@ -158,6 +163,7 @@ export async function deleteEtf(
 
     revalidateTag('etfs')
     revalidateTag('portfolio-overview')
+    revalidateTag('holdings-exposure')
     return { success: true }
   } catch (err) {
     return { error: err instanceof Error ? err.message : 'Network error' }
@@ -195,7 +201,8 @@ export async function addPriceSnapshot(
    * Server Action: append a manual price snapshot to etf_price_history.
    *
    * POSTs to ${BACKEND_URL}/etfs/{id}/price with { price, currency, timestamp }.
-   * On HTTP 201, calls revalidateTag('etfs'). On 404, returns { error: 'ETF not found' }.
+   * On HTTP 201, calls revalidateTag('etfs'), revalidateTag('portfolio-overview'),
+   * and revalidateTag('holdings-exposure'). On 404, returns { error: 'ETF not found' }.
    *
    * Args:
    *   id: UUID string of the parent ETF.
@@ -221,6 +228,7 @@ export async function addPriceSnapshot(
 
     revalidateTag('etfs')
     revalidateTag('portfolio-overview')
+    revalidateTag('holdings-exposure')
     return { success: true }
   } catch (err) {
     return { error: err instanceof Error ? err.message : 'Network error' }
@@ -238,8 +246,9 @@ export async function updatePriceSnapshot(
    * Server Action: partially update an existing price snapshot.
    *
    * PUTs to ${BACKEND_URL}/etfs/{etfId}/price/{priceId} with
-   * { price, currency, timestamp }. On HTTP 200, calls revalidateTag('etfs')
-   * and revalidateTag('portfolio-overview'), mirroring addPriceSnapshot.
+   * { price, currency, timestamp }. On HTTP 200, calls revalidateTag('etfs'),
+   * revalidateTag('portfolio-overview'), and revalidateTag('holdings-exposure'),
+   * mirroring addPriceSnapshot.
    *
    * Args:
    *   etfId: UUID string of the parent ETF.
@@ -269,6 +278,7 @@ export async function updatePriceSnapshot(
 
     revalidateTag('etfs')
     revalidateTag('portfolio-overview')
+    revalidateTag('holdings-exposure')
     return { success: true }
   } catch (err) {
     return { error: err instanceof Error ? err.message : 'Network error' }
@@ -283,8 +293,8 @@ export async function deletePriceSnapshot(
    * Server Action: permanently delete a price snapshot.
    *
    * DELETEs ${BACKEND_URL}/etfs/{etfId}/price/{priceId}. On HTTP 204, calls
-   * revalidateTag('etfs') and revalidateTag('portfolio-overview'), mirroring
-   * deleteEtf.
+   * revalidateTag('etfs'), revalidateTag('portfolio-overview'), and
+   * revalidateTag('holdings-exposure'), mirroring deleteEtf.
    *
    * Args:
    *   etfId: UUID string of the parent ETF.
@@ -307,6 +317,7 @@ export async function deletePriceSnapshot(
 
     revalidateTag('etfs')
     revalidateTag('portfolio-overview')
+    revalidateTag('holdings-exposure')
     return { success: true }
   } catch (err) {
     return { error: err instanceof Error ? err.message : 'Network error' }

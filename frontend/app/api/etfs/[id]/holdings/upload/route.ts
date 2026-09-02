@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { revalidateTag } from 'next/cache'
 
 export async function POST(
   req: NextRequest,
@@ -13,5 +14,11 @@ export async function POST(
   })
 
   const data = await res.json()
+
+  if (res.ok) {
+    revalidateTag('holdings-exposure')
+    revalidateTag('portfolio-overview')
+  }
+
   return NextResponse.json(data, { status: res.status })
 }

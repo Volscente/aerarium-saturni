@@ -5,6 +5,43 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.2] - 2026-09-01
+
+### Added
+
+- **Frontend**: New `RiskAlertPanel` component (`frontend/app/(tabularium)/tabularium/portfolio/components/RiskAlertPanel.tsx`) — collapsible alert badge/banner on `/tabularium/portfolio`; renders nothing when there are no active alerts, defaults expanded otherwise, listing every `RiskAlert.message` from the backend.
+- **Frontend**: New `concentratedStockKeys` shared helper (`frontend/app/(tabularium)/tabularium/portfolio/utils/concentrationAlerts.ts`).
+
+### Changed
+
+- **Frontend**: `ConcentrationAlertBadge`, `HoldingsBarChart`, and `HoldingsTreemap` no longer independently hardcode a `total_weight_percentage > 10` comparison — each now derives its warning coloring from the backend's `RiskAlert` list via `concentratedStockKeys`, so the 10% concentration limit is compared in exactly one place across the whole codebase (the backend, per TASK-2).
+
+### Notes
+
+- This is TASK-3 of the **Holdings Risk Alerts** initiative (see `.claude/14-holdings-risk-alerts/rfc.md`) — completes the initiative (TASK-1 cache-invalidation fix, TASK-2 rule engine, TASK-3 dashboard rendering).
+
+## [0.5.1] - 2026-09-01
+
+### Added
+
+- **Backend**: New `RiskAlert` Pydantic schema (`backend/src/backend/schemas/portfolio.py`) — `rule: Literal["concentration_risk", "data_freshness_risk"]`, a ready-to-render `message`, plus rule-specific context fields. `HoldingsExposureResponse` gains an `alerts: list[RiskAlert]` field.
+- **Backend**: `GET /portfolio/holdings/exposure` now derives two risk rules inside the existing aggregation, with no new query: Concentration Risk fires for any holding whose `total_weight_percentage` exceeds 10%; Data Freshness Risk fires for any owned ETF whose latest holdings `snapshot_date` is more than 60 days old (`_build_concentration_alerts`, `_build_freshness_alerts` in `backend/src/backend/routers/portfolio.py`).
+- **Tests**: 6 new tests covering both rules' threshold boundaries (strict `>`, not `>=`), the zero-alert case, and both alert types firing together.
+
+### Notes
+
+- This is TASK-2 of the **Holdings Risk Alerts** initiative (see `.claude/14-holdings-risk-alerts/rfc.md`) — the dashboard-facing Alert Badge/Banner (TASK-3) consumes this `alerts` field next.
+
+## [0.5.0] - 2026-09-01
+
+### Fixed
+
+- **Frontend**: `revalidateTag('holdings-exposure')` was never called by any mutation path — `actions.ts` (transactions), `etf-actions.ts` (ETFs/prices), and the holdings-upload route handler all invalidated their own domain tags and `portfolio-overview`, but never the tag `frontend/app/(tabularium)/tabularium/portfolio/page.tsx` actually uses to fetch `GET /portfolio/holdings/exposure`. This meant the Concentration Dashboard (Alert Badge, Bar Chart, Treemap, Detailed Table) could silently keep showing pre-mutation numbers after a buy/sell transaction, a price update, or a holdings CSV/XLSX upload, until Next.js's default fetch cache eventually expired on its own. Added `revalidateTag('holdings-exposure')` to all 9 existing Server Action mutation functions across both files, plus `app/api/etfs/[id]/holdings/upload/route.ts` (which also gained its first-ever `revalidateTag` calls, `holdings-exposure` and `portfolio-overview`, since a Route Handler can call `revalidateTag` the same way a Server Action does).
+
+### Notes
+
+- This is TASK-1 of the new **Holdings Risk Alerts** initiative (see `.claude/14-holdings-risk-alerts/rfc.md`) — a prerequisite for that initiative's "real-time re-evaluation" objective, found and fixed during design rather than assumed to already work.
+
 ## [0.4.7] - 2026-08-29
 
 ### Added

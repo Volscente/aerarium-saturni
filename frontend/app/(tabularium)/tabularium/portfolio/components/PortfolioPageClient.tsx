@@ -1,6 +1,7 @@
 'use client'
 
 import { PortfolioOverviewTable } from './PortfolioOverviewTable'
+import { RiskAlertPanel } from './RiskAlertPanel'
 import { ConcentrationAlertBadge } from './ConcentrationAlertBadge'
 import { HoldingsBarChart } from './HoldingsBarChart'
 import { HoldingsTreemap } from './HoldingsTreemap'
@@ -36,9 +37,23 @@ export interface HoldingExposureResponse {
   contributions: HoldingContribution[]
 }
 
+export interface RiskAlert {
+  rule: 'concentration_risk' | 'data_freshness_risk'
+  message: string
+  stock_isin: string | null
+  stock_ticker: string | null
+  stock_name: string | null
+  total_weight_percentage: number | null
+  etf_ticker: string | null
+  etf_name: string | null
+  snapshot_date: string | null
+  days_stale: number | null
+}
+
 export interface HoldingsExposureResponse {
   holdings: HoldingExposureResponse[]
   skipped_etfs: string[]
+  alerts: RiskAlert[]
 }
 
 export function PortfolioPageClient({
@@ -57,9 +72,10 @@ export function PortfolioPageClient({
           {exposureData.skipped_etfs.join(', ')}
         </p>
       )}
-      <ConcentrationAlertBadge holdings={exposureData.holdings} />
-      <HoldingsBarChart holdings={exposureData.holdings} />
-      <HoldingsTreemap holdings={exposureData.holdings} />
+      <RiskAlertPanel alerts={exposureData.alerts} />
+      <ConcentrationAlertBadge holdings={exposureData.holdings} alerts={exposureData.alerts} />
+      <HoldingsBarChart holdings={exposureData.holdings} alerts={exposureData.alerts} />
+      <HoldingsTreemap holdings={exposureData.holdings} alerts={exposureData.alerts} />
       <HoldingsExposureTable holdings={exposureData.holdings} />
     </div>
   )

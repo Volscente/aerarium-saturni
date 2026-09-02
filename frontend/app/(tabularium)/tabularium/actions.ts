@@ -9,7 +9,9 @@ export async function updateTransaction(
 ): Promise<{ success: true } | { error: string }> {
   /**
    * Re-validates payload with TransactionFormSchema, calls PUT /transactions/{id},
-   * and invalidates both cache tags on success.
+   * and invalidates all three cache tags on success (transactions, portfolio-overview,
+   * holdings-exposure — a transaction change can alter net ETF quantities and
+   * therefore look-through exposure).
    *
    * Args:
    *   id: UUID of the transaction to update.
@@ -45,6 +47,7 @@ export async function updateTransaction(
 
     revalidateTag('transactions')
     revalidateTag('portfolio-overview')
+    revalidateTag('holdings-exposure')
     return { success: true }
   } catch (err) {
     return { error: err instanceof Error ? err.message : 'Network error' }
@@ -55,7 +58,8 @@ export async function deleteTransaction(
   id: string
 ): Promise<{ success: true } | { error: string }> {
   /**
-   * Calls DELETE /transactions/{id} and invalidates both cache tags on success.
+   * Calls DELETE /transactions/{id} and invalidates all three cache tags on
+   * success (transactions, portfolio-overview, holdings-exposure).
    *
    * Args:
    *   id: UUID of the transaction to delete.
@@ -76,6 +80,7 @@ export async function deleteTransaction(
 
     revalidateTag('transactions')
     revalidateTag('portfolio-overview')
+    revalidateTag('holdings-exposure')
     return { success: true }
   } catch (err) {
     return { error: err instanceof Error ? err.message : 'Network error' }
@@ -90,10 +95,10 @@ export async function createTransaction(
    *
    * Parses `payload` with `TransactionFormSchema` (Zod). On parse success, POSTs
    * to `${process.env.BACKEND_URL}/transactions`. On HTTP 201, calls
-   * `revalidateTag('transactions')` to invalidate the ledger cache and returns
-   * `{ success: true }`. On Zod parse failure or non-201 HTTP response, returns
-   * `{ error: string }` without throwing — callers receive a structured error
-   * they can render inline.
+   * `revalidateTag('transactions')`, `revalidateTag('portfolio-overview')`, and
+   * `revalidateTag('holdings-exposure')` and returns `{ success: true }`. On Zod
+   * parse failure or non-201 HTTP response, returns `{ error: string }` without
+   * throwing — callers receive a structured error they can render inline.
    *
    * Args:
    *   payload: Raw form values from `TransactionForm`; validated client-side
@@ -129,6 +134,7 @@ export async function createTransaction(
 
     revalidateTag('transactions')
     revalidateTag('portfolio-overview')
+    revalidateTag('holdings-exposure')
     return { success: true }
   } catch (err) {
     return { error: err instanceof Error ? err.message : 'Network error' }

@@ -25,10 +25,10 @@ async function fetchHoldingsExposure(): Promise<HoldingsExposureResponse> {
       `${process.env.BACKEND_URL}/portfolio/holdings/exposure`,
       { next: { tags: ['holdings-exposure'] } }
     )
-    if (!res.ok) return { holdings: [], skipped_etfs: [] }
+    if (!res.ok) return { holdings: [], skipped_etfs: [], alerts: [] }
     return res.json()
   } catch {
-    return { holdings: [], skipped_etfs: [] }
+    return { holdings: [], skipped_etfs: [], alerts: [] }
   }
 }
 

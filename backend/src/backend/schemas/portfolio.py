@@ -1,4 +1,5 @@
 from datetime import date
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -63,6 +64,27 @@ class HoldingExposureResponse(BaseModel):
     )
 
 
+class RiskAlert(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    rule: Literal["concentration_risk", "data_freshness_risk"] = Field(
+        description="Which rule produced this alert."
+    )
+    message: str = Field(description="Human-readable summary, ready to render as-is.")
+    # Concentration Risk context (present only when rule == 'concentration_risk'):
+    stock_isin: str | None = Field(default=None, description="ISIN of the concentrated stock, if known.")
+    stock_ticker: str | None = Field(default=None, description="Ticker of the concentrated stock, if known.")
+    stock_name: str | None = Field(default=None, description="Name of the concentrated stock.")
+    total_weight_percentage: float | None = Field(
+        default=None, description="The breaching total_weight_percentage value."
+    )
+    # Data Freshness Risk context (present only when rule == 'data_freshness_risk'):
+    etf_ticker: str | None = Field(default=None, description="Ticker of the stale ETF.")
+    etf_name: str | None = Field(default=None, description="Name of the stale ETF.")
+    snapshot_date: date | None = Field(default=None, description="The stale ETF's latest holdings snapshot_date.")
+    days_stale: int | None = Field(default=None, description="Days between today and snapshot_date.")
+
+
 class HoldingsExposureResponse(BaseModel):
     holdings: list[HoldingExposureResponse] = Field(
         description="One row per distinct stock identity (ISIN-priority, ticker-fallback), ordered by total_weight_percentage DESC."
@@ -70,4 +92,8 @@ class HoldingsExposureResponse(BaseModel):
     skipped_etfs: list[str] = Field(
         default_factory=list,
         description="Tickers of owned ETFs excluded from the aggregation because they have no price record in etf_price_history.",
+    )
+    alerts: list[RiskAlert] = Field(
+        default_factory=list,
+        description="Active Concentration Risk and Data Freshness Risk warnings, computed fresh on every request.",
     )

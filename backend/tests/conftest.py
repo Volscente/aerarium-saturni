@@ -28,8 +28,6 @@ VALID_ETF_PAYLOAD = {
     "german_tax_classification": "Aktien",
     "replication_strategy": "Full replication",
     "dividend_policy": "Accumulating",
-    "geographical_distribution": {"US": 63.0, "EU": 20.0},
-    "sector_distribution": {"Technology": 25.0, "Financials": 18.0},
 }
 
 VALID_BUY_PAYLOAD = {
@@ -930,11 +928,13 @@ def client_exposure_multiple_alerts(mock_session_exposure_multiple_alerts):
 
 @pytest.fixture
 def mock_session_geography_multi_country():
-    """Two stocks in different countries/sectors, one stock with unmapped (None) country/sector.
+    """Stocks in different countries/sectors, one stock with unmapped (None) country/sector,
+    and two US/Information-Technology stocks both held by EUNL (to test that an ETF holding
+    multiple stocks in the same bucket collapses into one contribution row per bucket).
 
-    Both EUNL rows share the same etf_id, since _aggregate_stock_groups
+    All EUNL rows share the same etf_id, since _aggregate_stock_groups
     dedupes etf_current_value by etf_id -- giving them different default
-    (random) etf_ids would double-count EUNL's value across both rows.
+    (random) etf_ids would double-count EUNL's value across rows.
     """
     session = AsyncMock()
     result = MagicMock()
@@ -961,6 +961,17 @@ def mock_session_geography_multi_country():
             stock_country="US",
             stock_sector="Information Technology",
             weight_percentage=Decimal("6.0000"),
+        ),
+        _make_holdings_exposure_row(
+            etf_id=eunl_id,
+            etf_ticker="EUNL",
+            etf_current_value=Decimal("6000.0000"),
+            stock_isin=None,
+            stock_ticker="AAPL",
+            stock_name="APPLE INC",
+            stock_country="US",
+            stock_sector="Information Technology",
+            weight_percentage=Decimal("3.0000"),
         ),
         _make_holdings_exposure_row(
             etf_ticker="LYP6",

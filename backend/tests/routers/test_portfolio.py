@@ -199,21 +199,53 @@ def test_get_holdings_geography_buckets_by_country(client_geography_multi_countr
 
     by_country = {c["country_code"]: c for c in data["countries"]}
     assert set(by_country) == {"DE", "US", None}
-    # EUNL (6000/10000 = 60% portfolio weight) * NVDA's 6% fund weight = 3.6%
-    assert by_country["US"]["total_weight_percentage"] == pytest.approx(3.6)
+    # EUNL (6000/10000 = 60% portfolio weight) * (NVDA 6% + AAPL 3%) fund weight = 5.4%
+    assert by_country["US"]["total_weight_percentage"] == pytest.approx(5.4)
     # EUNL 60% portfolio weight * RWE's 4% fund weight = 2.4%
     assert by_country["DE"]["total_weight_percentage"] == pytest.approx(2.4)
     # LYP6 (4000/10000 = 40% portfolio weight) * unmapped stock's 2% fund weight = 0.8%
     assert by_country[None]["total_weight_percentage"] == pytest.approx(0.8)
 
-    us_holdings = by_country["US"]["holdings"]
-    assert len(us_holdings) == 1
-    assert us_holdings[0]["stock_ticker"] == "NVDA"
-    assert us_holdings[0]["weight_percentage"] == pytest.approx(3.6)
+
+def test_get_holdings_geography_contributions_are_per_etf_not_per_stock(client_geography_multi_country):
+    """A country's contributions list has one row per ETF, mirroring the Holdings tab's shape."""
+    response = client_geography_multi_country.get("/portfolio/holdings/geography")
+    by_country = {c["country_code"]: c for c in response.json()["countries"]}
+
+    de_contributions = by_country["DE"]["contributions"]
+    assert len(de_contributions) == 1
+    de_contrib = de_contributions[0]
+    assert set(de_contrib.keys()) == {
+        "etf_ticker",
+        "etf_name",
+        "etf_portfolio_weight_percentage",
+        "bucket_weight_in_etf_percentage",
+        "contribution_weight_percentage",
+        "snapshot_date",
+    }
+    assert de_contrib["etf_ticker"] == "EUNL"
+    assert de_contrib["etf_portfolio_weight_percentage"] == pytest.approx(60.0)
+    assert de_contrib["bucket_weight_in_etf_percentage"] == pytest.approx(4.0)
+    assert de_contrib["contribution_weight_percentage"] == pytest.approx(2.4)
+
+
+def test_get_holdings_geography_merges_same_etf_across_stocks_in_bucket(client_geography_multi_country):
+    """EUNL holds both NVDA and AAPL in the US bucket -- they collapse into ONE EUNL contribution row."""
+    response = client_geography_multi_country.get("/portfolio/holdings/geography")
+    by_country = {c["country_code"]: c for c in response.json()["countries"]}
+
+    us_contributions = by_country["US"]["contributions"]
+    assert len(us_contributions) == 1
+    us_contrib = us_contributions[0]
+    assert us_contrib["etf_ticker"] == "EUNL"
+    # NVDA (6%) + AAPL (3%) fund weight, combined for this one ETF within the US bucket
+    assert us_contrib["bucket_weight_in_etf_percentage"] == pytest.approx(9.0)
+    # EUNL 60% portfolio weight * 9% combined bucket weight = 5.4%
+    assert us_contrib["contribution_weight_percentage"] == pytest.approx(5.4)
 
 
 def test_get_holdings_geography_sorted_desc_by_total_weight(client_geography_multi_country):
-    """countries is ordered by total_weight_percentage DESC (US 3.6% > DE 2.4% > unmapped 0.8%)."""
+    """countries is ordered by total_weight_percentage DESC (US 5.4% > DE 2.4% > unmapped 0.8%)."""
     response = client_geography_multi_country.get("/portfolio/holdings/geography")
     codes_in_order = [c["country_code"] for c in response.json()["countries"]]
     assert codes_in_order == ["US", "DE", None]
@@ -242,18 +274,38 @@ def test_get_holdings_sectors_buckets_by_sector(client_sectors_multi_sector):
 
     by_sector = {s["sector"]: s for s in data["sectors"]}
     assert set(by_sector) == {"Utilities", "Information Technology", None}
-    assert by_sector["Information Technology"]["total_weight_percentage"] == pytest.approx(3.6)
+    # EUNL 60% portfolio weight * (NVDA 6% + AAPL 3%) combined fund weight = 5.4%
+    assert by_sector["Information Technology"]["total_weight_percentage"] == pytest.approx(5.4)
     assert by_sector["Utilities"]["total_weight_percentage"] == pytest.approx(2.4)
     assert by_sector[None]["total_weight_percentage"] == pytest.approx(0.8)
 
 
-def test_get_holdings_sectors_holding_shape_has_no_per_etf_breakdown(client_sectors_multi_sector):
-    """Each bucket's holdings list carries ticker/ISIN/weight_percentage only -- no per-ETF dimension."""
+def test_get_holdings_sectors_contributions_are_per_etf_not_per_stock(client_sectors_multi_sector):
+    """Each bucket's contributions list carries the per-ETF breakdown shape, mirroring the Holdings tab."""
     response = client_sectors_multi_sector.get("/portfolio/holdings/sectors")
     by_sector = {s["sector"]: s for s in response.json()["sectors"]}
-    holding = by_sector["Utilities"]["holdings"][0]
-    assert set(holding.keys()) == {"stock_isin", "stock_ticker", "stock_name", "weight_percentage"}
-    assert holding["stock_isin"] == "DE0007037129"
+    contribution = by_sector["Utilities"]["contributions"][0]
+    assert set(contribution.keys()) == {
+        "etf_ticker",
+        "etf_name",
+        "etf_portfolio_weight_percentage",
+        "bucket_weight_in_etf_percentage",
+        "contribution_weight_percentage",
+        "snapshot_date",
+    }
+    assert contribution["etf_ticker"] == "EUNL"
+
+
+def test_get_holdings_sectors_merges_same_etf_across_stocks_in_bucket(client_sectors_multi_sector):
+    """EUNL holds both NVDA and AAPL under Information Technology -- they collapse into ONE EUNL contribution row."""
+    response = client_sectors_multi_sector.get("/portfolio/holdings/sectors")
+    by_sector = {s["sector"]: s for s in response.json()["sectors"]}
+
+    it_contributions = by_sector["Information Technology"]["contributions"]
+    assert len(it_contributions) == 1
+    assert it_contributions[0]["etf_ticker"] == "EUNL"
+    assert it_contributions[0]["bucket_weight_in_etf_percentage"] == pytest.approx(9.0)
+    assert it_contributions[0]["contribution_weight_percentage"] == pytest.approx(5.4)
 
 
 def test_get_holdings_sectors_missing_price_skipped(client_exposure_missing_price):

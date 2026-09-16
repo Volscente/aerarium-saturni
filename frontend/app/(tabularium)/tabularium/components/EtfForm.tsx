@@ -57,8 +57,6 @@ interface FormState {
   volatility_1y: string;
   volatility_3y: string;
   holdings_overview: string;
-  geographical_distribution: string;
-  sector_distribution: string;
   bond_maturities: string;
   bond_credit_scores: string;
 }
@@ -85,12 +83,6 @@ function initialState(etf?: EtfResponse): FormState {
       volatility_1y: etf.volatility_1y ?? "",
       volatility_3y: etf.volatility_3y ?? "",
       holdings_overview: etf.holdings_overview ?? "",
-      geographical_distribution: JSON.stringify(
-        etf.geographical_distribution,
-        null,
-        2,
-      ),
-      sector_distribution: JSON.stringify(etf.sector_distribution, null, 2),
       bond_maturities: etf.bond_maturities
         ? JSON.stringify(etf.bond_maturities, null, 2)
         : "",
@@ -119,8 +111,6 @@ function initialState(etf?: EtfResponse): FormState {
     volatility_1y: "",
     volatility_3y: "",
     holdings_overview: "",
-    geographical_distribution: "",
-    sector_distribution: "",
     bond_maturities: "",
     bond_credit_scores: "",
   };
@@ -162,9 +152,14 @@ export function EtfForm({ onSuccess, etf }: EtfFormProps): JSX.Element {
    * ETF create/edit form with asset-class-conditional field visibility.
    *
    * Maintains a single formState object. Field visibility matrix:
-   *   Always:    all required scalar fields, geographical/sector distribution
+   *   Always:    all required scalar fields
    *   Equities:  fund_size, monthly_volume, volatility_1y, volatility_3y
    *   Bonds:     bond_maturities, bond_credit_scores
+   *
+   * geographical_distribution/sector_distribution are NOT editable here —
+   * they are derived from an ETF's own holdings uploads (aggregated
+   * server-side by weight_percentage per stock_country/stock_sector), not
+   * user-entered.
    *
    * When `etf` prop is provided, operates in edit mode — pre-populates fields
    * and calls updateEtf on submit. Otherwise creates a new ETF via createEtf.
@@ -543,36 +538,6 @@ export function EtfForm({ onSuccess, etf }: EtfFormProps): JSX.Element {
           </div>
         </>
       )}
-
-      {/* Geographical Distribution */}
-      <div>
-        <Label htmlFor="geographical_distribution">
-          Geographical Distribution (JSON)
-        </Label>
-        <textarea
-          id="geographical_distribution"
-          value={formState.geographical_distribution}
-          onChange={set("geographical_distribution")}
-          placeholder={'{"US": 63.0, "EU": 20.0, "JP": 6.0}'}
-          rows={3}
-          className={textareaClass}
-        />
-        <FieldError errors={fieldErrors.geographical_distribution} />
-      </div>
-
-      {/* Sector Distribution */}
-      <div>
-        <Label htmlFor="sector_distribution">Sector Distribution (JSON)</Label>
-        <textarea
-          id="sector_distribution"
-          value={formState.sector_distribution}
-          onChange={set("sector_distribution")}
-          placeholder={'{"Technology": 25.0, "Financials": 18.0}'}
-          rows={3}
-          className={textareaClass}
-        />
-        <FieldError errors={fieldErrors.sector_distribution} />
-      </div>
 
       {/* Bonds-only fields */}
       {isBonds && (

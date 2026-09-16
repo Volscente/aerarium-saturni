@@ -31,14 +31,6 @@ export const EtfFormSchema = z.object({
   volatility_1y: z.coerce.number().min(0).optional(),
   volatility_3y: z.coerce.number().min(0).optional(),
   holdings_overview: z.string().optional(),
-  geographical_distribution: z
-    .string()
-    .min(1, 'Geographical distribution is required')
-    .refine(isValidJson, 'Must be valid JSON (e.g. {"US": 63.0, "EU": 20.0})'),
-  sector_distribution: z
-    .string()
-    .min(1, 'Sector distribution is required')
-    .refine(isValidJson, 'Must be valid JSON (e.g. {"Technology": 25.0})'),
   bond_maturities: z
     .string()
     .refine((val) => !val || isValidJson(val), 'Must be valid JSON')

@@ -1,5 +1,6 @@
 import csv
 import io
+from decimal import Decimal
 from pathlib import Path
 from uuid import UUID
 
@@ -32,6 +33,11 @@ async def create_etf(
 ) -> EtfResponse:
     """Persist a new ETF and return the created record.
 
+    ``geographical_distribution``/``sector_distribution`` are not part of
+    ``EtfCreate`` (they are derived, not user-entered) — a new ETF always
+    starts with both as ``{}`` until its first holdings upload populates
+    them via ``upload_holdings``'s ``_aggregate_fund_distribution``.
+
     Args:
         body: Validated ETF creation payload from the request body.
         session: Async SQLAlchemy session injected by ``Depends(get_session)``.
@@ -42,7 +48,7 @@ async def create_etf(
     Raises:
         sqlalchemy.exc.IntegrityError: If ``ticker`` or ``isin`` violates the UNIQUE constraint.
     """
-    row = Etf(**body.model_dump())
+    row = Etf(geographical_distribution={}, sector_distribution={}, **body.model_dump())
     session.add(row)
     await session.commit()
     await session.refresh(row)
@@ -279,6 +285,36 @@ async def delete_price(
     await session.commit()
 
 
+def _aggregate_fund_distribution(
+    holdings: list[tuple[EtfHoldingRow, dict]], key: str
+) -> dict[str, float]:
+    """Aggregates a fund's own holdings weight_percentage by stock_country or stock_sector.
+
+    Unlike the portfolio-wide look-through aggregation in routers/portfolio.py,
+    this sums weight_percentage directly across a single ETF's own holdings
+    (no portfolio-weighting) -- the fund-level distribution stored on
+    Etf.geographical_distribution/sector_distribution. A holding whose
+    stock_country/stock_sector could not be derived (or a CSV upload that
+    never carried the column) is bucketed under "Unknown" rather than a raw
+    None key, since JSONB/JSON object keys must be strings.
+
+    Args:
+        holdings: The (EtfHoldingRow, raw row dict) tuples about to be
+            inserted for this ETF.
+        key: Either "stock_country" or "stock_sector".
+
+    Returns:
+        Dict mapping country code / canonical sector name (or "Unknown") to
+        the summed weight_percentage, as plain floats. Empty dict when
+        holdings is empty.
+    """
+    totals: dict[str, Decimal] = {}
+    for holding, row_dict in holdings:
+        bucket = row_dict.get(key) or "Unknown"
+        totals[bucket] = totals.get(bucket, Decimal("0")) + holding.weight_percentage
+    return {bucket: float(total) for bucket, total in totals.items()}
+
+
 async def _reconcile_stock_isin_aliases_in_background() -> None:
     """Run resolve_stock_isin_aliases decoupled from any single upload request.
 
@@ -314,9 +350,13 @@ async def upload_holdings(
     """Replace all holdings for an ETF atomically from a CSV or issuer XLSX upload.
 
     Reads the uploaded file, parses each row into an ``EtfHoldingRow`` model,
-    then within a single session transaction deletes all existing
-    ``etf_holdings`` rows for the given ETF and bulk-inserts the new rows.
-    Any parsing failure or constraint error rolls back the entire operation.
+    then within a single session transaction updates the ETF's own
+    ``geographical_distribution``/``sector_distribution`` (via
+    ``_aggregate_fund_distribution`` — summed directly across this upload's
+    rows, not portfolio-weighted) and deletes all existing ``etf_holdings``
+    rows for the given ETF before bulk-inserting the new rows. Any parsing
+    failure or constraint error rolls back the entire operation, including
+    the distribution update.
 
     A ``.xlsx`` file is first run through ``convert_holdings_xlsx``, which
     picks an issuer-specific parser from the uploaded filename's ticker (e.g.
@@ -373,6 +413,9 @@ async def upload_holdings(
                 detail={"row": i, "errors": exc.errors()},
             )
         holdings.append((holding, row_dict))
+
+    etf.geographical_distribution = _aggregate_fund_distribution(holdings, "stock_country")
+    etf.sector_distribution = _aggregate_fund_distribution(holdings, "stock_sector")
 
     await session.execute(delete(EtfHolding).where(EtfHolding.etf_id == id))
     session.add_all(

@@ -99,15 +99,23 @@ class HoldingsExposureResponse(BaseModel):
     )
 
 
-class BucketStockContribution(BaseModel):
+class BucketEtfContribution(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
-    stock_isin: str | None = Field(default=None, description="ISIN of the underlying stock, when reported by its ETF(s).")
-    stock_ticker: str | None = Field(default=None, description="Ticker of the underlying stock, when reported by its ETF(s).")
-    stock_name: str = Field(description="Display name of the underlying stock.")
-    weight_percentage: float = Field(
-        description="This stock's own total_weight_percentage from the holdings-exposure aggregation, already deduplicated across all contributing ETFs."
+    etf_ticker: str = Field(description="Ticker of the contributing ETF.")
+    etf_name: str = Field(description="Name of the contributing ETF.")
+    etf_portfolio_weight_percentage: float = Field(
+        description="This ETF's own share of total portfolio value (etf_current_value / total_portfolio_value), in percentage points."
     )
+    bucket_weight_in_etf_percentage: float = Field(
+        description="This ETF's combined weight_percentage across every holding of this ETF that falls in this "
+        "geography/sector bucket, unmultiplied by portfolio weight."
+    )
+    contribution_weight_percentage: float = Field(
+        description="This ETF's contribution to the bucket's total look-through weight, in percentage points. "
+        "Equal to etf_portfolio_weight_percentage * bucket_weight_in_etf_percentage / 100."
+    )
+    snapshot_date: date = Field(description="snapshot_date of this ETF's latest holdings snapshot.")
 
 
 class CountryExposureResponse(BaseModel):
@@ -120,8 +128,8 @@ class CountryExposureResponse(BaseModel):
     total_weight_percentage: float = Field(
         description="Σ total_weight_percentage across every stock bucketed under this country."
     )
-    holdings: list[BucketStockContribution] = Field(
-        description="Contributing stocks in this country bucket, sorted by weight_percentage DESC."
+    contributions: list[BucketEtfContribution] = Field(
+        description="Per-ETF breakdown of this country's total look-through weight, sorted by contribution_weight_percentage DESC."
     )
 
 
@@ -145,8 +153,8 @@ class SectorExposureResponse(BaseModel):
     total_weight_percentage: float = Field(
         description="Σ total_weight_percentage across every stock bucketed under this sector."
     )
-    holdings: list[BucketStockContribution] = Field(
-        description="Contributing stocks in this sector bucket, sorted by weight_percentage DESC."
+    contributions: list[BucketEtfContribution] = Field(
+        description="Per-ETF breakdown of this sector's total look-through weight, sorted by contribution_weight_percentage DESC."
     )
 
 

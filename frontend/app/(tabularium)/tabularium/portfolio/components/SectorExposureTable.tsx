@@ -1,7 +1,7 @@
 'use client'
 
 import { Fragment, useMemo, useState } from 'react'
-import type { BucketStockContribution, SectorExposureResponse } from './PortfolioPageClient'
+import type { BucketEtfContribution, SectorExposureResponse } from './PortfolioPageClient'
 
 type SortColumn = 'sector' | 'total_weight_percentage'
 
@@ -76,7 +76,7 @@ export function SectorExposureTable({
 }): JSX.Element {
   /**
    * Searchable, sortable table of all look-through sector exposure
-   * buckets, with per-row expansion revealing the contributing stocks.
+   * buckets, with per-row expansion revealing the contributing ETFs.
    *
    * Mirrors GeographyExposureTable exactly, keyed by `sector` instead of
    * `country_code`.
@@ -237,33 +237,51 @@ export function SectorExposureTable({
                         {isExpanded && (
                           <tr className="bg-roman-stone/5">
                             <td colSpan={2} className="px-6 py-4">
-                              {sector.holdings.length === 0 ? (
+                              {sector.contributions.length === 0 ? (
                                 <p className="text-xs text-roman-stone/60">
-                                  No contributing stocks recorded.
+                                  No contributing ETFs recorded.
                                 </p>
                               ) : (
                                 <table className="w-full text-xs text-roman-stone border-collapse">
                                   <thead>
                                     <tr className="border-b border-roman-stone/20 text-left">
-                                      <th className="pb-2 pr-6 font-medium text-roman-gold">Ticker</th>
-                                      <th className="pb-2 pr-6 font-medium text-roman-gold">ISIN</th>
-                                      <th className="pb-2 pr-6 font-medium text-roman-gold">Name</th>
-                                      <th className="pb-2 font-medium text-roman-gold">Weight %</th>
+                                      <th className="pb-2 pr-6 font-medium text-roman-gold">
+                                        ETF
+                                      </th>
+                                      <th className="pb-2 pr-6 font-medium text-roman-gold">
+                                        Portfolio Share
+                                      </th>
+                                      <th className="pb-2 pr-6 font-medium text-roman-gold">
+                                        Fund Weight
+                                      </th>
+                                      <th className="pb-2 pr-6 font-medium text-roman-gold">
+                                        Contribution
+                                      </th>
+                                      <th className="pb-2 font-medium text-roman-gold">
+                                        As of
+                                      </th>
                                     </tr>
                                   </thead>
                                   <tbody>
-                                    {sector.holdings.map((h: BucketStockContribution) => (
+                                    {sector.contributions.map((c: BucketEtfContribution) => (
                                       <tr
-                                        key={h.stock_isin ?? h.stock_ticker ?? h.stock_name}
+                                        key={`${c.etf_ticker}-${c.snapshot_date}`}
                                         className="border-b border-roman-stone/10"
                                       >
-                                        <td className="py-1.5 pr-6 font-mono">{h.stock_ticker ?? '—'}</td>
-                                        <td className="py-1.5 pr-6 font-mono">{h.stock_isin ?? '—'}</td>
-                                        <td className="py-1.5 pr-6" title={h.stock_name}>
-                                          {h.stock_name}
+                                        <td className="py-1.5 pr-6" title={c.etf_name}>
+                                          {c.etf_ticker}
                                         </td>
-                                        <td className="py-1.5 tabular-nums font-medium">
-                                          {h.weight_percentage.toFixed(2)}%
+                                        <td className="py-1.5 pr-6 tabular-nums text-roman-stone/70">
+                                          {c.etf_portfolio_weight_percentage.toFixed(2)}%
+                                        </td>
+                                        <td className="py-1.5 pr-6 tabular-nums text-roman-stone/70">
+                                          {c.bucket_weight_in_etf_percentage.toFixed(2)}%
+                                        </td>
+                                        <td className="py-1.5 pr-6 tabular-nums font-medium">
+                                          {c.contribution_weight_percentage.toFixed(2)}%
+                                        </td>
+                                        <td className="py-1.5 tabular-nums">
+                                          {c.snapshot_date}
                                         </td>
                                       </tr>
                                     ))}

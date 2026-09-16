@@ -61,17 +61,19 @@ export interface HoldingsExposureResponse {
   alerts: RiskAlert[]
 }
 
-export interface BucketStockContribution {
-  stock_isin: string | null
-  stock_ticker: string | null
-  stock_name: string
-  weight_percentage: number
+export interface BucketEtfContribution {
+  etf_ticker: string
+  etf_name: string
+  etf_portfolio_weight_percentage: number
+  bucket_weight_in_etf_percentage: number
+  contribution_weight_percentage: number
+  snapshot_date: string
 }
 
 export interface CountryExposureResponse {
   country_code: string | null
   total_weight_percentage: number
-  holdings: BucketStockContribution[]
+  contributions: BucketEtfContribution[]
 }
 
 export interface HoldingsGeographyResponse {
@@ -82,7 +84,7 @@ export interface HoldingsGeographyResponse {
 export interface SectorExposureResponse {
   sector: string | null
   total_weight_percentage: number
-  holdings: BucketStockContribution[]
+  contributions: BucketEtfContribution[]
 }
 
 export interface HoldingsSectorsResponse {

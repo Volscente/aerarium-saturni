@@ -5,6 +5,8 @@ from uuid import UUID
 import httpx
 import pytest
 
+from backend.routers.etfs import _aggregate_fund_distribution
+from backend.schemas.etfs import EtfHoldingRow
 from tests.conftest import VALID_ETF_PAYLOAD
 
 DUMMY_ETF_ID = "00000000-0000-0000-0000-000000000001"
@@ -20,6 +22,29 @@ def test_create_etf_valid(client):
     assert "created_at" in data
     assert data["ticker"] == "VWCE"
     assert data["isin"] == "IE00B3RBWM25"
+
+
+def test_create_etf_defaults_empty_distributions(client):
+    """A newly created ETF has empty geographical_distribution/sector_distribution -- both are derived from holdings uploads, not user-entered."""
+    response = client.post("/etfs", json=VALID_ETF_PAYLOAD)
+    assert response.status_code == 201
+    data = response.json()
+    assert data["geographical_distribution"] == {}
+    assert data["sector_distribution"] == {}
+
+
+def test_create_etf_ignores_supplied_distribution_fields(client):
+    """geographical_distribution/sector_distribution in the request body are ignored, not persisted."""
+    payload = {
+        **VALID_ETF_PAYLOAD,
+        "geographical_distribution": {"US": 100.0},
+        "sector_distribution": {"Technology": 100.0},
+    }
+    response = client.post("/etfs", json=payload)
+    assert response.status_code == 201
+    data = response.json()
+    assert data["geographical_distribution"] == {}
+    assert data["sector_distribution"] == {}
 
 
 def test_create_etf_invalid_isin(client):
@@ -199,6 +224,80 @@ def test_upload_holdings_succeeds_when_reconciliation_fails(client_with_etfs):
         )
     assert response.status_code == 200
     assert response.json() == {"inserted_rows": 1}
+
+
+def _make_holding_row(stock_country=None, stock_sector=None, weight_percentage="1.0000"):
+    holding = EtfHoldingRow(
+        stock_ticker="AAPL",
+        stock_name="Apple Inc",
+        weight_percentage=weight_percentage,
+        snapshot_date="2026-07-22",
+    )
+    return holding, {"stock_country": stock_country, "stock_sector": stock_sector}
+
+
+def test_aggregate_fund_distribution_sums_by_bucket():
+    """Rows sharing a bucket have their weight_percentage summed; distinct buckets stay separate."""
+    holdings = [
+        _make_holding_row(stock_country="US", weight_percentage="5.0000"),
+        _make_holding_row(stock_country="US", weight_percentage="3.0000"),
+        _make_holding_row(stock_country="DE", weight_percentage="4.0000"),
+    ]
+    result = _aggregate_fund_distribution(holdings, "stock_country")
+    assert result == {"US": 8.0, "DE": 4.0}
+
+
+def test_aggregate_fund_distribution_missing_key_buckets_as_unknown():
+    """A None (or absent) bucket value is grouped under the literal 'Unknown' string, not a null key."""
+    holdings = [
+        _make_holding_row(stock_country=None, weight_percentage="2.0000"),
+        _make_holding_row(stock_country="US", weight_percentage="1.0000"),
+    ]
+    result = _aggregate_fund_distribution(holdings, "stock_country")
+    assert result == {"Unknown": 2.0, "US": 1.0}
+
+
+def test_aggregate_fund_distribution_empty_holdings_returns_empty_dict():
+    """No holdings produces an empty distribution rather than raising."""
+    assert _aggregate_fund_distribution([], "stock_sector") == {}
+
+
+def test_upload_holdings_populates_fund_distributions(client_with_etfs, mock_session_with_etfs):
+    """A holdings upload aggregates its rows' stock_country/stock_sector into the ETF's own distribution fields."""
+    csv_content = (
+        "stock_isin,stock_name,stock_country,stock_sector,weight_percentage,snapshot_date\n"
+        "IE00B3RBWM25,Vanguard FTSE All-World,US,Information Technology,5.0,2026-07-22\n"
+        "IE00B5BMR087,iShares Core S&P 500,DE,Financials,4.5,2026-07-22"
+    )
+    response = client_with_etfs.post(
+        f"/etfs/{DUMMY_ETF_ID}/holdings/upload",
+        files={"file": ("holdings.csv", csv_content.encode(), "text/csv")},
+    )
+    assert response.status_code == 200
+
+    etf_row = mock_session_with_etfs.execute.return_value.scalar_one_or_none.return_value
+    assert etf_row.geographical_distribution == {"US": 5.0, "DE": 4.5}
+    assert etf_row.sector_distribution == {"Information Technology": 5.0, "Financials": 4.5}
+
+
+def test_upload_holdings_without_country_sector_columns_buckets_as_unknown(
+    client_with_etfs, mock_session_with_etfs
+):
+    """A CSV with no stock_country/stock_sector columns buckets every row's weight under 'Unknown'."""
+    csv_content = (
+        "stock_isin,stock_name,weight_percentage,snapshot_date\n"
+        "IE00B3RBWM25,Vanguard FTSE All-World,5.0,2026-07-22\n"
+        "IE00B5BMR087,iShares Core S&P 500,4.5,2026-07-22"
+    )
+    response = client_with_etfs.post(
+        f"/etfs/{DUMMY_ETF_ID}/holdings/upload",
+        files={"file": ("holdings.csv", csv_content.encode(), "text/csv")},
+    )
+    assert response.status_code == 200
+
+    etf_row = mock_session_with_etfs.execute.return_value.scalar_one_or_none.return_value
+    assert etf_row.geographical_distribution == {"Unknown": 9.5}
+    assert etf_row.sector_distribution == {"Unknown": 9.5}
 
 
 def test_upload_holdings_xlsx_unrecognised_ticker(client_with_etfs):

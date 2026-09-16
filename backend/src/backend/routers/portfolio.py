@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.db import get_session
 from backend.models import Etf, EtfHolding, EtfPriceHistory, Transaction
 from backend.schemas.portfolio import (
-    BucketStockContribution,
+    BucketEtfContribution,
     CountryExposureResponse,
     HoldingContribution,
     HoldingExposureResponse,
@@ -446,11 +446,19 @@ async def _aggregate_stock_groups(
     return groups, etf_values, skipped_etfs
 
 
-def _bucket_stock_groups(groups: dict[str, dict], bucket_field: str) -> list[dict]:
-    """Group per-stock aggregation groups into buckets by stock_country or stock_sector.
+def _bucket_etf_contributions(groups: dict[str, dict], bucket_field: str) -> list[dict]:
+    """Group per-stock groups' per-ETF contributions into per-ETF totals within each geography/sector bucket.
 
-    A second, small Python-side pass over the already-computed per-stock
-    groups dict from _aggregate_stock_groups -- no additional query.
+    Each per-stock group (from _aggregate_stock_groups) already carries a
+    per-ETF ``contributions`` list (one HoldingContribution per ETF holding
+    that stock). This re-groups those contributions by (bucket, etf_ticker)
+    -- summing an ETF's contribution across every stock it holds within the
+    same bucket -- so an ETF holding multiple stocks in the same country/
+    sector appears as ONE combined row under that bucket, not one row per
+    stock. This mirrors what the Holdings tab already shows (a per-ETF
+    breakdown), just re-aggregated by bucket instead of by stock. No
+    additional query; this is a second, small Python-side pass over
+    _aggregate_stock_groups' already-computed groups.
 
     Args:
         groups: The per-stock groups dict from _aggregate_stock_groups.
@@ -458,33 +466,48 @@ def _bucket_stock_groups(groups: dict[str, dict], bucket_field: str) -> list[dic
 
     Returns:
         List of dicts with keys "bucket" (the country code / sector name,
-        or None), "total_weight_percentage", and "holdings" (a list of
-        BucketStockContribution, sorted DESC by weight_percentage) -- the
-        whole list sorted DESC by total_weight_percentage.
+        or None), "total_weight_percentage", and "contributions" (a list of
+        BucketEtfContribution, sorted DESC by contribution_weight_percentage)
+        -- the whole list sorted DESC by total_weight_percentage.
     """
     buckets: dict[str | None, dict] = {}
     for group in groups.values():
         bucket_key = group[bucket_field]
-        if bucket_key not in buckets:
-            buckets[bucket_key] = {
-                "bucket": bucket_key,
-                "total_weight_percentage": Decimal("0"),
-                "holdings": [],
-            }
-        buckets[bucket_key]["total_weight_percentage"] += group["total_weight_percentage"]
-        buckets[bucket_key]["holdings"].append(
-            BucketStockContribution(
-                stock_isin=group["stock_isin"],
-                stock_ticker=group["stock_ticker"],
-                stock_name=group["stock_name"],
-                weight_percentage=group["total_weight_percentage"],
-            )
+        bucket = buckets.setdefault(
+            bucket_key,
+            {"bucket": bucket_key, "total_weight_percentage": Decimal("0"), "etf_totals": {}},
         )
+        bucket["total_weight_percentage"] += group["total_weight_percentage"]
+        for contribution in group["contributions"]:
+            etf_total = bucket["etf_totals"].setdefault(
+                contribution.etf_ticker,
+                {
+                    "etf_ticker": contribution.etf_ticker,
+                    "etf_name": contribution.etf_name,
+                    "etf_portfolio_weight_percentage": contribution.etf_portfolio_weight_percentage,
+                    "bucket_weight_in_etf_percentage": 0.0,
+                    "contribution_weight_percentage": 0.0,
+                    "snapshot_date": contribution.snapshot_date,
+                },
+            )
+            etf_total["bucket_weight_in_etf_percentage"] += contribution.stock_weight_in_etf_percentage
+            etf_total["contribution_weight_percentage"] += contribution.contribution_weight_percentage
 
+    result = []
     for bucket in buckets.values():
-        bucket["holdings"].sort(key=lambda h: h.weight_percentage, reverse=True)
-
-    return sorted(buckets.values(), key=lambda b: b["total_weight_percentage"], reverse=True)
+        contributions = sorted(
+            (BucketEtfContribution(**etf_total) for etf_total in bucket["etf_totals"].values()),
+            key=lambda c: c.contribution_weight_percentage,
+            reverse=True,
+        )
+        result.append(
+            {
+                "bucket": bucket["bucket"],
+                "total_weight_percentage": bucket["total_weight_percentage"],
+                "contributions": contributions,
+            }
+        )
+    return sorted(result, key=lambda b: b["total_weight_percentage"], reverse=True)
 
 
 @router.get("/holdings/exposure", response_model=HoldingsExposureResponse)
@@ -551,11 +574,14 @@ async def get_holdings_geography(
     """Aggregate look-through single-stock exposure into per-country buckets.
 
     Reuses _aggregate_stock_groups (the same per-stock aggregation powering
-    GET /holdings/exposure) and buckets its groups by stock_country in a
-    second, small Python-side pass -- no additional query. A stock whose
-    stock_country is None (unmapped country name, or a CSV upload that
-    never carried the column) is bucketed under country_code=None; the
-    frontend renders that bucket as "Unknown".
+    GET /holdings/exposure) and re-groups each stock's per-ETF contributions
+    by stock_country via _bucket_etf_contributions -- no additional query.
+    Each country's ``contributions`` is a per-ETF breakdown (an ETF holding
+    several stocks in that country collapses into one row), mirroring the
+    Holdings tab's own per-ETF breakdown rather than listing individual
+    stocks. A stock whose stock_country is None (unmapped country name, or
+    a CSV upload that never carried the column) is bucketed under
+    country_code=None; the frontend renders that bucket as "Unknown".
 
     Args:
         session: Async SQLAlchemy session injected by ``Depends(get_session)``.
@@ -567,13 +593,13 @@ async def get_holdings_geography(
         the tickers of any ETFs excluded for lacking a price record.
     """
     groups, _, skipped_etfs = await _aggregate_stock_groups(session)
-    buckets = _bucket_stock_groups(groups, "stock_country")
+    buckets = _bucket_etf_contributions(groups, "stock_country")
 
     countries = [
         CountryExposureResponse(
             country_code=bucket["bucket"],
             total_weight_percentage=bucket["total_weight_percentage"],
-            holdings=bucket["holdings"],
+            contributions=bucket["contributions"],
         )
         for bucket in buckets
     ]
@@ -589,10 +615,11 @@ async def get_holdings_sectors(
 
     Identical shape to get_holdings_geography, bucketed by stock_sector (the
     canonical GICS-like name normalised by _normalize_sector at holdings
-    upload time) instead of stock_country. A stock whose stock_sector is
-    None (unmapped raw sector label, or a CSV upload with no sector column)
-    is bucketed under sector=None; the frontend renders that bucket as
-    "Unknown".
+    upload time) instead of stock_country -- each sector's ``contributions``
+    is a per-ETF breakdown, not a per-stock one (see _bucket_etf_contributions).
+    A stock whose stock_sector is None (unmapped raw sector label, or a CSV
+    upload with no sector column) is bucketed under sector=None; the
+    frontend renders that bucket as "Unknown".
 
     Args:
         session: Async SQLAlchemy session injected by ``Depends(get_session)``.
@@ -604,13 +631,13 @@ async def get_holdings_sectors(
         the tickers of any ETFs excluded for lacking a price record.
     """
     groups, _, skipped_etfs = await _aggregate_stock_groups(session)
-    buckets = _bucket_stock_groups(groups, "stock_sector")
+    buckets = _bucket_etf_contributions(groups, "stock_sector")
 
     sectors = [
         SectorExposureResponse(
             sector=bucket["bucket"],
             total_weight_percentage=bucket["total_weight_percentage"],
-            holdings=bucket["holdings"],
+            contributions=bucket["contributions"],
         )
         for bucket in buckets
     ]

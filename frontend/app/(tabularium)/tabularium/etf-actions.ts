@@ -18,9 +18,10 @@ export async function createEtf(
   /**
    * Server Action: validate, persist, and invalidate the ETF registry cache.
    *
-   * Parses payload with EtfFormSchema. On success, transforms the JSONB string
-   * fields back to Record<string, number> by JSON.parse before POSTing to
-   * ${BACKEND_URL}/etfs. On HTTP 201, calls revalidateTag('etfs'),
+   * Parses payload with EtfFormSchema. On success, transforms the bond JSONB
+   * string fields back to Record<string, number> by JSON.parse before POSTing
+   * to ${BACKEND_URL}/etfs — geographical_distribution/sector_distribution are
+   * never sent; the backend derives them from holdings uploads. On HTTP 201, calls revalidateTag('etfs'),
    * revalidateTag('portfolio-overview'), and revalidateTag('holdings-exposure'),
    * then returns { success: true }. Mirrors createTransaction in actions.ts.
    *
@@ -36,19 +37,9 @@ export async function createEtf(
     return { error: parsed.error.issues[0]?.message ?? 'Invalid form data' }
   }
 
-  const {
-    geographical_distribution,
-    sector_distribution,
-    bond_maturities,
-    bond_credit_scores,
-    ...rest
-  } = parsed.data
+  const { bond_maturities, bond_credit_scores, ...rest } = parsed.data
 
-  const body: Record<string, unknown> = {
-    ...rest,
-    geographical_distribution: parseJsonbField(geographical_distribution) ?? {},
-    sector_distribution: parseJsonbField(sector_distribution) ?? {},
-  }
+  const body: Record<string, unknown> = { ...rest }
   const bondMat = parseJsonbField(bond_maturities)
   const bondCred = parseJsonbField(bond_credit_scores)
   if (bondMat !== null) body.bond_maturities = bondMat
@@ -97,12 +88,7 @@ export async function updateEtf(
    *   { success: true } on HTTP 200, or { error: string } on any failure.
    */
   const body: Record<string, unknown> = {}
-  const jsonbKeys = new Set([
-    'geographical_distribution',
-    'sector_distribution',
-    'bond_maturities',
-    'bond_credit_scores',
-  ])
+  const jsonbKeys = new Set(['bond_maturities', 'bond_credit_scores'])
 
   for (const [key, value] of Object.entries(payload)) {
     if (value === undefined) continue

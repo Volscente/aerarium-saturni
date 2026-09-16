@@ -1,6 +1,7 @@
 'use client'
 
 import type { CountryExposureResponse } from './PortfolioPageClient'
+import { countryLabel } from '../utils/countryDisplay'
 
 const MAX_BARS = 15
 
@@ -64,13 +65,16 @@ export function GeographyBarChart({
       <h2 className="mb-6 font-roman text-xl font-bold text-roman-gold">
         Top 15 Countries by Exposure
       </h2>
-      <div className="grid grid-cols-[minmax(6rem,10rem)_1fr_auto] items-center gap-x-4 gap-y-3">
+      <div className="grid grid-cols-[minmax(8rem,14rem)_1fr_auto] items-center gap-x-4 gap-y-3">
         {bars.map((c) => {
           const barLeft = `${(c.total_weight_percentage / axisMax) * 100}%`
           return (
             <div key={c.country_code ?? 'unknown'} className="contents">
-              <span className="truncate text-sm text-roman-stone">
-                {c.country_code ?? 'Unknown'}
+              <span
+                className="truncate text-sm text-roman-stone"
+                title={countryLabel(c.country_code)}
+              >
+                {countryLabel(c.country_code)}
               </span>
               <div className="relative h-4 rounded bg-roman-stone/10">
                 <div

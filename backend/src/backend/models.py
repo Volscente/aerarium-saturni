@@ -62,8 +62,8 @@ class Etf(Base):
     dividend_policy: Mapped[str] = mapped_column(String(50), nullable=False)
     dividend_frequency: Mapped[str | None] = mapped_column(String(20), nullable=True)
     holdings_overview: Mapped[str | None] = mapped_column(Text, nullable=True)
-    geographical_distribution: Mapped[dict] = mapped_column(JSONB, nullable=False)
-    sector_distribution: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    geographical_distribution: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    sector_distribution: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
     bond_maturities: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     bond_credit_scores: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     created_at: Mapped[datetime] = mapped_column(

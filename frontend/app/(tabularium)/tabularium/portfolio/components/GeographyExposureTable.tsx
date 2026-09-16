@@ -1,7 +1,8 @@
 'use client'
 
 import { Fragment, useMemo, useState } from 'react'
-import type { BucketStockContribution, CountryExposureResponse } from './PortfolioPageClient'
+import type { BucketEtfContribution, CountryExposureResponse } from './PortfolioPageClient'
+import { countryDisplayName, countryLabel } from '../utils/countryDisplay'
 
 type SortColumn = 'country_code' | 'total_weight_percentage'
 
@@ -24,12 +25,17 @@ function searchCountries(
   query: string,
 ): CountryExposureResponse[] {
   /**
-   * Filters countries by a case-insensitive substring match against
-   * country_code. An empty/whitespace-only query returns all countries.
+   * Filters countries by a case-insensitive substring match against either
+   * the raw country_code or its full display name (e.g. matches "ch" and
+   * "switz" alike). An empty/whitespace-only query returns all countries.
    */
   const q = query.trim().toLowerCase()
   if (!q) return countries
-  return countries.filter((c) => c.country_code?.toLowerCase().includes(q) ?? false)
+  return countries.filter(
+    (c) =>
+      (c.country_code?.toLowerCase().includes(q) ?? false) ||
+      countryDisplayName(c.country_code).toLowerCase().includes(q),
+  )
 }
 
 function sortCountries(
@@ -80,10 +86,11 @@ export function GeographyExposureTable({
    *
    * Mirrors HoldingsExposureTable's state shape (searchQuery,
    * sortColumn/sortDirection, expandedKeys, pageSize/currentPage) and
-   * search->sort->paginate pipeline exactly, but the expand panel lists
-   * `holdings: BucketStockContribution[]` (ticker, ISIN, weight %) instead
-   * of a per-ETF `contributions` breakdown, since a country bucket has no
-   * per-ETF dimension of its own.
+   * search->sort->paginate pipeline exactly. The expand panel is also the
+   * same per-ETF contributions table as HoldingsExposureTable's (ETF,
+   * Portfolio Share, Fund Weight, Contribution, As of) -- an ETF holding
+   * several stocks within this country is already collapsed server-side
+   * into one combined row per ETF.
    *
    * Args:
    *   countries: Full look-through geography exposure list from
@@ -181,7 +188,7 @@ export function GeographyExposureTable({
               type="text"
               value={searchQuery}
               onChange={(e) => handleSearchChange(e.target.value)}
-              placeholder="Search by country code…"
+              placeholder="Search by country…"
               className={`${inputClass} w-full max-w-sm`}
             />
             <div className="flex items-center gap-2 text-sm text-roman-stone">
@@ -228,11 +235,11 @@ export function GeographyExposureTable({
                           onClick={() => toggleExpanded(key)}
                           className="border-b border-roman-stone/10 hover:bg-roman-stone/5 transition-colors cursor-pointer"
                         >
-                          <td className="py-3 pr-4 font-mono font-medium">
+                          <td className="py-3 pr-4 font-medium">
                             <span className="mr-1 text-roman-stone/40 select-none">
                               {isExpanded ? '▾' : '▸'}
                             </span>
-                            {country.country_code ?? 'Unknown'}
+                            {countryLabel(country.country_code)}
                           </td>
                           <td className="py-3 pr-4 tabular-nums">
                             {country.total_weight_percentage.toFixed(2)}%
@@ -241,33 +248,51 @@ export function GeographyExposureTable({
                         {isExpanded && (
                           <tr className="bg-roman-stone/5">
                             <td colSpan={2} className="px-6 py-4">
-                              {country.holdings.length === 0 ? (
+                              {country.contributions.length === 0 ? (
                                 <p className="text-xs text-roman-stone/60">
-                                  No contributing stocks recorded.
+                                  No contributing ETFs recorded.
                                 </p>
                               ) : (
                                 <table className="w-full text-xs text-roman-stone border-collapse">
                                   <thead>
                                     <tr className="border-b border-roman-stone/20 text-left">
-                                      <th className="pb-2 pr-6 font-medium text-roman-gold">Ticker</th>
-                                      <th className="pb-2 pr-6 font-medium text-roman-gold">ISIN</th>
-                                      <th className="pb-2 pr-6 font-medium text-roman-gold">Name</th>
-                                      <th className="pb-2 font-medium text-roman-gold">Weight %</th>
+                                      <th className="pb-2 pr-6 font-medium text-roman-gold">
+                                        ETF
+                                      </th>
+                                      <th className="pb-2 pr-6 font-medium text-roman-gold">
+                                        Portfolio Share
+                                      </th>
+                                      <th className="pb-2 pr-6 font-medium text-roman-gold">
+                                        Fund Weight
+                                      </th>
+                                      <th className="pb-2 pr-6 font-medium text-roman-gold">
+                                        Contribution
+                                      </th>
+                                      <th className="pb-2 font-medium text-roman-gold">
+                                        As of
+                                      </th>
                                     </tr>
                                   </thead>
                                   <tbody>
-                                    {country.holdings.map((h: BucketStockContribution) => (
+                                    {country.contributions.map((c: BucketEtfContribution) => (
                                       <tr
-                                        key={h.stock_isin ?? h.stock_ticker ?? h.stock_name}
+                                        key={`${c.etf_ticker}-${c.snapshot_date}`}
                                         className="border-b border-roman-stone/10"
                                       >
-                                        <td className="py-1.5 pr-6 font-mono">{h.stock_ticker ?? '—'}</td>
-                                        <td className="py-1.5 pr-6 font-mono">{h.stock_isin ?? '—'}</td>
-                                        <td className="py-1.5 pr-6" title={h.stock_name}>
-                                          {h.stock_name}
+                                        <td className="py-1.5 pr-6" title={c.etf_name}>
+                                          {c.etf_ticker}
                                         </td>
-                                        <td className="py-1.5 tabular-nums font-medium">
-                                          {h.weight_percentage.toFixed(2)}%
+                                        <td className="py-1.5 pr-6 tabular-nums text-roman-stone/70">
+                                          {c.etf_portfolio_weight_percentage.toFixed(2)}%
+                                        </td>
+                                        <td className="py-1.5 pr-6 tabular-nums text-roman-stone/70">
+                                          {c.bucket_weight_in_etf_percentage.toFixed(2)}%
+                                        </td>
+                                        <td className="py-1.5 pr-6 tabular-nums font-medium">
+                                          {c.contribution_weight_percentage.toFixed(2)}%
+                                        </td>
+                                        <td className="py-1.5 tabular-nums">
+                                          {c.snapshot_date}
                                         </td>
                                       </tr>
                                     ))}

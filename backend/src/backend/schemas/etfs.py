@@ -27,8 +27,6 @@ class EtfCreate(BaseModel):
     volatility_1y: Decimal | None = Field(default=None, ge=0)
     volatility_3y: Decimal | None = Field(default=None, ge=0)
     holdings_overview: str | None = Field(default=None)
-    geographical_distribution: dict[str, float] = Field(description="Country code → weight pct")
-    sector_distribution: dict[str, float] = Field(description="Sector name → weight pct")
     bond_maturities: dict[str, float] | None = Field(default=None)
     bond_credit_scores: dict[str, float] | None = Field(default=None)
 
@@ -97,8 +95,6 @@ class EtfUpdate(BaseModel):
     volatility_1y: Decimal | None = Field(default=None, ge=0)
     volatility_3y: Decimal | None = Field(default=None, ge=0)
     holdings_overview: str | None = Field(default=None)
-    geographical_distribution: dict[str, float] | None = Field(default=None)
-    sector_distribution: dict[str, float] | None = Field(default=None)
     bond_maturities: dict[str, float] | None = Field(default=None)
     bond_credit_scores: dict[str, float] | None = Field(default=None)
 

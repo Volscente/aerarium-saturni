@@ -13,13 +13,16 @@ type UploadStatus =
 
 export function HoldingsUpload({ etfId }: HoldingsUploadProps): JSX.Element {
   /**
-   * CSV batch upload component for ETF holdings replacement.
+   * Holdings batch upload component for ETF holdings replacement.
    *
-   * Renders a styled label wrapping a hidden file input. On file selection,
-   * POSTs the CSV to /api/etfs/{id}/holdings/upload (the Next.js route handler
-   * that proxies to the backend). Shows "Inserted N rows" on success or a
-   * structured error message on failure. Resets the input after each attempt
-   * to allow re-uploading the same file.
+   * Accepts a CSV or an issuer XLSX export (the backend dispatches on file
+   * extension, then on the XLSX's filename ticker to pick an issuer-specific
+   * parser — see convert_holdings_xlsx). Renders a styled label wrapping a
+   * hidden file input. On file selection, POSTs the file to
+   * /api/etfs/{id}/holdings/upload (the Next.js route handler that proxies to
+   * the backend). Shows "Inserted N rows" on success or a structured error
+   * message on failure. Resets the input after each attempt to allow
+   * re-uploading the same file.
    *
    * Args:
    *   etfId: UUID of the ETF whose holdings will be replaced.
@@ -66,11 +69,11 @@ export function HoldingsUpload({ etfId }: HoldingsUploadProps): JSX.Element {
   return (
     <div className="flex flex-col gap-1">
       <label className="cursor-pointer rounded border border-roman-stone/30 px-2 py-1 text-xs text-roman-stone hover:border-roman-gold/50 hover:text-roman-gold transition-colors text-center select-none">
-        {isPending ? 'Uploading…' : 'Holdings CSV'}
+        {isPending ? 'Uploading…' : 'Upload Holdings'}
         <input
           ref={inputRef}
           type="file"
-          accept=".csv"
+          accept=".csv,.xlsx"
           className="sr-only"
           onChange={handleChange}
           disabled={isPending}

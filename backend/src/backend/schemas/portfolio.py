@@ -97,3 +97,64 @@ class HoldingsExposureResponse(BaseModel):
         default_factory=list,
         description="Active Concentration Risk and Data Freshness Risk warnings, computed fresh on every request.",
     )
+
+
+class BucketStockContribution(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    stock_isin: str | None = Field(default=None, description="ISIN of the underlying stock, when reported by its ETF(s).")
+    stock_ticker: str | None = Field(default=None, description="Ticker of the underlying stock, when reported by its ETF(s).")
+    stock_name: str = Field(description="Display name of the underlying stock.")
+    weight_percentage: float = Field(
+        description="This stock's own total_weight_percentage from the holdings-exposure aggregation, already deduplicated across all contributing ETFs."
+    )
+
+
+class CountryExposureResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    country_code: str | None = Field(
+        default=None,
+        description="ISO 3166-1 alpha-2 country code of this bucket; None groups stocks whose country could not be derived.",
+    )
+    total_weight_percentage: float = Field(
+        description="Σ total_weight_percentage across every stock bucketed under this country."
+    )
+    holdings: list[BucketStockContribution] = Field(
+        description="Contributing stocks in this country bucket, sorted by weight_percentage DESC."
+    )
+
+
+class HoldingsGeographyResponse(BaseModel):
+    countries: list[CountryExposureResponse] = Field(
+        description="One row per distinct stock_country bucket, ordered by total_weight_percentage DESC."
+    )
+    skipped_etfs: list[str] = Field(
+        default_factory=list,
+        description="Tickers of owned ETFs excluded from the aggregation because they have no price record in etf_price_history.",
+    )
+
+
+class SectorExposureResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    sector: str | None = Field(
+        default=None,
+        description="Canonical GICS-like sector name of this bucket; None groups stocks whose sector could not be normalised.",
+    )
+    total_weight_percentage: float = Field(
+        description="Σ total_weight_percentage across every stock bucketed under this sector."
+    )
+    holdings: list[BucketStockContribution] = Field(
+        description="Contributing stocks in this sector bucket, sorted by weight_percentage DESC."
+    )
+
+
+class HoldingsSectorsResponse(BaseModel):
+    sectors: list[SectorExposureResponse] = Field(
+        description="One row per distinct stock_sector bucket, ordered by total_weight_percentage DESC."
+    )
+    skipped_etfs: list[str] = Field(
+        default_factory=list,
+        description="Tickers of owned ETFs excluded from the aggregation because they have no price record in etf_price_history.",
+    )

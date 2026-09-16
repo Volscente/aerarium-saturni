@@ -10,6 +10,7 @@ from backend.converters.holdings_xlsx import (
     _OPENFIGI_JOBS_PER_REQUEST,
     _country_from_isin,
     _german_country_to_iso,
+    _normalize_sector,
     convert_holdings_xlsx,
     resolve_stock_isin_aliases,
     write_csv,
@@ -34,6 +35,7 @@ def test_convert_ishares_valid():
         "stock_ticker",
         "stock_name",
         "stock_country",
+        "stock_sector",
         "weight_percentage",
         "snapshot_date",
     }
@@ -41,6 +43,7 @@ def test_convert_ishares_valid():
         "stock_ticker": "NVDA",
         "stock_name": "NVIDIA CORP",
         "stock_country": "US",
+        "stock_sector": "Information Technology",
         "weight_percentage": "5.4400",
         "snapshot_date": "2026-07-23",
     }
@@ -65,6 +68,7 @@ def test_convert_vanguard_valid():
         "stock_ticker",
         "stock_name",
         "stock_country",
+        "stock_sector",
         "weight_percentage",
         "snapshot_date",
     }
@@ -72,6 +76,7 @@ def test_convert_vanguard_valid():
         "stock_ticker": "NVDA",
         "stock_name": "NVIDIA Corp",
         "stock_country": "US",
+        "stock_sector": "Information Technology",
         "weight_percentage": "4.4503",
         "snapshot_date": "2026-06-30",
     }
@@ -96,6 +101,7 @@ def test_convert_amundi_valid():
         "stock_isin",
         "stock_name",
         "stock_country",
+        "stock_sector",
         "weight_percentage",
         "snapshot_date",
     }
@@ -103,6 +109,7 @@ def test_convert_amundi_valid():
         "stock_isin": "NL0010273215",
         "stock_name": "ASML HOLDING NV",
         "stock_country": "NL",
+        "stock_sector": "Information Technology",
         "weight_percentage": "4.5914",
         "snapshot_date": "2026-07-22",
     }
@@ -163,6 +170,27 @@ def test_german_country_to_iso_known_and_unknown():
     assert _german_country_to_iso("Deutschland") == "DE"
     assert _german_country_to_iso("Vereinigte Staaten") == "US"
     assert _german_country_to_iso("Atlantis") is None
+
+
+def test_normalize_sector_ishares_and_amundi_german_labels():
+    """Both German-language issuers resolve through the same merged dict, without colliding."""
+    assert _normalize_sector("IT", "ishares") == "Information Technology"
+    assert _normalize_sector("Informationstechnologie", "amundi") == "Information Technology"
+    assert _normalize_sector("Energie", "ishares") == "Energy"
+    assert _normalize_sector("Energie", "amundi") == "Energy"
+
+
+def test_normalize_sector_vanguard_english_labels():
+    """Vanguard's English labels resolve through the separate EN dict."""
+    assert _normalize_sector("Technology", "vanguard") == "Information Technology"
+    assert _normalize_sector("Telecommunications", "vanguard") == "Communication Services"
+
+
+def test_normalize_sector_unmapped_or_absent_returns_none():
+    """An unrecognised label, or a missing value, returns None without raising."""
+    assert _normalize_sector("Atlantis Sector", "ishares") is None
+    assert _normalize_sector(None, "vanguard") is None
+    assert _normalize_sector("", "amundi") is None
 
 
 def test_write_csv_roundtrip(tmp_path):

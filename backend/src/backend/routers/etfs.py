@@ -377,7 +377,12 @@ async def upload_holdings(
     await session.execute(delete(EtfHolding).where(EtfHolding.etf_id == id))
     session.add_all(
         [
-            EtfHolding(etf_id=id, stock_country=row_dict.get("stock_country"), **h.model_dump())
+            EtfHolding(
+                etf_id=id,
+                stock_country=row_dict.get("stock_country"),
+                stock_sector=row_dict.get("stock_sector"),
+                **h.model_dump(),
+            )
             for h, row_dict in holdings
         ]
     )

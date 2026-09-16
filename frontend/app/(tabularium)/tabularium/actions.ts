@@ -48,6 +48,8 @@ export async function updateTransaction(
     revalidateTag('transactions')
     revalidateTag('portfolio-overview')
     revalidateTag('holdings-exposure')
+    revalidateTag('holdings-geography')
+    revalidateTag('holdings-sectors')
     return { success: true }
   } catch (err) {
     return { error: err instanceof Error ? err.message : 'Network error' }
@@ -81,6 +83,8 @@ export async function deleteTransaction(
     revalidateTag('transactions')
     revalidateTag('portfolio-overview')
     revalidateTag('holdings-exposure')
+    revalidateTag('holdings-geography')
+    revalidateTag('holdings-sectors')
     return { success: true }
   } catch (err) {
     return { error: err instanceof Error ? err.message : 'Network error' }
@@ -135,6 +139,8 @@ export async function createTransaction(
     revalidateTag('transactions')
     revalidateTag('portfolio-overview')
     revalidateTag('holdings-exposure')
+    revalidateTag('holdings-geography')
+    revalidateTag('holdings-sectors')
     return { success: true }
   } catch (err) {
     return { error: err instanceof Error ? err.message : 'Network error' }

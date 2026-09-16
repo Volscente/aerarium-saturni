@@ -88,7 +88,7 @@ export function HoldingsBarChart({
   return (
     <div className="mb-6 rounded-2xl border border-roman-stone/10 bg-white/5 dark:bg-roman-obsidian/50 p-6 backdrop-blur-sm">
       <h2 className="mb-6 font-roman text-xl font-bold text-roman-gold">
-        Top Holdings by Look-Through Exposure
+        Top 15 Holdings by Exposure
       </h2>
       <div className="grid grid-cols-[minmax(6rem,10rem)_1fr_auto] items-center gap-x-4 gap-y-3">
         {bars.map((h) => {

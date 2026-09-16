@@ -548,6 +548,8 @@ def _make_holdings_exposure_row(**overrides) -> MagicMock:
     row.stock_isin = overrides.get("stock_isin", None)
     row.stock_ticker = overrides.get("stock_ticker", "RWE")
     row.stock_name = overrides.get("stock_name", "RWE AG")
+    row.stock_country = overrides.get("stock_country", None)
+    row.stock_sector = overrides.get("stock_sector", None)
     row.weight_percentage = overrides.get("weight_percentage", Decimal("5.0000"))
     row.snapshot_date = overrides.get("snapshot_date", date(2026, 7, 23))
     return row
@@ -924,6 +926,91 @@ def client_exposure_multiple_alerts(mock_session_exposure_multiple_alerts):
         with TestClient(app) as c:
             yield c
     app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def mock_session_geography_multi_country():
+    """Two stocks in different countries/sectors, one stock with unmapped (None) country/sector.
+
+    Both EUNL rows share the same etf_id, since _aggregate_stock_groups
+    dedupes etf_current_value by etf_id -- giving them different default
+    (random) etf_ids would double-count EUNL's value across both rows.
+    """
+    session = AsyncMock()
+    result = MagicMock()
+    eunl_id = uuid4()
+    result.all.return_value = [
+        _make_holdings_exposure_row(
+            etf_id=eunl_id,
+            etf_ticker="EUNL",
+            etf_current_value=Decimal("6000.0000"),
+            stock_isin="DE0007037129",
+            stock_ticker=None,
+            stock_name="RWE AG",
+            stock_country="DE",
+            stock_sector="Utilities",
+            weight_percentage=Decimal("4.0000"),
+        ),
+        _make_holdings_exposure_row(
+            etf_id=eunl_id,
+            etf_ticker="EUNL",
+            etf_current_value=Decimal("6000.0000"),
+            stock_isin=None,
+            stock_ticker="NVDA",
+            stock_name="NVIDIA CORP",
+            stock_country="US",
+            stock_sector="Information Technology",
+            weight_percentage=Decimal("6.0000"),
+        ),
+        _make_holdings_exposure_row(
+            etf_ticker="LYP6",
+            etf_current_value=Decimal("4000.0000"),
+            stock_isin="XX0000000000",
+            stock_ticker=None,
+            stock_name="UNMAPPED CO",
+            stock_country=None,
+            stock_sector=None,
+            weight_percentage=Decimal("2.0000"),
+        ),
+    ]
+    session.execute = AsyncMock(return_value=result)
+    return session
+
+
+def _make_bucket_client(mock_session):
+    async def override_get_session():
+        yield mock_session
+
+    app.dependency_overrides[get_session] = override_get_session
+    mock_engine = MagicMock()
+    mock_conn = AsyncMock()
+    mock_conn.run_sync = AsyncMock()
+    mock_engine.begin.return_value = _make_async_cm(mock_conn)
+    with patch("backend.main.engine", mock_engine):
+        with TestClient(app) as c:
+            yield c
+    app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def client_geography_multi_country(mock_session_geography_multi_country):
+    yield from _make_bucket_client(mock_session_geography_multi_country)
+
+
+@pytest.fixture
+def client_geography_empty(mock_session_exposure_empty):
+    yield from _make_bucket_client(mock_session_exposure_empty)
+
+
+@pytest.fixture
+def client_sectors_multi_sector(mock_session_geography_multi_country):
+    """Reuses the same rows as geography -- each row also carries a stock_sector."""
+    yield from _make_bucket_client(mock_session_geography_multi_country)
+
+
+@pytest.fixture
+def client_sectors_empty(mock_session_exposure_empty):
+    yield from _make_bucket_client(mock_session_exposure_empty)
 
 
 @pytest.fixture

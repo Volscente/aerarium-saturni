@@ -69,6 +69,8 @@ export async function createEtf(
     revalidateTag('etfs')
     revalidateTag('portfolio-overview')
     revalidateTag('holdings-exposure')
+    revalidateTag('holdings-geography')
+    revalidateTag('holdings-sectors')
     return { success: true }
   } catch (err) {
     return { error: err instanceof Error ? err.message : 'Network error' }
@@ -127,6 +129,8 @@ export async function updateEtf(
     revalidateTag('etfs')
     revalidateTag('portfolio-overview')
     revalidateTag('holdings-exposure')
+    revalidateTag('holdings-geography')
+    revalidateTag('holdings-sectors')
     return { success: true }
   } catch (err) {
     return { error: err instanceof Error ? err.message : 'Network error' }
@@ -164,6 +168,8 @@ export async function deleteEtf(
     revalidateTag('etfs')
     revalidateTag('portfolio-overview')
     revalidateTag('holdings-exposure')
+    revalidateTag('holdings-geography')
+    revalidateTag('holdings-sectors')
     return { success: true }
   } catch (err) {
     return { error: err instanceof Error ? err.message : 'Network error' }
@@ -229,6 +235,8 @@ export async function addPriceSnapshot(
     revalidateTag('etfs')
     revalidateTag('portfolio-overview')
     revalidateTag('holdings-exposure')
+    revalidateTag('holdings-geography')
+    revalidateTag('holdings-sectors')
     return { success: true }
   } catch (err) {
     return { error: err instanceof Error ? err.message : 'Network error' }
@@ -279,6 +287,8 @@ export async function updatePriceSnapshot(
     revalidateTag('etfs')
     revalidateTag('portfolio-overview')
     revalidateTag('holdings-exposure')
+    revalidateTag('holdings-geography')
+    revalidateTag('holdings-sectors')
     return { success: true }
   } catch (err) {
     return { error: err instanceof Error ? err.message : 'Network error' }
@@ -318,6 +328,8 @@ export async function deletePriceSnapshot(
     revalidateTag('etfs')
     revalidateTag('portfolio-overview')
     revalidateTag('holdings-exposure')
+    revalidateTag('holdings-geography')
+    revalidateTag('holdings-sectors')
     return { success: true }
   } catch (err) {
     return { error: err instanceof Error ? err.message : 'Network error' }

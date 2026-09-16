@@ -181,3 +181,83 @@ def test_get_holdings_exposure_multiple_alerts(client_exposure_multiple_alerts):
     assert len(data["alerts"]) == 2
     rules = {a["rule"] for a in data["alerts"]}
     assert rules == {"concentration_risk", "data_freshness_risk"}
+
+
+def test_get_holdings_geography_empty(client_geography_empty):
+    """GET /portfolio/holdings/geography returns 200 with empty countries when no ETFs are held."""
+    response = client_geography_empty.get("/portfolio/holdings/geography")
+    assert response.status_code == 200
+    assert response.json() == {"countries": [], "skipped_etfs": []}
+
+
+def test_get_holdings_geography_buckets_by_country(client_geography_multi_country):
+    """Stocks bucket by stock_country, summing total_weight_percentage per country; unmapped country groups under null."""
+    response = client_geography_multi_country.get("/portfolio/holdings/geography")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data["countries"]) == 3
+
+    by_country = {c["country_code"]: c for c in data["countries"]}
+    assert set(by_country) == {"DE", "US", None}
+    # EUNL (6000/10000 = 60% portfolio weight) * NVDA's 6% fund weight = 3.6%
+    assert by_country["US"]["total_weight_percentage"] == pytest.approx(3.6)
+    # EUNL 60% portfolio weight * RWE's 4% fund weight = 2.4%
+    assert by_country["DE"]["total_weight_percentage"] == pytest.approx(2.4)
+    # LYP6 (4000/10000 = 40% portfolio weight) * unmapped stock's 2% fund weight = 0.8%
+    assert by_country[None]["total_weight_percentage"] == pytest.approx(0.8)
+
+    us_holdings = by_country["US"]["holdings"]
+    assert len(us_holdings) == 1
+    assert us_holdings[0]["stock_ticker"] == "NVDA"
+    assert us_holdings[0]["weight_percentage"] == pytest.approx(3.6)
+
+
+def test_get_holdings_geography_sorted_desc_by_total_weight(client_geography_multi_country):
+    """countries is ordered by total_weight_percentage DESC (US 3.6% > DE 2.4% > unmapped 0.8%)."""
+    response = client_geography_multi_country.get("/portfolio/holdings/geography")
+    codes_in_order = [c["country_code"] for c in response.json()["countries"]]
+    assert codes_in_order == ["US", "DE", None]
+
+
+def test_get_holdings_geography_missing_price_skipped(client_exposure_missing_price):
+    """An ETF with no price record is excluded from geography weighting and listed in skipped_etfs."""
+    response = client_exposure_missing_price.get("/portfolio/holdings/geography")
+    assert response.status_code == 200
+    assert "LYP6" in response.json()["skipped_etfs"]
+
+
+def test_get_holdings_sectors_empty(client_sectors_empty):
+    """GET /portfolio/holdings/sectors returns 200 with empty sectors when no ETFs are held."""
+    response = client_sectors_empty.get("/portfolio/holdings/sectors")
+    assert response.status_code == 200
+    assert response.json() == {"sectors": [], "skipped_etfs": []}
+
+
+def test_get_holdings_sectors_buckets_by_sector(client_sectors_multi_sector):
+    """Stocks bucket by stock_sector, summing total_weight_percentage per sector; unmapped sector groups under null."""
+    response = client_sectors_multi_sector.get("/portfolio/holdings/sectors")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data["sectors"]) == 3
+
+    by_sector = {s["sector"]: s for s in data["sectors"]}
+    assert set(by_sector) == {"Utilities", "Information Technology", None}
+    assert by_sector["Information Technology"]["total_weight_percentage"] == pytest.approx(3.6)
+    assert by_sector["Utilities"]["total_weight_percentage"] == pytest.approx(2.4)
+    assert by_sector[None]["total_weight_percentage"] == pytest.approx(0.8)
+
+
+def test_get_holdings_sectors_holding_shape_has_no_per_etf_breakdown(client_sectors_multi_sector):
+    """Each bucket's holdings list carries ticker/ISIN/weight_percentage only -- no per-ETF dimension."""
+    response = client_sectors_multi_sector.get("/portfolio/holdings/sectors")
+    by_sector = {s["sector"]: s for s in response.json()["sectors"]}
+    holding = by_sector["Utilities"]["holdings"][0]
+    assert set(holding.keys()) == {"stock_isin", "stock_ticker", "stock_name", "weight_percentage"}
+    assert holding["stock_isin"] == "DE0007037129"
+
+
+def test_get_holdings_sectors_missing_price_skipped(client_exposure_missing_price):
+    """An ETF with no price record is excluded from sector weighting and listed in skipped_etfs."""
+    response = client_exposure_missing_price.get("/portfolio/holdings/sectors")
+    assert response.status_code == 200
+    assert "LYP6" in response.json()["skipped_etfs"]

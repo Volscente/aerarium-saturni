@@ -7,6 +7,10 @@ import { ConcentrationAlertBadge } from './ConcentrationAlertBadge'
 import { HoldingsBarChart } from './HoldingsBarChart'
 import { HoldingsTreemap } from './HoldingsTreemap'
 import { HoldingsExposureTable } from './HoldingsExposureTable'
+import { GeographyBarChart } from './GeographyBarChart'
+import { GeographyExposureTable } from './GeographyExposureTable'
+import { SectorBarChart } from './SectorBarChart'
+import { SectorExposureTable } from './SectorExposureTable'
 
 export interface PortfolioRowResponse {
   owner: string
@@ -57,30 +61,65 @@ export interface HoldingsExposureResponse {
   alerts: RiskAlert[]
 }
 
-type PortfolioTab = 'overview' | 'holdings' | 'allocation'
+export interface BucketStockContribution {
+  stock_isin: string | null
+  stock_ticker: string | null
+  stock_name: string
+  weight_percentage: number
+}
+
+export interface CountryExposureResponse {
+  country_code: string | null
+  total_weight_percentage: number
+  holdings: BucketStockContribution[]
+}
+
+export interface HoldingsGeographyResponse {
+  countries: CountryExposureResponse[]
+  skipped_etfs: string[]
+}
+
+export interface SectorExposureResponse {
+  sector: string | null
+  total_weight_percentage: number
+  holdings: BucketStockContribution[]
+}
+
+export interface HoldingsSectorsResponse {
+  sectors: SectorExposureResponse[]
+  skipped_etfs: string[]
+}
+
+type PortfolioTab = 'overview' | 'holdings' | 'geography' | 'sectors'
 
 const TABS: { id: PortfolioTab; label: string }[] = [
   { id: 'overview', label: 'Overview' },
   { id: 'holdings', label: 'Holdings' },
-  { id: 'allocation', label: 'Allocation' },
+  { id: 'geography', label: 'Geography' },
+  { id: 'sectors', label: 'Sectors' },
 ]
 
 export function PortfolioPageClient({
   overviewData,
   exposureData,
+  geographyData,
+  sectorsData,
 }: {
   overviewData: PortfolioOverviewResponse
   exposureData: HoldingsExposureResponse
+  geographyData: HoldingsGeographyResponse
+  sectorsData: HoldingsSectorsResponse
 }): JSX.Element {
   /**
-   * Renders the Portfolio dashboard as a tabbed interface.
+   * Renders the Portfolio dashboard as a tabbed interface: Overview,
+   * Holdings, Geography, and Sectors.
    *
    * Tab content is conditionally rendered rather than hidden via CSS, so
    * components for inactive tabs (the D3 treemap, the bar chart, the
    * expandable exposure table) are not mounted until their tab is
-   * activated. overviewData and exposureData are already fully fetched by
-   * the parent server component, so switching tabs never re-fetches or
-   * loses data context.
+   * activated. overviewData, exposureData, geographyData, and sectorsData
+   * are already fully fetched by the parent server component, so switching
+   * tabs never re-fetches or loses data context.
    */
   const [activeTab, setActiveTab] = useState<PortfolioTab>('overview')
 
@@ -125,12 +164,30 @@ export function PortfolioPageClient({
         </>
       )}
 
-      {activeTab === 'allocation' && (
-        <div className="rounded-2xl border border-roman-stone/10 bg-white/5 dark:bg-roman-obsidian/50 p-6 backdrop-blur-sm">
-          <p className="text-sm text-roman-stone">
-            Sector and geographic allocation breakdowns are coming soon.
-          </p>
-        </div>
+      {activeTab === 'geography' && (
+        <>
+          {geographyData.skipped_etfs.length > 0 && (
+            <p className="mb-4 text-sm text-roman-stone">
+              Excluded from geography analysis (no price data):{' '}
+              {geographyData.skipped_etfs.join(', ')}
+            </p>
+          )}
+          <GeographyBarChart countries={geographyData.countries} />
+          <GeographyExposureTable countries={geographyData.countries} />
+        </>
+      )}
+
+      {activeTab === 'sectors' && (
+        <>
+          {sectorsData.skipped_etfs.length > 0 && (
+            <p className="mb-4 text-sm text-roman-stone">
+              Excluded from sector analysis (no price data):{' '}
+              {sectorsData.skipped_etfs.join(', ')}
+            </p>
+          )}
+          <SectorBarChart sectors={sectorsData.sectors} />
+          <SectorExposureTable sectors={sectorsData.sectors} />
+        </>
       )}
     </div>
   )

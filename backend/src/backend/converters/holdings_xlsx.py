@@ -5,7 +5,7 @@ import zipfile
 from datetime import date
 from decimal import Decimal
 from pathlib import Path
-from typing import BinaryIO
+from typing import BinaryIO, Literal
 
 import httpx
 import openpyxl
@@ -63,6 +63,47 @@ GERMAN_COUNTRY_TO_ISO = {
     "Österreich": "AT",
 }
 
+SECTOR_TO_CANONICAL_DE = {
+    # iShares (EUNL.xlsx) raw "Sektor" values
+    "IT": "Information Technology",
+    "Finanzwesen": "Financials",
+    "Gesundheitsversorgung": "Health Care",
+    "Zyklische Konsumgüter": "Consumer Discretionary",
+    "Nichtzyklische Konsumgüter": "Consumer Staples",
+    "Industrie": "Industrials",
+    "Energie": "Energy",
+    "Materialien": "Materials",
+    "Versorger": "Utilities",
+    "Immobilien": "Real Estate",
+    "Kommunikation": "Communication Services",
+    # Amundi (LYP6.xlsx) raw "Sektor" values -- different German phrasing
+    # for the same GICS-like concepts as iShares'; no key collisions with
+    # the entries above (the 4 concepts both issuers phrase identically --
+    # Energie, Immobilien, Industrie, Versorger -- are listed once each).
+    "Informationstechnologie": "Information Technology",
+    "Finanzdienstleistungen": "Financials",
+    "Gesundheitswesen": "Health Care",
+    "Nicht-Basiskonsumgüter": "Consumer Discretionary",
+    "Basiskonsumgüter": "Consumer Staples",
+    "Werkstoffe": "Materials",
+    "Kommunikationsdienstleistungen": "Communication Services",
+}
+
+SECTOR_TO_CANONICAL_EN = {
+    # Vanguard (VWCE.xlsx) raw "Sektor" values
+    "Technology": "Information Technology",
+    "Financials": "Financials",
+    "Health Care": "Health Care",
+    "Consumer Discretionary": "Consumer Discretionary",
+    "Consumer Staples": "Consumer Staples",
+    "Industrials": "Industrials",
+    "Energy": "Energy",
+    "Basic Materials": "Materials",
+    "Utilities": "Utilities",
+    "Real Estate": "Real Estate",
+    "Telecommunications": "Communication Services",
+}
+
 OPENFIGI_MAPPING_URL = "https://api.openfigi.com/v3/mapping"
 _OPENFIGI_JOBS_PER_REQUEST = 10
 _OPENFIGI_BATCH_DELAY_SECONDS = 2.5
@@ -100,9 +141,11 @@ def convert_holdings_xlsx(source: XlsxSource, ticker: str | None = None) -> list
         only normalises a blank/absent *ISIN* to ``None``; a blank
         ``stock_ticker`` would fail its ``min_length=1`` constraint). Each
         dict also carries ``stock_country`` (an ISO 3166-1 alpha-2 code, or
-        ``None`` if it couldn't be derived) — this field is not part of
-        ``EtfHoldingRow`` and is read directly off the dict by the upload
-        handler when constructing ``EtfHolding`` rows. Cash, money-market,
+        ``None`` if it couldn't be derived) and ``stock_sector`` (a
+        canonical GICS-like bucket name, or ``None`` if the issuer's raw
+        label isn't mapped) — neither field is part of ``EtfHoldingRow``;
+        both are read directly off the dict by the upload handler when
+        constructing ``EtfHolding`` rows. Cash, money-market,
         derivative, and zero-weight lines are dropped, since ``EtfHoldingRow``
         models discrete stock constituents only and requires
         ``weight_percentage > 0``.
@@ -348,6 +391,34 @@ def _german_country_to_iso(country_name: str) -> str | None:
     return GERMAN_COUNTRY_TO_ISO.get(country_name)
 
 
+def _normalize_sector(raw: str | None, issuer: Literal["ishares", "vanguard", "amundi"]) -> str | None:
+    """Map an issuer's raw sector label to a canonical GICS-like bucket.
+
+    iShares and Amundi both publish German sector labels but with different
+    exact phrasing for the same concepts (e.g. iShares' "Finanzwesen" vs.
+    Amundi's "Finanzdienstleistungen"), so both are resolved through the
+    same merged SECTOR_TO_CANONICAL_DE dict; Vanguard publishes English
+    labels, resolved through SECTOR_TO_CANONICAL_EN instead. Mirrors
+    _german_country_to_iso's style: a thin .get() wrapper that returns None
+    on an unmapped miss rather than raising, so an unrecognised sector label
+    still lets the row convert, just without stock_sector.
+
+    Args:
+        raw: The raw Sektor/Sector cell value, or None/empty if absent.
+        issuer: Which converter is calling this, selecting which mapping
+            dict to look the raw value up in.
+
+    Returns:
+        The canonical sector name, or None if raw is falsy or not found in
+        the selected mapping.
+    """
+    if not raw:
+        return None
+    cleaned = raw.strip()
+    mapping = SECTOR_TO_CANONICAL_EN if issuer == "vanguard" else SECTOR_TO_CANONICAL_DE
+    return mapping.get(cleaned)
+
+
 def _convert_ishares(source: XlsxSource) -> list[dict[str, str]]:
     """Convert an iShares holdings export (e.g. EUNL.xlsx) to holding rows.
 
@@ -362,7 +433,9 @@ def _convert_ishares(source: XlsxSource) -> list[dict[str, str]]:
     Returns:
         Converted holding rows keyed by ``stock_ticker`` (no ISIN available),
         with ``stock_country`` derived from the ``Standort`` column via
-        ``_german_country_to_iso`` (``None`` if the country name isn't mapped).
+        ``_german_country_to_iso`` (``None`` if the country name isn't mapped),
+        and ``stock_sector`` normalised from the ``Sektor`` column via
+        ``_normalize_sector`` (``None`` if the label isn't mapped).
     """
     wb = _load_workbook(source)
     ws = wb.active
@@ -372,7 +445,7 @@ def _convert_ishares(source: XlsxSource) -> list[dict[str, str]]:
     for (
         ticker,
         name,
-        _sector,
+        sector,
         asset_class,
         _market_value,
         weight_pct,
@@ -392,6 +465,7 @@ def _convert_ishares(source: XlsxSource) -> list[dict[str, str]]:
                 "stock_ticker": str(ticker).strip(),
                 "stock_name": str(name).strip(),
                 "stock_country": _german_country_to_iso(str(location).strip()) if location else None,
+                "stock_sector": _normalize_sector(str(sector), "ishares") if sector else None,
                 "weight_percentage": str(weight),
                 "snapshot_date": snapshot_date.isoformat(),
             }
@@ -412,7 +486,9 @@ def _convert_vanguard(source: XlsxSource) -> list[dict[str, str]]:
     Returns:
         Converted holding rows keyed by ``stock_ticker`` (no ISIN available),
         with ``stock_country`` taken directly from the ``Region`` column
-        (already ISO 3166-1 alpha-2, unlike iShares' German country names).
+        (already ISO 3166-1 alpha-2, unlike iShares' German country names),
+        and ``stock_sector`` normalised from the ``Sektor`` column via
+        ``_normalize_sector`` (``None`` if the label isn't mapped).
     """
     wb = _load_workbook(source)
     ws = wb.active
@@ -420,7 +496,7 @@ def _convert_vanguard(source: XlsxSource) -> list[dict[str, str]]:
     snapshot_date = _parse_german_date(title_row)
 
     rows = []
-    for ticker, name, weight_pct, _sector, region, *_rest in (
+    for ticker, name, weight_pct, sector, region, *_rest in (
         row[:5] for row in ws.iter_rows(min_row=8, values_only=True)
     ):
         if not ticker or not name:
@@ -433,6 +509,7 @@ def _convert_vanguard(source: XlsxSource) -> list[dict[str, str]]:
                 "stock_ticker": str(ticker).strip(),
                 "stock_name": str(name).strip(),
                 "stock_country": str(region).strip().upper() if region else None,
+                "stock_sector": _normalize_sector(str(sector), "vanguard") if sector else None,
                 "weight_percentage": str(weight),
                 "snapshot_date": snapshot_date.isoformat(),
             }
@@ -460,7 +537,9 @@ def _convert_amundi(source: XlsxSource) -> list[dict[str, str]]:
     Returns:
         Converted holding rows keyed by ``stock_isin`` (no ticker available),
         with ``stock_country`` derived for free from the ISIN's own first two
-        characters (``_country_from_isin``).
+        characters (``_country_from_isin``), and ``stock_sector`` normalised
+        from the ``Sektor`` column via ``_normalize_sector`` (``None`` if the
+        label isn't mapped).
     """
     wb = _load_workbook(source)
     ws = wb.active
@@ -484,7 +563,7 @@ def _convert_amundi(source: XlsxSource) -> list[dict[str, str]]:
 
     rows = []
     for row in rows_iter:
-        isin, name, asset_class, weight_pct = row[1], row[2], row[3], row[5]
+        isin, name, asset_class, weight_pct, sector = row[1], row[2], row[3], row[5], row[6]
         if asset_class != "EQUITY" or not isin or not _ISIN_PATTERN.fullmatch(str(isin)) or not name:
             continue
         weight = _clean_weight(Decimal(str(weight_pct)) * 100 if weight_pct is not None else None)
@@ -496,6 +575,7 @@ def _convert_amundi(source: XlsxSource) -> list[dict[str, str]]:
                 "stock_isin": normalised_isin,
                 "stock_name": str(name).strip(),
                 "stock_country": _country_from_isin(normalised_isin),
+                "stock_sector": _normalize_sector(str(sector), "amundi") if sector else None,
                 "weight_percentage": str(weight),
                 "snapshot_date": snapshot_date.isoformat(),
             }

@@ -9,12 +9,17 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.db import get_session
 from backend.models import Etf, EtfHolding, EtfPriceHistory, Transaction
 from backend.schemas.portfolio import (
+    BucketStockContribution,
+    CountryExposureResponse,
     HoldingContribution,
     HoldingExposureResponse,
     HoldingsExposureResponse,
+    HoldingsGeographyResponse,
+    HoldingsSectorsResponse,
     PortfolioOverviewResponse,
     PortfolioRowResponse,
     RiskAlert,
+    SectorExposureResponse,
 )
 
 router = APIRouter()
@@ -214,9 +219,9 @@ def _build_holdings_exposure_query() -> Select:
 
     Returns:
         A SQLAlchemy ``Select`` yielding rows of ``(etf_id, etf_ticker, etf_name,
-        etf_current_value, stock_isin, stock_ticker, stock_name,
-        weight_percentage, snapshot_date)``. ``etf_current_value`` is ``NULL`` when
-        the ETF has no price record.
+        etf_current_value, stock_isin, stock_ticker, stock_name, stock_country,
+        stock_sector, weight_percentage, snapshot_date)``. ``etf_current_value``
+        is ``NULL`` when the ETF has no price record.
     """
     latest_price_subq = (
         select(EtfPriceHistory.price)
@@ -276,6 +281,8 @@ def _build_holdings_exposure_query() -> Select:
             EtfHolding.stock_isin,
             EtfHolding.stock_ticker,
             EtfHolding.stock_name,
+            EtfHolding.stock_country,
+            EtfHolding.stock_sector,
             EtfHolding.weight_percentage,
             EtfHolding.snapshot_date,
         )
@@ -356,44 +363,37 @@ def _build_freshness_alerts(
     return alerts
 
 
-@router.get("/holdings/exposure", response_model=HoldingsExposureResponse)
-async def get_holdings_exposure(
-    session: AsyncSession = Depends(get_session),
-) -> HoldingsExposureResponse:
-    """Aggregate look-through single-stock exposure across all owned ETFs.
+async def _aggregate_stock_groups(
+    session: AsyncSession,
+) -> tuple[dict[str, dict], dict[UUID, tuple], set[str]]:
+    """Run _build_holdings_exposure_query once and group its rows by stock identity.
 
-    Executes ``_build_holdings_exposure_query()``, then in Python: deduplicates
-    rows by ``etf_id`` to compute each ETF's share of ``total_portfolio_value``
-    (ETFs with a ``NULL`` current value are excluded from both the numerator and
-    denominator and reported in ``skipped_etfs`` rather than failing the
-    request); multiplies each holding's ``weight_percentage`` by its owning
-    ETF's portfolio weight; and groups the results by
-    ``COALESCE(stock_isin, stock_ticker)``, summing contributions per stock and
-    building the nested ``HoldingContribution`` list per group. Results are
-    ordered by ``total_weight_percentage`` descending.
+    Shared by get_holdings_exposure, get_holdings_geography, and
+    get_holdings_sectors so the query (and the etf-value dedup/weighting
+    logic built on top of it) runs exactly once per request regardless of
+    which endpoint is called -- geography/sectors bucket the SAME per-stock
+    groups dict in a second, small Python-side pass rather than re-querying
+    or re-deriving stock identity.
 
-    Missing-price handling is a settled decision (not an open question): a
-    priceless ETF is skipped rather than nulling the whole response.
-
-    Also derives ``alerts``: a Concentration Risk ``RiskAlert`` for every
-    holding whose ``total_weight_percentage`` exceeds ``CONCENTRATION_THRESHOLD_PCT``
-    (``_build_concentration_alerts``), and a Data Freshness Risk ``RiskAlert``
-    for every distinct owned ETF whose latest holdings ``snapshot_date`` is
-    more than ``FRESHNESS_THRESHOLD_DAYS`` days old (``_build_freshness_alerts``).
-    Both reuse data already computed above — no additional query.
+    A stock's stock_country/stock_sector is taken from the first row seen
+    for that stock's key and treated as invariant across every ETF that
+    holds it -- i.e. if two ETFs disagree (e.g. a stale country/sector on
+    one issuer's export), whichever ETF's row is encountered first for that
+    stock silently wins. This mirrors the "first row wins" convention
+    already used for stock_name in this same groups dict.
 
     Args:
-        session: Async SQLAlchemy session injected by ``Depends(get_session)``.
+        session: Async SQLAlchemy session.
 
     Returns:
-        A ``HoldingsExposureResponse`` with one ``HoldingExposureResponse`` per
-        distinct stock identity found across all owned ETFs' latest holdings
-        snapshots, the tickers of any ETFs excluded for lacking a price
-        record, and any active Concentration Risk / Data Freshness Risk
-        alerts. Returns ``holdings=[]``/``alerts=[]`` when no ETFs are held.
-
-    Raises:
-        sqlalchemy.exc.OperationalError: If the database is unreachable at query time.
+        A 3-tuple:
+        - groups: dict keyed by COALESCE(stock_isin, stock_ticker), each
+          value a dict with stock_isin, stock_ticker, stock_name,
+          stock_country, stock_sector, total_weight_percentage, and
+          contributions (a list[HoldingContribution]).
+        - etf_values: dict keyed by etf_id, each value
+          (etf_ticker, etf_name, etf_current_value, snapshot_date).
+        - skipped_etfs: tickers of ETFs excluded for lacking a price record.
     """
     stmt = _build_holdings_exposure_query()
     result = await session.execute(stmt)
@@ -426,6 +426,8 @@ async def get_holdings_exposure(
                 "stock_isin": row.stock_isin,
                 "stock_ticker": row.stock_ticker,
                 "stock_name": row.stock_name,
+                "stock_country": row.stock_country,
+                "stock_sector": row.stock_sector,
                 "total_weight_percentage": Decimal("0"),
                 "contributions": [],
             }
@@ -440,6 +442,87 @@ async def get_holdings_exposure(
                 snapshot_date=row.snapshot_date,
             )
         )
+
+    return groups, etf_values, skipped_etfs
+
+
+def _bucket_stock_groups(groups: dict[str, dict], bucket_field: str) -> list[dict]:
+    """Group per-stock aggregation groups into buckets by stock_country or stock_sector.
+
+    A second, small Python-side pass over the already-computed per-stock
+    groups dict from _aggregate_stock_groups -- no additional query.
+
+    Args:
+        groups: The per-stock groups dict from _aggregate_stock_groups.
+        bucket_field: Either "stock_country" or "stock_sector".
+
+    Returns:
+        List of dicts with keys "bucket" (the country code / sector name,
+        or None), "total_weight_percentage", and "holdings" (a list of
+        BucketStockContribution, sorted DESC by weight_percentage) -- the
+        whole list sorted DESC by total_weight_percentage.
+    """
+    buckets: dict[str | None, dict] = {}
+    for group in groups.values():
+        bucket_key = group[bucket_field]
+        if bucket_key not in buckets:
+            buckets[bucket_key] = {
+                "bucket": bucket_key,
+                "total_weight_percentage": Decimal("0"),
+                "holdings": [],
+            }
+        buckets[bucket_key]["total_weight_percentage"] += group["total_weight_percentage"]
+        buckets[bucket_key]["holdings"].append(
+            BucketStockContribution(
+                stock_isin=group["stock_isin"],
+                stock_ticker=group["stock_ticker"],
+                stock_name=group["stock_name"],
+                weight_percentage=group["total_weight_percentage"],
+            )
+        )
+
+    for bucket in buckets.values():
+        bucket["holdings"].sort(key=lambda h: h.weight_percentage, reverse=True)
+
+    return sorted(buckets.values(), key=lambda b: b["total_weight_percentage"], reverse=True)
+
+
+@router.get("/holdings/exposure", response_model=HoldingsExposureResponse)
+async def get_holdings_exposure(
+    session: AsyncSession = Depends(get_session),
+) -> HoldingsExposureResponse:
+    """Aggregate look-through single-stock exposure across all owned ETFs.
+
+    Delegates the query execution and per-stock aggregation to
+    _aggregate_stock_groups (shared with get_holdings_geography and
+    get_holdings_sectors); builds the response exactly as before --
+    stock_country/stock_sector captured by the helper stay internal to the
+    aggregation step and are not exposed on HoldingExposureResponse.
+
+    Missing-price handling is a settled decision (not an open question): a
+    priceless ETF is skipped rather than nulling the whole response.
+
+    Also derives ``alerts``: a Concentration Risk ``RiskAlert`` for every
+    holding whose ``total_weight_percentage`` exceeds ``CONCENTRATION_THRESHOLD_PCT``
+    (``_build_concentration_alerts``), and a Data Freshness Risk ``RiskAlert``
+    for every distinct owned ETF whose latest holdings ``snapshot_date`` is
+    more than ``FRESHNESS_THRESHOLD_DAYS`` days old (``_build_freshness_alerts``).
+    Both reuse data already computed above — no additional query.
+
+    Args:
+        session: Async SQLAlchemy session injected by ``Depends(get_session)``.
+
+    Returns:
+        A ``HoldingsExposureResponse`` with one ``HoldingExposureResponse`` per
+        distinct stock identity found across all owned ETFs' latest holdings
+        snapshots, the tickers of any ETFs excluded for lacking a price
+        record, and any active Concentration Risk / Data Freshness Risk
+        alerts. Returns ``holdings=[]``/``alerts=[]`` when no ETFs are held.
+
+    Raises:
+        sqlalchemy.exc.OperationalError: If the database is unreachable at query time.
+    """
+    groups, etf_values, skipped_etfs = await _aggregate_stock_groups(session)
 
     holdings = sorted(
         (
@@ -459,3 +542,77 @@ async def get_holdings_exposure(
     alerts = _build_concentration_alerts(holdings) + _build_freshness_alerts(etf_values)
 
     return HoldingsExposureResponse(holdings=holdings, skipped_etfs=sorted(skipped_etfs), alerts=alerts)
+
+
+@router.get("/holdings/geography", response_model=HoldingsGeographyResponse)
+async def get_holdings_geography(
+    session: AsyncSession = Depends(get_session),
+) -> HoldingsGeographyResponse:
+    """Aggregate look-through single-stock exposure into per-country buckets.
+
+    Reuses _aggregate_stock_groups (the same per-stock aggregation powering
+    GET /holdings/exposure) and buckets its groups by stock_country in a
+    second, small Python-side pass -- no additional query. A stock whose
+    stock_country is None (unmapped country name, or a CSV upload that
+    never carried the column) is bucketed under country_code=None; the
+    frontend renders that bucket as "Unknown".
+
+    Args:
+        session: Async SQLAlchemy session injected by ``Depends(get_session)``.
+
+    Returns:
+        A HoldingsGeographyResponse with one CountryExposureResponse per
+        distinct stock_country value found across all owned ETFs' latest
+        holdings snapshots (ordered by total_weight_percentage DESC), plus
+        the tickers of any ETFs excluded for lacking a price record.
+    """
+    groups, _, skipped_etfs = await _aggregate_stock_groups(session)
+    buckets = _bucket_stock_groups(groups, "stock_country")
+
+    countries = [
+        CountryExposureResponse(
+            country_code=bucket["bucket"],
+            total_weight_percentage=bucket["total_weight_percentage"],
+            holdings=bucket["holdings"],
+        )
+        for bucket in buckets
+    ]
+
+    return HoldingsGeographyResponse(countries=countries, skipped_etfs=sorted(skipped_etfs))
+
+
+@router.get("/holdings/sectors", response_model=HoldingsSectorsResponse)
+async def get_holdings_sectors(
+    session: AsyncSession = Depends(get_session),
+) -> HoldingsSectorsResponse:
+    """Aggregate look-through single-stock exposure into per-sector buckets.
+
+    Identical shape to get_holdings_geography, bucketed by stock_sector (the
+    canonical GICS-like name normalised by _normalize_sector at holdings
+    upload time) instead of stock_country. A stock whose stock_sector is
+    None (unmapped raw sector label, or a CSV upload with no sector column)
+    is bucketed under sector=None; the frontend renders that bucket as
+    "Unknown".
+
+    Args:
+        session: Async SQLAlchemy session injected by ``Depends(get_session)``.
+
+    Returns:
+        A HoldingsSectorsResponse with one SectorExposureResponse per
+        distinct stock_sector value found across all owned ETFs' latest
+        holdings snapshots (ordered by total_weight_percentage DESC), plus
+        the tickers of any ETFs excluded for lacking a price record.
+    """
+    groups, _, skipped_etfs = await _aggregate_stock_groups(session)
+    buckets = _bucket_stock_groups(groups, "stock_sector")
+
+    sectors = [
+        SectorExposureResponse(
+            sector=bucket["bucket"],
+            total_weight_percentage=bucket["total_weight_percentage"],
+            holdings=bucket["holdings"],
+        )
+        for bucket in buckets
+    ]
+
+    return HoldingsSectorsResponse(sectors=sectors, skipped_etfs=sorted(skipped_etfs))

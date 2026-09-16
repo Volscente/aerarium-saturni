@@ -1,0 +1,97 @@
+backend/src/backend/routers/etfs.py
+  s_0e5bf017b62f6b::t_3d6a87a290dd24 51
+  s_0e5bf017b62f6b::t_54b58e7c93fe2c 288-317
+  s_0e5bf017b62f6b::t_2b1cf0f027b664 3
+  s_0e5bf017b62f6b::t_5bf81ea0813212 417-419
+  s_0e5bf017b62f6b::t_a468f245346b2f 36-40
+  s_0e5bf017b62f6b::t_f9291b1fe63b10 353-359
+frontend/app/(tabularium)/tabularium/portfolio/components/SectorExposureTable.tsx
+  s_0e5bf017b62f6b::t_37c587de449f73 240,242,248-262,266,268,271-272,274-284
+  s_0e5bf017b62f6b::t_8d5e67b77aa7ce 4
+  s_0e5bf017b62f6b::t_b879b3b619e427 79
+frontend/app/(tabularium)/tabularium/portfolio/components/GeographyBarChart.tsx
+  s_0e5bf017b62f6b::t_5a99e0b5f130ad 68,73-77
+  s_0e5bf017b62f6b::t_d528772992b49f 4
+frontend/app/(tabularium)/tabularium/components/HoldingsUpload.tsx
+  s_0e5bf017b62f6b::t_28fa630fac0081 16,18-25
+  s_0e5bf017b62f6b::t_2d4010dd957445 72,76
+backend/tests/conftest.py
+  s_0e5bf017b62f6b::t_94c51a8b7a89cd 931-933,935,937,965-974
+  s_0e5bf017b62f6b::t_2f97fb63ca505f 975
+backend/src/backend/models.py
+  s_0e5bf017b62f6b::t_bf7dc0cf6a3c0f 65-66
+backend/tests/routers/test_etfs.py
+  s_0e5bf017b62f6b::t_5165987ed40ded 27-49
+  s_0e5bf017b62f6b::t_78664bdc47a156 265-302
+  s_0e5bf017b62f6b::t_2d4ac055bd5f0e 8-9
+  s_0e5bf017b62f6b::t_15388a348e9af7 229-264
+backend/README.md
+  s_0e5bf017b62f6b::t_c4938927ed570e 22
+  s_0e5bf017b62f6b::t_e406c98ca4e521 24
+  s_0e5bf017b62f6b::t_0e6a39cef95b07 154-161
+  s_0e5bf017b62f6b::t_377d291368e3a9 11
+  s_0e5bf017b62f6b::t_e64bb92a2a3741 20
+  s_0e5bf017b62f6b::t_80855669eb1ab6 162-170
+  s_0e5bf017b62f6b::t_7404d091faf61e 25
+  s_0e5bf017b62f6b::t_ca49cdc68571a8 46
+backend/src/backend/routers/portfolio.py
+  s_0e5bf017b62f6b::t_a8e793548e07c0 449-450,452-461,469-471,476-478,480-494,496,498-510
+  s_0e5bf017b62f6b::t_4a6152f0ba327b 12
+  s_0e5bf017b62f6b::t_b8c4f7ee967f01 618-622,634,640
+  s_0e5bf017b62f6b::t_b05e7229ebcd69 577-584,596,602
+backend/src/backend/schemas/portfolio.py
+  s_0e5bf017b62f6b::t_642acc4ab8360d 102,105-116,118,131-132,156-157
+frontend/app/(tabularium)/tabularium/portfolio/components/GeographyExposureTable.tsx
+  s_0e5bf017b62f6b::t_6f6383e69c4136 5
+  s_0e5bf017b62f6b::t_3f39c0d58f3125 238,242
+  s_0e5bf017b62f6b::t_7169ef6d7563e8 251,253,259-273,277,279,282-292,294-295
+  s_0e5bf017b62f6b::t_85feab07ccebda 4
+  s_0e5bf017b62f6b::t_eca700b8341f65 28-30,34-38
+  s_0e5bf017b62f6b::t_12cfed36154732 89-93
+  s_0e5bf017b62f6b::t_598e31436b36ee 191
+backend/tests/routers/test_portfolio.py
+  s_0e5bf017b62f6b::t_8aefd9966a288f 202-203,209-244,248
+  s_0e5bf017b62f6b::t_9ce8b58fc8223e 277-278,283-284,287-308
+frontend/README.md
+  s_0e5bf017b62f6b::t_df1d694cabb8a1 184,187-192
+  s_0e5bf017b62f6b::t_c6989fa3610cdc 19
+  s_0e5bf017b62f6b::t_c08ae67d4dc67f 37
+  s_0e5bf017b62f6b::t_c73221e6c0a19d 170-176
+  s_0e5bf017b62f6b::t_1278631f3f85ff 20-22
+  s_0e5bf017b62f6b::t_2274e5786010a9 177-183,185-186
+  s_0e5bf017b62f6b::t_c1ff3ce32c4b7f 39
+  s_0e5bf017b62f6b::t_7b7d73053b846f 32
+frontend/app/(tabularium)/tabularium/portfolio/utils/countryDisplay.ts
+  s_0e5bf017b62f6b::t_fa4a6155fc2516 1-58
+frontend/app/(tabularium)/tabularium/etf-actions.ts
+  s_0e5bf017b62f6b::t_74cc5b410e3abc 21-24
+  s_0e5bf017b62f6b::t_b5b1ad6da5dc41 40,42
+  s_0e5bf017b62f6b::t_d71e4746741b76 91
+frontend/package.json
+  s_0e5bf017b62f6b::t_771836ca0c5df8 3
+frontend/app/(tabularium)/tabularium/portfolio/components/PortfolioPageClient.tsx
+  s_0e5bf017b62f6b::t_62c7475b1714e4 64-70,76,87
+frontend/app/(tabularium)/tabularium/components/EtfForm.tsx
+  s_0e5bf017b62f6b::t_bfe96dc3f9f574 155,159-162
+  s_0e5bf017b62f6b::t_c681cfd9ad71d0 163
+backend/pyproject.toml
+  s_0e5bf017b62f6b::t_b8b72c5bbe70e1 3
+uv.lock
+  s_0e5bf017b62f6b::t_d98974d033c170 62
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "defb0f27138b5aa5f8c9253d9828e528e035071d",
+  "prompts": {},
+  "sessions": {
+    "s_0e5bf017b62f6b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c2b9aaa1-512a-4ab3-a583-9f613e38c6e8",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Simone Porreca <porrecasimone@gmail.com>"
+    }
+  }
+}

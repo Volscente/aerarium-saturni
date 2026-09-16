@@ -315,7 +315,7 @@ export function PortfolioOverviewTable({
             })}
           </tbody>
           <tfoot>
-            <tr className="border-t border-roman-stone/20 font-medium text-roman-parchment">
+            <tr className="border-t border-roman-stone/20 font-medium text-roman-obsidian dark:text-roman-parchment">
               <td className="py-3 pr-4" />
               <td className="py-3 pr-4" colSpan={2}>
                 Total

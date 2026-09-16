@@ -1,0 +1,106 @@
+.claude/launch.json
+  s_0e5bf017b62f6b::t_8f90c836411b6d 1-5,8-11
+  s_0e5bf017b62f6b::t_495d5dc36f4221 6-7
+frontend/README.md
+  s_0e5bf017b62f6b::t_e5a6203641ecc4 61
+  s_0e5bf017b62f6b::t_6fa62edbdcb48e 42
+  s_0e5bf017b62f6b::t_e70cc7c22ec00a 169-179
+  s_0e5bf017b62f6b::t_b17cd07cd9ecb1 93
+  s_0e5bf017b62f6b::t_334b5df06bcc83 180-183
+  s_0e5bf017b62f6b::t_c6da95e36a22c1 39
+  s_0e5bf017b62f6b::t_f565293902bbf5 32
+  s_0e5bf017b62f6b::t_cfac457d0b0d55 19-21
+backend/src/backend/routers/etfs.py
+  s_0e5bf017b62f6b::t_a7f198f0dee032 380-385
+frontend/app/(tabularium)/tabularium/actions.ts
+  s_0e5bf017b62f6b::t_6eaa7138da7c7d 51-52,86-87,142-143
+frontend/app/api/etfs/[id]/holdings/upload/route.ts
+  s_0e5bf017b62f6b::t_db7eacbe5d7eb1 20-21
+frontend/app/(tabularium)/tabularium/portfolio/components/HoldingsBarChart.tsx
+  s_0e5bf017b62f6b::t_ac3ceea3f00c06 91
+backend/src/backend/routers/portfolio.py
+  s_0e5bf017b62f6b::t_d7b32f761e89dd 284-285
+  s_0e5bf017b62f6b::t_3562459d96baf9 222-224
+  s_0e5bf017b62f6b::t_d8d3922d98b61c 366-369,371-376,378-383,386,389-396,429-430,446-526,545-618
+  s_0e5bf017b62f6b::t_22c254276dcb53 12-13,17-18,22
+backend/README.md
+  s_0e5bf017b62f6b::t_bb4f49b0b8d488 18
+  s_0e5bf017b62f6b::t_546796fe2065e7 46-47
+  s_0e5bf017b62f6b::t_8e96fed80e34a7 24-25
+  s_0e5bf017b62f6b::t_aebb611aa0b43d 11
+  s_0e5bf017b62f6b::t_96c94cb1772bf0 23
+  s_0e5bf017b62f6b::t_4543e53be655e7 154-168
+backend/alembic/versions/005_add_etf_holdings_stock_sector.py
+  s_0e5bf017b62f6b::t_51aabb44cbf824 1-39
+frontend/app/(tabularium)/tabularium/etf-actions.ts
+  s_0e5bf017b62f6b::t_3424035c855ca4 72-73,132-133,171-172,238-239,290-291,331-332
+backend/tests/routers/test_portfolio.py
+  s_0e5bf017b62f6b::t_cd01cfcbc96401 184-201,208-211,213-215,217-244,248-263
+  s_0e5bf017b62f6b::t_467f60adb64a47 245-247
+  s_0e5bf017b62f6b::t_4a91573cb66fc7 202-207,212,216
+frontend/package.json
+  s_0e5bf017b62f6b::t_004803d3d7bd8b 3
+backend/src/backend/converters/holdings_xlsx.py
+  s_0e5bf017b62f6b::t_02d0c4f76ba7fb 8
+  s_0e5bf017b62f6b::t_9dfed0f7f1bcdc 144-148
+  s_0e5bf017b62f6b::t_3b85025600a07c 66-106
+  s_0e5bf017b62f6b::t_d4f253687a35e0 394-421
+  s_0e5bf017b62f6b::t_0f3a6b18e82c1a 566,578
+  s_0e5bf017b62f6b::t_1604ba5fb8139e 540-542
+  s_0e5bf017b62f6b::t_64df7d5915bdcb 489-491,499,512
+  s_0e5bf017b62f6b::t_ab31941b72f8ea 436-438,448,468
+backend/src/backend/schemas/portfolio.py
+  s_0e5bf017b62f6b::t_237d113f54d994 100-160
+backend/tests/converters/test_holdings_xlsx.py
+  s_0e5bf017b62f6b::t_36b62e03c353e6 13
+  s_0e5bf017b62f6b::t_e4c9482e5e5b08 71,79
+  s_0e5bf017b62f6b::t_e229269854b2b5 104,112
+  s_0e5bf017b62f6b::t_b4c7061b574efc 175-195
+  s_0e5bf017b62f6b::t_a45474fbb93c36 38,46
+backend/tests/conftest.py
+  s_0e5bf017b62f6b::t_94cf304344b309 933-938,941,944,955
+  s_0e5bf017b62f6b::t_20c641d0e5d2cb 551-552
+  s_0e5bf017b62f6b::t_8cbf75080f7d93 931-932,939-940,942-943,945-954,956-1015
+frontend/app/(tabularium)/tabularium/portfolio/components/GeographyBarChart.tsx
+  s_0e5bf017b62f6b::t_c8a8f9b50ec222 1-90
+frontend/app/(tabularium)/tabularium/portfolio/components/GeographyExposureTable.tsx
+  s_0e5bf017b62f6b::t_2fe63a11e2e435 1-312
+frontend/app/(tabularium)/tabularium/portfolio/components/PortfolioPageClient.tsx
+  s_0e5bf017b62f6b::t_3afaba661e12d0 120-122
+  s_0e5bf017b62f6b::t_a45dad69175bfa 114-115
+  s_0e5bf017b62f6b::t_d29e5d70549985 168-177,181-190
+  s_0e5bf017b62f6b::t_18d71252c818da 167,178-180
+  s_0e5bf017b62f6b::t_04bcc9fd2dcec7 10-13
+  s_0e5bf017b62f6b::t_60769282297df4 93,98-99
+  s_0e5bf017b62f6b::t_bcae13e9ca033b 64-92
+  s_0e5bf017b62f6b::t_7c75cd0a8929ab 105-106,110-111
+frontend/app/(tabularium)/tabularium/portfolio/components/SectorBarChart.tsx
+  s_0e5bf017b62f6b::t_7216f523234011 1-88
+backend/src/backend/models.py
+  s_0e5bf017b62f6b::t_a69d1319a04a29 96
+frontend/app/(tabularium)/tabularium/portfolio/components/SectorExposureTable.tsx
+  s_0e5bf017b62f6b::t_7d94daef0bc729 1-308
+frontend/app/(tabularium)/tabularium/portfolio/page.tsx
+  s_0e5bf017b62f6b::t_fba3f405a6be9e 7-8
+  s_0e5bf017b62f6b::t_47d75c8f26478f 37-62,64,67-68,74-75
+backend/pyproject.toml
+  s_0e5bf017b62f6b::t_eea34d5da0188a 3
+uv.lock
+  s_0e5bf017b62f6b::t_1505b644e3b691 62
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "ab9fcc3c8a8ceb9be59ccacbf1cf7b8a14be7de8",
+  "prompts": {},
+  "sessions": {
+    "s_0e5bf017b62f6b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c2b9aaa1-512a-4ab3-a583-9f613e38c6e8",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Simone Porreca <porrecasimone@gmail.com>"
+    }
+  }
+}

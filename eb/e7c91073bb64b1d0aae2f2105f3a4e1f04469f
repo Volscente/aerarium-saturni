@@ -1,0 +1,21 @@
+frontend/README.md
+  s_0e5bf017b62f6b::t_7414bd6bbdd0f4 171
+frontend/app/(tabularium)/tabularium/portfolio/components/PortfolioOverviewTable.tsx
+  s_0e5bf017b62f6b::t_62b19303157bef 318
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "ebe7c91073bb64b1d0aae2f2105f3a4e1f04469f",
+  "prompts": {},
+  "sessions": {
+    "s_0e5bf017b62f6b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c2b9aaa1-512a-4ab3-a583-9f613e38c6e8",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Simone Porreca <porrecasimone@gmail.com>"
+    }
+  }
+}

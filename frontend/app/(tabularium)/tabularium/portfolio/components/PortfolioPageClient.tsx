@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { PortfolioOverviewTable } from './PortfolioOverviewTable'
 import { RiskAlertPanel } from './RiskAlertPanel'
 import { ConcentrationAlertBadge } from './ConcentrationAlertBadge'
@@ -56,6 +57,14 @@ export interface HoldingsExposureResponse {
   alerts: RiskAlert[]
 }
 
+type PortfolioTab = 'overview' | 'holdings' | 'allocation'
+
+const TABS: { id: PortfolioTab; label: string }[] = [
+  { id: 'overview', label: 'Overview' },
+  { id: 'holdings', label: 'Holdings' },
+  { id: 'allocation', label: 'Allocation' },
+]
+
 export function PortfolioPageClient({
   overviewData,
   exposureData,
@@ -63,20 +72,66 @@ export function PortfolioPageClient({
   overviewData: PortfolioOverviewResponse
   exposureData: HoldingsExposureResponse
 }): JSX.Element {
+  /**
+   * Renders the Portfolio dashboard as a tabbed interface.
+   *
+   * Tab content is conditionally rendered rather than hidden via CSS, so
+   * components for inactive tabs (the D3 treemap, the bar chart, the
+   * expandable exposure table) are not mounted until their tab is
+   * activated. overviewData and exposureData are already fully fetched by
+   * the parent server component, so switching tabs never re-fetches or
+   * loses data context.
+   */
+  const [activeTab, setActiveTab] = useState<PortfolioTab>('overview')
+
   return (
     <div className="px-6 py-8">
-      <PortfolioOverviewTable rows={overviewData.rows} />
-      {exposureData.skipped_etfs.length > 0 && (
-        <p className="mb-4 text-sm text-roman-stone">
-          Excluded from concentration analysis (no price data):{' '}
-          {exposureData.skipped_etfs.join(', ')}
-        </p>
+      <nav className="mb-6 flex gap-2 border-b border-roman-stone/10">
+        {TABS.map(({ id, label }) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => setActiveTab(id)}
+            className={`px-4 py-2 text-sm font-medium transition-all ${
+              activeTab === id
+                ? 'border-b-2 border-roman-terracotta text-roman-terracotta'
+                : 'text-roman-stone hover:text-roman-gold'
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </nav>
+
+      {activeTab === 'overview' && (
+        <>
+          <PortfolioOverviewTable rows={overviewData.rows} />
+          <ConcentrationAlertBadge holdings={exposureData.holdings} alerts={exposureData.alerts} />
+        </>
       )}
-      <RiskAlertPanel alerts={exposureData.alerts} />
-      <ConcentrationAlertBadge holdings={exposureData.holdings} alerts={exposureData.alerts} />
-      <HoldingsBarChart holdings={exposureData.holdings} alerts={exposureData.alerts} />
-      <HoldingsTreemap holdings={exposureData.holdings} alerts={exposureData.alerts} />
-      <HoldingsExposureTable holdings={exposureData.holdings} />
+
+      {activeTab === 'holdings' && (
+        <>
+          {exposureData.skipped_etfs.length > 0 && (
+            <p className="mb-4 text-sm text-roman-stone">
+              Excluded from concentration analysis (no price data):{' '}
+              {exposureData.skipped_etfs.join(', ')}
+            </p>
+          )}
+          <RiskAlertPanel alerts={exposureData.alerts} />
+          <HoldingsBarChart holdings={exposureData.holdings} alerts={exposureData.alerts} />
+          <HoldingsTreemap holdings={exposureData.holdings} alerts={exposureData.alerts} />
+          <HoldingsExposureTable holdings={exposureData.holdings} />
+        </>
+      )}
+
+      {activeTab === 'allocation' && (
+        <div className="rounded-2xl border border-roman-stone/10 bg-white/5 dark:bg-roman-obsidian/50 p-6 backdrop-blur-sm">
+          <p className="text-sm text-roman-stone">
+            Sector and geographic allocation breakdowns are coming soon.
+          </p>
+        </div>
+      )}
     </div>
   )
 }

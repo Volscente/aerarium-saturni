@@ -1,0 +1,14 @@
+.claude/16-etf-price-history/initiative.md
+  h_68a16e6033d539 1-20
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "9a4682ec30ddf25f8b87a6a214ecfa2cb24cf184",
+  "prompts": {},
+  "humans": {
+    "h_68a16e6033d539": {
+      "author": "Simone Porreca <porrecasimone@gmail.com>"
+    }
+  }
+}

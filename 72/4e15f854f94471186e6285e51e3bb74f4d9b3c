@@ -1,0 +1,26 @@
+.claude/16-etf-price-history/proposal.md
+  s_99106f779a37d0::t_ae9381319a2939 35,39,43-47,51-55,60,64,68-72
+  s_99106f779a37d0::t_d2cd3c30c49252 9-17,19-23
+  h_68a16e6033d539 56
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "724e15f854f94471186e6285e51e3bb74f4d9b3c",
+  "prompts": {},
+  "humans": {
+    "h_68a16e6033d539": {
+      "author": "Simone Porreca <porrecasimone@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_99106f779a37d0": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "0df73eae-2d51-400d-bee8-4bdf21155744",
+        "model": "claude-sonnet-5-5"
+      },
+      "human_author": "Simone Porreca <porrecasimone@gmail.com>"
+    }
+  }
+}

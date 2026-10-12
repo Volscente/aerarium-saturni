@@ -29,7 +29,7 @@
 
 ## Motivation {#motivation}
 
-ETF prices are entered by hand, one snapshot at a time, through the ETF Registry page. This is tedious and error-prone, leaves the price history sparse, and degrades every feature that depends on current valuations (portfolio overview, look-through exposure). The registry also offers no way to see how an ETF's price has evolved: history is only visible as a drop-down table under each entry, which supports neither visual nor cross-ETF comparison. The solution must retrieve prices from a free-of-charge external source and fit within the existing Tabularium structure and Lighthouse budget. For full context, see the [Notion initiative page](https://app.notion.com/p/16-ETF-Price-History-3f65cc6c0f0780ac9bbfe316750fcac2).
+ETF prices are entered by hand, one snapshot at a time, through the ETF Registry page. This is tedious and error-prone, leaves the price history sparse, and degrades every feature that depends on current valuations (portfolio overview, look-through exposure). The registry also offers no way to see how an ETF's price has evolved: history is only visible as a drop-down table under each entry, which supports neither visual nor cross-ETF comparison. The solution must retrieve prices from a free-of-charge external source and fit within the existing Tabularium structure and Lighthouse budget.
 
 ## Objectives {#objectives}
 

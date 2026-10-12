@@ -1,0 +1,14 @@
+.claude/16-etf-price-history/rfc.md
+  h_68a16e6033d539 32
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "4d1f7239429e3136b690fd7ecb2c0f821e03c2b7",
+  "prompts": {},
+  "humans": {
+    "h_68a16e6033d539": {
+      "author": "Simone Porreca <porrecasimone@gmail.com>"
+    }
+  }
+}

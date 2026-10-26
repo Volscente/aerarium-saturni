@@ -1,0 +1,28 @@
+.claude/16-etf-price-history/1-price-schema-migration.md
+  s_99106f779a37d0::t_feadd5e39d66a4 1-15,17,20-23,27-71,74-95,107-172,175-198
+  s_99106f779a37d0::t_b0803bab2608da 72-73
+  s_99106f779a37d0::t_4110b7e3d6eac2 96-106
+  s_99106f779a37d0::t_671aff564238ad 173-174
+  s_99106f779a37d0::t_a6f756a94ddb9c 199-211
+  s_99106f779a37d0::t_b3d0b4c0803cad 16,18-19,24-26
+.claude/16-etf-price-history/planning.md
+  s_99106f779a37d0::t_faa4bda58969fa 146
+  s_99106f779a37d0::t_d11b0f0c6272a0 39
+  s_99106f779a37d0::t_9f1b13036691ea 42-43
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "4e75240f317e5e3b1f2154eb24c4cd6237b6b55f",
+  "prompts": {},
+  "sessions": {
+    "s_99106f779a37d0": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "0df73eae-2d51-400d-bee8-4bdf21155744",
+        "model": "claude-sonnet-5-5"
+      },
+      "human_author": "Simone Porreca <porrecasimone@gmail.com>"
+    }
+  }
+}

@@ -8,7 +8,7 @@ The Backend is the Python FastAPI service for Aerarium Saturni. It owns all data
 
 - **`src/backend/main.py`** — FastAPI application entry point; `lifespan` event creates the `transactions` table via `Base.metadata.create_all`; CORS middleware; transactions router registered at `/transactions`; `GET /health` liveness endpoint
 - **`src/backend/db.py`** — Async SQLAlchemy engine and session factory; `get_session` async generator for FastAPI dependency injection
-- **`src/backend/models.py`** — `Base` (declarative base); `Transaction` ORM class (14 columns); `Etf` ORM class (25 columns including four JSONB distribution columns — `geographical_distribution`/`sector_distribution` default to `{}` via Python-side `default=dict`, since they are derived from holdings uploads rather than user-supplied at creation); `EtfHolding` child class (9 columns: `id`, `etf_id` FK cascade, `stock_isin` nullable, `stock_ticker` nullable, `stock_country` nullable (ISO 3166-1 alpha-2), `stock_sector` nullable (canonical GICS-like bucket name), `stock_name`, `weight_percentage`, `snapshot_date`; at least one of `stock_isin`/`stock_ticker` required per row; composite index on `(etf_id, snapshot_date)`); `EtfPriceHistory` child class with FK cascade and composite index
+- **`src/backend/models.py`** — `Base` (declarative base); `Transaction` ORM class (14 columns); `Etf` ORM class (25 columns including four JSONB distribution columns — `geographical_distribution`/`sector_distribution` default to `{}` via Python-side `default=dict`, since they are derived from holdings uploads rather than user-supplied at creation); `EtfHolding` child class (9 columns: `id`, `etf_id` FK cascade, `stock_isin` nullable, `stock_ticker` nullable, `stock_country` nullable (ISO 3166-1 alpha-2), `stock_sector` nullable (canonical GICS-like bucket name), `stock_name`, `weight_percentage`, `snapshot_date`; at least one of `stock_isin`/`stock_ticker` required per row; composite index on `(etf_id, snapshot_date)`); `EtfPriceHistory` child class with FK cascade, a composite index, and a unique expression index `uq_etf_price_history_etf_id_day` on `(etf_id, (timestamp AT TIME ZONE 'UTC')::date)` (one price per ETF per UTC day)
 - **`backend/alembic.ini`** — Alembic root config; `script_location = alembic`; sqlalchemy.url overridden at runtime from `DATABASE_URL`
 - **`backend/alembic/env.py`** — Migration runner; imports `Base.metadata`; synchronous psycopg3 `create_engine` with `NullPool`; `run_migrations_online()` entry point
 - **`backend/alembic/versions/001_create_etf_tables.py`** — First migration: `etfs`, `etf_holdings`, `etf_price_history` tables with FK cascades, UNIQUE constraints, GIN indexes on JSONB columns, and composite B-Tree index on `(etf_id, timestamp DESC)`
@@ -16,6 +16,8 @@ The Backend is the Python FastAPI service for Aerarium Saturni. It owns all data
 - **`backend/alembic/versions/003_alter_etf_holdings_add_ticker.py`** — Third migration: makes `stock_isin` nullable; adds `stock_ticker VARCHAR(20)` nullable to accommodate iShares/Vanguard CSVs that provide a Ticker instead of an ISIN
 - **`backend/alembic/versions/004_add_etf_holdings_stock_country.py`** — Fourth migration: adds `stock_country VARCHAR(2)` nullable to `etf_holdings`, used to disambiguate stock identity when backfilling `stock_isin` from a resolved ticker
 - **`backend/alembic/versions/005_add_etf_holdings_stock_sector.py`** — Fifth migration: adds `stock_sector VARCHAR(50)` nullable to `etf_holdings`, storing each holding's canonical GICS-like sector bucket
+- **`backend/alembic/versions/005_add_etf_holdings_stock_sector.py`** — Fifth migration: adds `stock_sector VARCHAR(50)` nullable to `etf_holdings`
+- **`backend/alembic/versions/006_add_etf_price_symbol_and_daily_unique.py`** — Sixth migration: adds nullable `etfs.price_symbol VARCHAR(30)` (provider symbol for automated price retrieval; `NULL` means fall back to `ticker`, resolved at retrieval time); collapses same-UTC-day `etf_price_history` rows per ETF (keeps the latest `timestamp`); creates the unique daily index
 - **`src/backend/schemas/transactions.py`** — `TransactionCreate` Pydantic v2 request model with ISIN format validation and `model_validator` (quantity required for buy/sell; ratio required for split); `TransactionUpdate` partial update model (all fields optional, no `model_validator`); `TransactionResponse` response model with ORM-mode serialization
 - **`src/backend/schemas/etfs.py`** — `EtfCreate` (ISIN `field_validator`; `model_validator` requiring bond distribution maps when `asset_class = Bonds`; does **not** accept `geographical_distribution`/`sector_distribution` — those are derived server-side from holdings uploads, never user-supplied); `EtfUpdate` (all fields optional for partial updates, same exclusion); `EtfResponse` (ORM-mode; still returns `geographical_distribution`/`sector_distribution` as read-only fields); `EtfPriceCreate`; `EtfPriceResponse`; `EtfHoldingRow` (CSV row parsing: `stock_isin` nullable + `stock_ticker` nullable with `model_validator` requiring at least one; ISIN validator normalises to uppercase, accepts blank/empty as absent)
 - **`src/backend/routers/transactions.py`** — `POST /transactions` (HTTP 201), `GET /transactions`, `PUT /transactions/{id}` (HTTP 200, partial update), and `DELETE /transactions/{id}` (HTTP 204) FastAPI route handlers using `Depends(get_session)`
@@ -39,7 +41,9 @@ The Backend is the Python FastAPI service for Aerarium Saturni. It owns all data
 - `PUT /etfs/{id}` — Partial update of an ETF's scalar or JSONB fields; returns updated `EtfResponse` (HTTP 200); 404 if not found
 - `DELETE /etfs/{id}` — Delete an ETF and cascade to holdings and price history (HTTP 204); 404 if not found
 - `GET /etfs/{id}/price-history` — List all price snapshots for an ETF ordered by `timestamp DESC`; returns `list[EtfPriceResponse]`; 404 if the ETF does not exist
-- `POST /etfs/{id}/price` — Append a manual price snapshot; accepts `EtfPriceCreate`; returns `EtfPriceResponse` (HTTP 201)
+- `POST /etfs/{id}/price` — Append a manual price snapshot; accepts `EtfPriceCreate`; returns `EtfPriceResponse` (HTTP 201); 404 if the ETF does not exist; 409 if the ETF already has a price on that UTC day
+- `PUT /etfs/{id}/price/{price_id}` — Partial update of a price snapshot; accepts `EtfPriceUpdate`; returns `EtfPriceResponse` (HTTP 200); 404 if the snapshot does not exist for that ETF; 409 if the update moves it onto a UTC day that already has a price
+- `DELETE /etfs/{id}/price/{price_id}` — Permanently delete a price snapshot (HTTP 204); 404 if not found for that ETF
 - `POST /etfs/{id}/holdings/upload` — Atomically replace all holdings for an ETF from a `multipart/form-data` upload; accepts CSV (unchanged contract) or issuer XLSX — a `.xlsx` filename is run through `convert_holdings_xlsx` first, using the filename's ticker (e.g. `EUNL.xlsx`) to pick the issuer parser; returns `{"inserted_rows": n}` (HTTP 200); rolls back entirely on any row validation error or unrecognised XLSX ticker
 - `GET /portfolio/overview` — Aggregate all buy/sell transactions by `(owner, broker_platform)`; returns `PortfolioOverviewResponse` with `total_invested`, `current_value` (nullable), `performance_abs` (nullable), `performance_pct` (nullable) per group; `current_value` is `null` for any group where at least one held ISIN has no price record in `etf_price_history`
 - `GET /portfolio/holdings/exposure` — Aggregate look-through single-stock exposure across all owned ETFs; returns `HoldingsExposureResponse` with one `HoldingExposureResponse` per distinct stock identity (ordered by `total_weight_percentage` descending), each carrying a `contributions` breakdown per source ETF; `skipped_etfs` lists tickers excluded from the aggregation for lacking a price record; `alerts` lists active Concentration Risk (`total_weight_percentage` > 10%) and Data Freshness Risk (an owned ETF's holdings `snapshot_date` more than 60 days old) warnings, recomputed fresh on every request
@@ -66,6 +70,7 @@ The Backend is the Python FastAPI service for Aerarium Saturni. It owns all data
 - `DATABASE_URL` must be set in the environment before the backend starts; the engine is created at module import time and raises `KeyError` immediately if the variable is absent.
 - CORS must allowlist `http://localhost:3000` unconditionally; the production origin is controlled by the `FRONTEND_ORIGIN` environment variable and is only added to the allow list when explicitly set.
 - The `psycopg[binary]` driver (psycopg3) must be used — not `psycopg2` — because `create_async_engine` requires an async-capable adapter.
+- `etf_price_history` holds at most one row per ETF per UTC day (`uq_etf_price_history_etf_id_day`); writers must upsert on that expression, and the manual price endpoints return 409 on a collision.
 - `Base.metadata.create_all()` is called at startup for the `transactions` table only; it remains for backwards compatibility while a baseline Alembic migration for `transactions` is deferred to a follow-up milestone. All new tables must be introduced via Alembic migrations.
 - All new schema changes must go through Alembic (`alembic upgrade head`), not `create_all()`. The `transactions` table is the sole exception pending a baseline migration.
 - `alembic downgrade base` removes only the ETF tables; the `transactions` table is unaffected (managed by `create_all`, not Alembic). This asymmetry is intentional.
@@ -150,6 +155,17 @@ The symptom at the API level is a `500` on any ETF write endpoint touching the s
 ---
 
 ### Changelog
+
+#### 2026-10-26 (v0.5.3)
+
+- `backend/alembic/versions/006_add_etf_price_symbol_and_daily_unique.py` — New migration: nullable `etfs.price_symbol VARCHAR(30)`; same-UTC-day `etf_price_history` rows collapsed (latest `timestamp` kept); unique index `uq_etf_price_history_etf_id_day` on `(etf_id, (timestamp AT TIME ZONE 'UTC')::date)`. Downgrade is schema-only (deleted duplicates are not restored).
+- `src/backend/models.py` — `Etf.price_symbol`; matching unique `Index` on `EtfPriceHistory`.
+- `src/backend/schemas/etfs.py` — `price_symbol` on `EtfCreate`, `EtfUpdate`, `EtfResponse`.
+- `src/backend/routers/etfs.py` — `create_price` and `update_price` catch `IntegrityError` on commit, roll back, and return HTTP 409 instead of a 500 on a same-day collision.
+- `tests/` — `price_symbol` schema tests, create round-trip test, two 409 tests; `_make_mock_etf_row` sets `price_symbol`; new `mock_session_price_conflict`/`client_price_conflict` fixtures.
+- README interface list now documents the previously missing `PUT`/`DELETE /etfs/{id}/price/{price_id}` and migration `005`.
+
+This is TASK-1 of the **ETF Price History** initiative (see `.claude/16-etf-price-history/rfc.md`).
 
 #### 2026-09-16 (v0.5.5)
 

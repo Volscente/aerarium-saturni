@@ -8,6 +8,7 @@ import httpx
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, UploadFile
 from pydantic import ValidationError
 from sqlalchemy import delete, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.converters.holdings_xlsx import convert_holdings_xlsx, resolve_stock_isin_aliases
@@ -195,6 +196,9 @@ async def create_price(
 
     Raises:
         HTTPException 404: If no ETF with the given ``id`` exists.
+        HTTPException 409: If the ETF already has a price for that UTC day
+            (``uq_etf_price_history_etf_id_day``). The ETF's existence is checked
+            first, so any ``IntegrityError`` at commit is that unique index.
     """
     result = await session.execute(select(Etf).where(Etf.id == id))
     etf = result.scalar_one_or_none()
@@ -202,7 +206,14 @@ async def create_price(
         raise HTTPException(status_code=404, detail="ETF not found")
     row = EtfPriceHistory(etf_id=id, **body.model_dump())
     session.add(row)
-    await session.commit()
+    try:
+        await session.commit()
+    except IntegrityError:
+        await session.rollback()
+        raise HTTPException(
+            status_code=409,
+            detail={"error": "A price already exists for this ETF on that day"},
+        )
     await session.refresh(row)
     return EtfPriceResponse.model_validate(row)
 
@@ -234,6 +245,8 @@ async def update_price(
     Raises:
         HTTPException 404: If no price snapshot with the given ``price_id``
             exists for the given ETF ``id``.
+        HTTPException 409: If the update moves the snapshot onto a UTC day that
+            already has a price for this ETF (``uq_etf_price_history_etf_id_day``).
     """
     result = await session.execute(
         select(EtfPriceHistory).where(
@@ -245,7 +258,14 @@ async def update_price(
         raise HTTPException(status_code=404, detail="Price snapshot not found")
     for field, value in body.model_dump(exclude_none=True).items():
         setattr(row, field, value)
-    await session.commit()
+    try:
+        await session.commit()
+    except IntegrityError:
+        await session.rollback()
+        raise HTTPException(
+            status_code=409,
+            detail={"error": "A price already exists for this ETF on that day"},
+        )
     await session.refresh(row)
     return EtfPriceResponse.model_validate(row)
 

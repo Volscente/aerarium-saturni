@@ -9,6 +9,7 @@ from uuid import uuid4
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy.exc import IntegrityError
 
 from backend.db import get_session
 from backend.main import app
@@ -166,6 +167,7 @@ def _make_mock_etf_row(**overrides) -> MagicMock:
     row.sector_distribution = overrides.get("sector_distribution", {"Technology": 25.0, "Financials": 18.0})
     row.bond_maturities = overrides.get("bond_maturities", None)
     row.bond_credit_scores = overrides.get("bond_credit_scores", None)
+    row.price_symbol = overrides.get("price_symbol", None)
     row.created_at = overrides.get("created_at", datetime(2026, 6, 19, 12, 0, 0, tzinfo=timezone.utc))
     return row
 
@@ -1044,6 +1046,35 @@ def client_with_price_history(mock_session_with_price_history):
 def client_etf_not_found(mock_session_etf_not_found):
     async def override_get_session():
         yield mock_session_etf_not_found
+
+    app.dependency_overrides[get_session] = override_get_session
+    mock_engine = MagicMock()
+    mock_conn = AsyncMock()
+    mock_conn.run_sync = AsyncMock()
+    mock_engine.begin.return_value = _make_async_cm(mock_conn)
+    with patch("backend.main.engine", mock_engine):
+        with TestClient(app) as c:
+            yield c
+    app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def mock_session_price_conflict():
+    """Async session whose commit raises IntegrityError (same-day price collision)."""
+    session = AsyncMock()
+    session.add = MagicMock()
+    result = MagicMock()
+    result.scalar_one_or_none.return_value = _make_mock_price_row()
+    session.execute = AsyncMock(return_value=result)
+    session.commit = AsyncMock(side_effect=IntegrityError("INSERT", {}, Exception("duplicate key")))
+    session.rollback = AsyncMock()
+    return session
+
+
+@pytest.fixture
+def client_price_conflict(mock_session_price_conflict):
+    async def override_get_session():
+        yield mock_session_price_conflict
 
     app.dependency_overrides[get_session] = override_get_session
     mock_engine = MagicMock()

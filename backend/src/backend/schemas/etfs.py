@@ -29,6 +29,7 @@ class EtfCreate(BaseModel):
     holdings_overview: str | None = Field(default=None)
     bond_maturities: dict[str, float] | None = Field(default=None)
     bond_credit_scores: dict[str, float] | None = Field(default=None)
+    price_symbol: str | None = Field(default=None, min_length=1, max_length=30)
 
     @field_validator("isin")
     @classmethod
@@ -97,6 +98,7 @@ class EtfUpdate(BaseModel):
     holdings_overview: str | None = Field(default=None)
     bond_maturities: dict[str, float] | None = Field(default=None)
     bond_credit_scores: dict[str, float] | None = Field(default=None)
+    price_symbol: str | None = Field(default=None, min_length=1, max_length=30)
 
 
 class EtfResponse(BaseModel):
@@ -126,6 +128,7 @@ class EtfResponse(BaseModel):
     sector_distribution: dict[str, float]
     bond_maturities: dict[str, float] | None
     bond_credit_scores: dict[str, float] | None
+    price_symbol: str | None
     created_at: datetime
 
 

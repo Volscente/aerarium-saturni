@@ -3,7 +3,7 @@ from datetime import date, datetime
 from decimal import Decimal
 from uuid import UUID, uuid4
 
-from sqlalchemy import Boolean, Date, DateTime, Enum, ForeignKey, Index, Numeric, String, Text, func
+from sqlalchemy import Boolean, Date, DateTime, Enum, ForeignKey, Index, Numeric, String, Text, func, text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -66,6 +66,7 @@ class Etf(Base):
     sector_distribution: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
     bond_maturities: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     bond_credit_scores: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    price_symbol: Mapped[str | None] = mapped_column(String(30), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
@@ -120,4 +121,10 @@ class EtfPriceHistory(Base):
 
     __table_args__ = (
         Index("ix_etf_price_history_etf_id_timestamp", "etf_id", "timestamp"),
+        Index(
+            "uq_etf_price_history_etf_id_day",
+            "etf_id",
+            text("((timestamp AT TIME ZONE 'UTC')::date)"),
+            unique=True,
+        ),
     )

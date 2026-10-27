@@ -1,5 +1,6 @@
 from datetime import date, datetime
 from decimal import Decimal
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -152,6 +153,20 @@ class EtfPriceResponse(BaseModel):
     price: Decimal
     currency: str
     timestamp: datetime
+
+
+class EtfPriceRefreshRequest(BaseModel):
+    etf_ids: list[UUID] | None = Field(
+        default=None, description="ETFs to update; omitted or empty means all"
+    )
+
+
+class EtfPriceRefreshResult(BaseModel):
+    etf_id: UUID
+    ticker: str
+    status: Literal["updated", "failed"]
+    rows_written: int = Field(ge=0)
+    error: str | None = None
 
 
 class EtfHoldingRow(BaseModel):

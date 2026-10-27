@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.4] - 2026-10-27
+
+### Added
+
+- **Backend**: New `POST /etfs/prices/refresh` endpoint (`backend/src/backend/routers/etfs.py`) — fetches daily prices from an external provider and upserts them into `etf_price_history` for all ETFs or a selected subset, with a per-ETF result (`updated` / `failed`, rows written, error). The first run per ETF fetches the full available history; later runs fetch only from the latest stored day. Re-running never duplicates rows, and retrieved prices overwrite a manual snapshot for the same UTC day.
+- **Backend**: New `backend/src/backend/providers/` package — `PriceProvider` protocol, `PricePoint`, `PriceProviderError`, and `YahooPriceProvider`, a free keyless adapter over Yahoo Finance's public chart endpoint.
+- **Backend**: `EtfPriceRefreshRequest` and `EtfPriceRefreshResult` Pydantic schemas.
+- **Data**: `price_symbol` (`EUNL.DE`, `VWCE.DE`, `LYP6.DE`) added to the seed ETF JSON files so `just create_etfs` produces refreshable ETFs.
+- **Tests**: Adapter tests (parsing, error mapping, request parameters) and refresh endpoint tests (all/subset/404, partial failure, non-EUR currency, incremental start date, symbol fallback, per-ETF commit and rollback).
+
+### Notes
+
+- This is TASK-2 of the **ETF Price History** initiative (see `.claude/16-etf-price-history/rfc.md`). Prices are assumed to be EUR; the provider is unofficial (Yahoo) and isolated behind `PriceProvider`.
+
 ## [0.5.3] - 2026-10-26
 
 ### Added

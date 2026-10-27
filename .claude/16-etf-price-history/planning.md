@@ -36,10 +36,11 @@ A database that can safely accept repeated, overlapping price updates without du
 
 ### Deliverables
 
-- `backend/alembic/versions/005_*.py` — adds nullable `price_symbol` to `etfs`; collapses same-day `etf_price_history` rows per ETF (keeping the most recent); adds uniqueness on `(etf_id, trading day)`
+- `backend/alembic/versions/006_*.py` — adds nullable `price_symbol` to `etfs`; collapses same-day `etf_price_history` rows per ETF (keeping the most recent); adds uniqueness on `(etf_id, trading day)`
 - `src/backend/models.py` — `Etf.price_symbol` and the matching constraint on `EtfPriceHistory`
 - `src/backend/schemas/etfs.py` — `price_symbol` added to `EtfCreate`, `EtfUpdate` and `EtfResponse`
-- `tests/` — schema tests for the new field
+- `src/backend/routers/etfs.py` — `POST /etfs/{id}/price` and `PUT /etfs/{id}/price/{price_id}` return 409 instead of 500 on a same-day collision
+- `tests/` — schema tests for the new field and the 409 mapping
 
 ### Technical Overview
 
@@ -142,7 +143,7 @@ A single backend call updates prices for all or selected ETFs from a free provid
 
 #### Deliverables
 
-- Alembic migration 005 with `price_symbol` and per-day uniqueness on price history
+- Alembic migration 006 with `price_symbol` and per-day uniqueness on price history
 - Updated `Etf` model and ETF schemas
 - `PriceProvider` interface and first free-provider adapter
 - `POST /etfs/prices/refresh` endpoint with per-ETF results

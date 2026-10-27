@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.4] - 2026-10-27
+
+### Added
+
+- **Backend**: New `POST /etfs/prices/refresh` endpoint (`backend/src/backend/routers/etfs.py`) — fetches daily prices from an external provider and upserts them into `etf_price_history` for all ETFs or a selected subset, with a per-ETF result (`updated` / `failed`, rows written, error). The first run per ETF fetches the full available history; later runs fetch only from the latest stored day. Re-running never duplicates rows, and retrieved prices overwrite a manual snapshot for the same UTC day.
+- **Backend**: New `backend/src/backend/providers/` package — `PriceProvider` protocol, `PricePoint`, `PriceProviderError`, and `YahooPriceProvider`, a free keyless adapter over Yahoo Finance's public chart endpoint.
+- **Backend**: `EtfPriceRefreshRequest` and `EtfPriceRefreshResult` Pydantic schemas.
+- **Data**: `price_symbol` (`EUNL.DE`, `VWCE.DE`, `LYP6.DE`) added to the seed ETF JSON files so `just create_etfs` produces refreshable ETFs.
+- **Tests**: Adapter tests (parsing, error mapping, request parameters) and refresh endpoint tests (all/subset/404, partial failure, non-EUR currency, incremental start date, symbol fallback, per-ETF commit and rollback).
+
+### Notes
+
+- This is TASK-2 of the **ETF Price History** initiative (see `.claude/16-etf-price-history/rfc.md`). Prices are assumed to be EUR; the provider is unofficial (Yahoo) and isolated behind `PriceProvider`.
+
+## [0.5.3] - 2026-10-26
+
+### Added
+
+- **Backend**: New Alembic migration `006` (`backend/alembic/versions/006_add_etf_price_symbol_and_daily_unique.py`) — nullable `etfs.price_symbol` column (provider symbol for automated price retrieval; `NULL` falls back to `ticker`) and a unique index `uq_etf_price_history_etf_id_day` enforcing one price per ETF per UTC day, after collapsing any existing same-day rows (latest `timestamp` kept).
+- **Backend**: `price_symbol` field on `EtfCreate`, `EtfUpdate` and `EtfResponse`.
+- **Tests**: `price_symbol` schema validation tests, a create/list round-trip test, and 409 tests for both manual price endpoints.
+
+### Changed
+
+- **Backend**: `POST /etfs/{id}/price` and `PUT /etfs/{id}/price/{price_id}` now return HTTP 409 (after a session rollback) instead of a 500 when the write collides with an existing price for the same ETF and UTC day.
+
+### Notes
+
+- This is TASK-1 of the **ETF Price History** initiative (see `.claude/16-etf-price-history/rfc.md`) — schema groundwork for the provider adapter and refresh endpoint (TASK-2).
+
 ## [0.5.2] - 2026-09-01
 
 ### Added

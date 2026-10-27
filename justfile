@@ -97,6 +97,21 @@ upload_holdings: check_root
         echo
     done
 
+# Create the mock transactions against a running backend (POST /transactions from backend/data/transactions/transactions.json; not idempotent — re-running creates duplicates)
+create_transactions: check_root
+    #!/usr/bin/env bash
+    python3 -c "import json, sys; [print(json.dumps(t)) for t in json.load(open(sys.argv[1]))]" \
+        "{{ ROOT_DIR }}/backend/data/transactions/transactions.json" | while IFS= read -r transaction; do
+        echo "Creating transaction..."
+        curl -s -X POST http://localhost:8000/transactions \
+            -H "Content-Type: application/json" \
+            -d "$transaction"
+        echo
+    done
+
+# Seed a running backend end to end: create the ETFs, upload their holdings (needs the ETFs), then create the transactions
+seed_data: create_etfs upload_holdings create_transactions
+
 # ----------------------------------------
 # ---------------- Full Stack ----------------
 

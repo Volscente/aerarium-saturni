@@ -1,0 +1,25 @@
+.claude/16-etf-price-history/2-provider-adapter-and-refresh-endpoint.md
+  h_68a16e6033d539 217-223
+  s_99106f779a37d0::t_e052a51bdb6e77 1-216
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "55bfadc83f95d186d16d44e8e410193647f058c9",
+  "prompts": {},
+  "humans": {
+    "h_68a16e6033d539": {
+      "author": "Simone Porreca <porrecasimone@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_99106f779a37d0": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "0df73eae-2d51-400d-bee8-4bdf21155744",
+        "model": "claude-sonnet-5-5"
+      },
+      "human_author": "Simone Porreca <porrecasimone@gmail.com>"
+    }
+  }
+}

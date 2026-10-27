@@ -1,0 +1,56 @@
+backend/pyproject.toml
+  s_99106f779a37d0::t_fa55aa9d25b932 3
+backend/src/backend/providers/base.py
+  s_99106f779a37d0::t_f5d2e8850b317a 1-36
+backend/data/etfs/VWCE.json
+  s_99106f779a37d0::t_bbc0f49e921750 28-29
+backend/src/backend/routers/etfs.py
+  s_99106f779a37d0::t_bbc0f49e921750 1,4-5,13-15,21-22,27-28,37-43,378-544
+  s_99106f779a37d0::t_2fb6d2973d3205 545-546
+CHANGELOG.md
+  s_99106f779a37d0::t_fa55aa9d25b932 8-21
+pyproject.toml
+  s_99106f779a37d0::t_fa55aa9d25b932 3
+backend/tests/conftest.py
+  s_99106f779a37d0::t_ee5b1de2e89cda 5-6,19,1091-1144
+  s_99106f779a37d0::t_6470efc37d5ccc 1145
+backend/src/backend/providers/yahoo.py
+  s_99106f779a37d0::t_f5d2e8850b317a 1-118
+backend/data/etfs/EUNL.json
+  s_99106f779a37d0::t_bbc0f49e921750 29-30
+frontend/package.json
+  h_68a16e6033d539 3
+backend/data/etfs/LYP6.json
+  s_99106f779a37d0::t_bbc0f49e921750 28-29
+backend/README.md
+  s_99106f779a37d0::t_fa55aa9d25b932 21-22,24,26,50,67-68,78-80,94-95,168-177
+  s_99106f779a37d0::t_6b232a49d26e18 178
+backend/src/backend/schemas/etfs.py
+  s_99106f779a37d0::t_bbc0f49e921750 3,158-169
+  s_99106f779a37d0::t_ed5739252de141 170-171
+backend/tests/providers/test_yahoo.py
+  s_99106f779a37d0::t_ee5b1de2e89cda 1-134
+uv.lock
+  s_99106f779a37d0::t_f8c7f90d267567 13,62
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "814dfed3b323e9e2b920650d37cfe25545b40661",
+  "prompts": {},
+  "humans": {
+    "h_68a16e6033d539": {
+      "author": "Simone Porreca <porrecasimone@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_99106f779a37d0": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "0df73eae-2d51-400d-bee8-4bdf21155744",
+        "model": "claude-sonnet-5-5"
+      },
+      "human_author": "Simone Porreca <porrecasimone@gmail.com>"
+    }
+  }
+}

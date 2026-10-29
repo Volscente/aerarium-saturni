@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.6] - 2026-10-29
+
+### Added
+
+- **Frontend**: New `TimelineChart` component (`frontend/app/(tabularium)/tabularium/components/TimelineChart.tsx`) on the ETF Registry page — a hand-rolled SVG line chart of ETF price history with ETF selection (first ETF by default), multi-ETF overlay, legend, hover tooltip, a rebased-to-100 default view with an absolute-price toggle, and empty/error states. Only EUR rows are plotted.
+- **Frontend**: New `RegistryPriceSection` component that groups the "Update prices" control and the chart and reloads the chart's cached series after each completed update.
+- **Infrastructure**: `/tabularium/etf-registry` added to the Lighthouse CI URL list.
+
+### Changed
+
+- **Frontend**: `UpdatePricesButton` accepts an optional `onUpdated` callback; the ETF Registry page mounts `RegistryPriceSection` instead of the bare button.
+- **Docs**: Frontend README, root README and `CLAUDE.md` describe the Timeline Chart and the extended Lighthouse list.
+
+### Notes
+
+- This is TASK-4 of the **ETF Price History** initiative (see `.claude/16-etf-price-history/rfc.md`). Lighthouse performance measured locally on the production build: 0.91 on `/tabularium/etf-registry`, 0.96 on `/tabularium/portfolio`.
+
 ## [0.5.5] - 2026-10-29
 
 ### Added

@@ -118,12 +118,12 @@ Traffic flows: browser → Nginx → Next.js frontend (SSR) → FastAPI backend 
 | `GET /tabularium` | Tabularium landing (App Router) |
 | `GET /tabularium/portfolio` | Portfolio dashboard placeholder |
 | `GET /tabularium/transactions` | Transaction Ledger (server-rendered) |
-| `GET /tabularium/etf-registry` | ETF Registry (App Router; edit/delete/holdings upload, "Update prices" control) |
+| `GET /tabularium/etf-registry` | ETF Registry (App Router; edit/delete/holdings upload, "Update prices" control, price Timeline Chart) |
 | `GET /codex/**` | Codex MDX wiki (Nextra) |
 
 **Key invariants:**
 
-- Lighthouse performance score ≥ 90 on `/`, `/tabularium`, `/tabularium/transactions`, `/codex/fundamentals`; enforced by `lhci autorun` in CI.
+- Lighthouse performance score ≥ 90 on `/`, `/tabularium`, `/tabularium/transactions`, `/tabularium/etf-registry`, `/codex/fundamentals`; enforced by `lhci autorun` in CI.
 - All LaTeX pre-rendered at build time — no KaTeX JS bundle shipped to the browser.
 - `<Search />` must be passed as `children` to `CustomNavbar` in `app/[[...slug]]/layout.tsx`; removing it breaks Pagefind in Codex headers.
 - `content/tabularium.mdx` must not be re-created; its absence lets the App Router route group own `/tabularium`.

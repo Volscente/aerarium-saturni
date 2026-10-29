@@ -33,7 +33,7 @@ The long-term direction is a three-pillar cognitive ecosystem:
 ### ETF Registry
 
 - Full CRUD for ETF assets: create, read, update, and delete records with scalar metadata (ticker, ISIN, asset class, issuer, TER, replication method) and JSONB distribution fields (geographic, sector, asset-class, currency breakdowns).
-- Automated prices: an "Update prices" button fetches prices and full price history from a free market-data provider for all ETFs (default) or a selected subset, with a per-ETF success/failure summary; each ETF carries an optional price symbol (e.g. `VWCE.DE`) used for retrieval.
+- Automated prices: an "Update prices" button fetches prices and full price history from a free market-data provider for all ETFs (default) or a selected subset, with a per-ETF success/failure summary, and a price Timeline Chart plots one or several ETFs (rebased to 100 or absolute) above the table; each ETF carries an optional price symbol (e.g. `VWCE.DE`) used for retrieval.
 - Atomic CSV holdings upload: replace all holdings for an ETF from a `multipart/form-data` CSV; rolls back entirely on any row validation error.
 - Filterable registry table with per-row edit, delete, and holdings upload actions.
 

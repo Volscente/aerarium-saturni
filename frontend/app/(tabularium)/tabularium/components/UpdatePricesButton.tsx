@@ -8,9 +8,10 @@ import type { EtfResponse } from './EtfForm'
 
 export interface UpdatePricesButtonProps {
   etfs: Pick<EtfResponse, 'id' | 'ticker' | 'name'>[]
+  onUpdated?: () => void
 }
 
-export function UpdatePricesButton({ etfs }: UpdatePricesButtonProps): JSX.Element {
+export function UpdatePricesButton({ etfs, onUpdated }: UpdatePricesButtonProps): JSX.Element {
   /**
    * Registry-level control that fetches prices for all or selected ETFs.
    *
@@ -27,6 +28,8 @@ export function UpdatePricesButton({ etfs }: UpdatePricesButtonProps): JSX.Eleme
    *
    * Args:
    *   etfs: The registry's ETFs (id, ticker, name), passed from the Server Component.
+   *   onUpdated: Optional callback invoked after an update returns results (even if
+   *              some ETFs failed), so siblings holding cached prices can reload.
    *
    * Returns:
    *   JSX containing the trigger button, the selection disclosure and the results.
@@ -64,7 +67,10 @@ export function UpdatePricesButton({ etfs }: UpdatePricesButtonProps): JSX.Eleme
     startTransition(async () => {
       const response = await refreshEtfPrices(selectedIds)
       if ('error' in response) setError(response.error)
-      else setResults(response.results)
+      else {
+        setResults(response.results)
+        onUpdated?.()
+      }
     })
   }
 

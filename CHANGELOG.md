@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.5] - 2026-10-29
+
+### Added
+
+- **Frontend**: New `UpdatePricesButton` component (`frontend/app/(tabularium)/tabularium/components/UpdatePricesButton.tsx`) on the ETF Registry page — an "Update prices" button with an ETF selection (all by default), a pending state, and an inline per-ETF result summary (updated rows or the failure reason, with a hint to check the price symbol).
+- **Frontend**: New `refreshEtfPrices` Server Action and `EtfPriceRefreshSchema` — call `POST /etfs/prices/refresh`, reject an empty selection (the backend would read it as "all ETFs"), and revalidate the five ETF-derived cache tags.
+- **Frontend**: Optional **Price Symbol** field on the ETF form (`price_symbol`, e.g. `VWCE.DE`).
+
+### Changed
+
+- **Frontend**: The ETF Registry no longer offers manual price entry or the expandable per-row price history table.
+- **Docs**: Corrected the frontend README, root README, `CLAUDE.md` and two docstrings to reflect that the ETF Registry is its own route (`/tabularium/etf-registry`) — the Tabularium has three sub-routes, not two.
+
+### Removed
+
+- **Frontend**: `PriceUpdateButton` and `PriceHistoryRow` components, and the `addPriceSnapshot`, `updatePriceSnapshot` and `deletePriceSnapshot` Server Actions.
+
+### Notes
+
+- This is TASK-3 of the **ETF Price History** initiative (see `.claude/16-etf-price-history/rfc.md`). The backend manual price endpoints are unchanged. The Timeline Chart follows in TASK-4.
+
 ## [0.5.4] - 2026-10-27
 
 ### Added

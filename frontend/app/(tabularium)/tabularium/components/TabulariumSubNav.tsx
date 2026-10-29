@@ -17,7 +17,8 @@ const NAV_LINKS: NavLink[] = [
 /**
  * Persistent Tabularium sub-navigation bar.
  *
- * Renders two links covering the two Tabularium sub-routes. Active state is
+ * Renders three links covering the three Tabularium sub-routes (portfolio,
+ * transactions, ETF registry). Active state is
  * determined by prefix-matching the current pathname against each link's href,
  * consistent with the CustomNavbar pattern. Must not import from 'nextra' or
  * 'nextra/components' — the Tabularium layout has no Nextra context.
@@ -30,7 +31,7 @@ const NAV_LINKS: NavLink[] = [
  *   roman-obsidian   (#1A1A2E) — dark-mode background
  *
  * Returns:
- *   A <nav> element with two styled anchor links.
+ *   A <nav> element with three styled anchor links.
  */
 export function TabulariumSubNav() {
   const pathname = usePathname()

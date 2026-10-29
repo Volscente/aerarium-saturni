@@ -1,7 +1,7 @@
 'use server'
 
 import { revalidateTag } from 'next/cache'
-import { EtfFormSchema, type EtfFormValues } from './etf-schema'
+import { EtfFormSchema, EtfPriceRefreshSchema, type EtfFormValues } from './etf-schema'
 
 function parseJsonbField(value: string | undefined): Record<string, number> | null {
   if (!value?.trim()) return null
@@ -183,140 +183,64 @@ export async function fetchPriceHistory(
   }
 }
 
-export async function addPriceSnapshot(
-  id: string,
-  price: number,
-  currency: string,
-  timestamp: string
-): Promise<{ success: true } | { error: string }> {
+export interface EtfPriceRefreshResult {
+  etf_id: string
+  ticker: string
+  status: 'updated' | 'failed'
+  rows_written: number
+  error: string | null
+}
+
+export async function refreshEtfPrices(
+  etfIds: string[]
+): Promise<{ results: EtfPriceRefreshResult[] } | { error: string }> {
   /**
-   * Server Action: append a manual price snapshot to etf_price_history.
+   * Server Action: fetch prices from the external provider for the selected ETFs.
    *
-   * POSTs to ${BACKEND_URL}/etfs/{id}/price with { price, currency, timestamp }.
-   * On HTTP 201, calls revalidateTag('etfs'), revalidateTag('portfolio-overview'),
-   * and revalidateTag('holdings-exposure'). On 404, returns { error: 'ETF not found' }.
+   * Validates the selection with EtfPriceRefreshSchema, then POSTs { etf_ids }
+   * to ${BACKEND_URL}/etfs/prices/refresh. The backend treats an omitted or empty
+   * etf_ids as "all ETFs", so an empty selection is rejected here rather than
+   * forwarded — deselecting everything must never refresh everything. The
+   * backend answers HTTP 200 once the ids resolve and reports per-ETF failures
+   * in the results, so a failed ETF is part of { results }, not { error }. On
+   * 200, calls revalidateTag for 'etfs', 'portfolio-overview',
+   * 'holdings-exposure', 'holdings-geography' and 'holdings-sectors' (the same
+   * set every other ETF write action revalidates) — even when some ETFs failed,
+   * because the others were written.
    *
    * Args:
-   *   id: UUID string of the parent ETF.
-   *   price: Positive numeric price in the given currency.
-   *   currency: ISO 4217 3-character code (e.g. "EUR").
-   *   timestamp: ISO 8601 datetime string for the observation point.
+   *   etfIds: UUID strings of the ETFs to update; must contain at least one.
    *
    * Returns:
-   *   { success: true } on HTTP 201, or { error: string } on any failure.
+   *   { results } with one entry per ETF on HTTP 200, or { error: string } on a
+   *   Zod failure, a 404 (unknown ETF), any other non-200 status, or a network error.
    */
+  const parsed = EtfPriceRefreshSchema.safeParse({ etf_ids: etfIds })
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? 'Invalid selection' }
+  }
+
   try {
-    const res = await fetch(`${process.env.BACKEND_URL}/etfs/${id}/price`, {
+    const res = await fetch(`${process.env.BACKEND_URL}/etfs/prices/refresh`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ price, currency, timestamp }),
+      body: JSON.stringify(parsed.data),
     })
 
     if (res.status === 404) return { error: 'ETF not found' }
-    if (res.status !== 201) {
-      const text = await res.text()
-      return { error: `Backend error ${res.status}: ${text}` }
-    }
-
-    revalidateTag('etfs')
-    revalidateTag('portfolio-overview')
-    revalidateTag('holdings-exposure')
-    revalidateTag('holdings-geography')
-    revalidateTag('holdings-sectors')
-    return { success: true }
-  } catch (err) {
-    return { error: err instanceof Error ? err.message : 'Network error' }
-  }
-}
-
-export async function updatePriceSnapshot(
-  etfId: string,
-  priceId: string,
-  price: number,
-  currency: string,
-  timestamp: string
-): Promise<{ success: true } | { error: string }> {
-  /**
-   * Server Action: partially update an existing price snapshot.
-   *
-   * PUTs to ${BACKEND_URL}/etfs/{etfId}/price/{priceId} with
-   * { price, currency, timestamp }. On HTTP 200, calls revalidateTag('etfs'),
-   * revalidateTag('portfolio-overview'), and revalidateTag('holdings-exposure'),
-   * mirroring addPriceSnapshot.
-   *
-   * Args:
-   *   etfId: UUID string of the parent ETF.
-   *   priceId: UUID string of the price snapshot to update.
-   *   price: Positive numeric price in the given currency.
-   *   currency: ISO 4217 3-character code (e.g. "EUR").
-   *   timestamp: ISO 8601 datetime string for the observation point.
-   *
-   * Returns:
-   *   { success: true } on HTTP 200, or { error: string } on any failure.
-   */
-  try {
-    const res = await fetch(
-      `${process.env.BACKEND_URL}/etfs/${etfId}/price/${priceId}`,
-      {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ price, currency, timestamp }),
-      }
-    )
-
-    if (res.status === 404) return { error: 'Price snapshot not found' }
     if (res.status !== 200) {
       const text = await res.text()
       return { error: `Backend error ${res.status}: ${text}` }
     }
 
-    revalidateTag('etfs')
-    revalidateTag('portfolio-overview')
-    revalidateTag('holdings-exposure')
-    revalidateTag('holdings-geography')
-    revalidateTag('holdings-sectors')
-    return { success: true }
-  } catch (err) {
-    return { error: err instanceof Error ? err.message : 'Network error' }
-  }
-}
-
-export async function deletePriceSnapshot(
-  etfId: string,
-  priceId: string
-): Promise<{ success: true } | { error: string }> {
-  /**
-   * Server Action: permanently delete a price snapshot.
-   *
-   * DELETEs ${BACKEND_URL}/etfs/{etfId}/price/{priceId}. On HTTP 204, calls
-   * revalidateTag('etfs'), revalidateTag('portfolio-overview'), and
-   * revalidateTag('holdings-exposure'), mirroring deleteEtf.
-   *
-   * Args:
-   *   etfId: UUID string of the parent ETF.
-   *   priceId: UUID string of the price snapshot to delete.
-   *
-   * Returns:
-   *   { success: true } on HTTP 204, or { error: string } on 404 or network failure.
-   */
-  try {
-    const res = await fetch(
-      `${process.env.BACKEND_URL}/etfs/${etfId}/price/${priceId}`,
-      { method: 'DELETE' }
-    )
-
-    if (res.status === 404) return { error: 'Price snapshot not found' }
-    if (res.status !== 204) {
-      const text = await res.text()
-      return { error: `Backend error ${res.status}: ${text}` }
-    }
+    const results = (await res.json()) as EtfPriceRefreshResult[]
 
     revalidateTag('etfs')
     revalidateTag('portfolio-overview')
     revalidateTag('holdings-exposure')
     revalidateTag('holdings-geography')
     revalidateTag('holdings-sectors')
-    return { success: true }
+    return { results }
   } catch (err) {
     return { error: err instanceof Error ? err.message : 'Network error' }
   }

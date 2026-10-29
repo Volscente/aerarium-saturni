@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import { AddEtfButton } from '../components/AddEtfButton'
 import { EtfRegistryTable } from '../components/EtfRegistryTable'
+import { UpdatePricesButton } from '../components/UpdatePricesButton'
 import type { EtfResponse } from '../components/EtfForm'
 
 async function fetchEtfs(): Promise<EtfResponse[]> {
@@ -30,7 +31,10 @@ export default async function EtfRegistryPage() {
       {etfs.length === 0 ? (
         <p className="text-roman-stone">No ETFs registered yet.</p>
       ) : (
-        <EtfRegistryTable etfs={etfs} />
+        <>
+          <UpdatePricesButton etfs={etfs} />
+          <EtfRegistryTable etfs={etfs} />
+        </>
       )}
     </div>
   )

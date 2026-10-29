@@ -100,7 +100,7 @@ Traffic flows: browser → Nginx → Next.js frontend (SSR) → FastAPI backend 
 - `app/layout.tsx` — Minimal root shell (`<html>`, `<body>`, `ThemeProvider`, global CSS).
 - `app/[[...slug]]/layout.tsx` — Nextra `<Layout>` wrapper; passes `navbar={<CustomNavbar><Search /></CustomNavbar>}` so Pagefind search appears in the header.
 - `app/(tabularium)/tabularium/layout.tsx` — Tabularium shell: `CustomNavbar` + `AddTransactionButton` bar + `TabulariumSubNav` + `CustomFooter`; no Nextra chrome.
-- `app/(tabularium)/tabularium/components/TabulariumSubNav.tsx` — `'use client'` sub-nav with two active-state links (`/tabularium/portfolio`, `/tabularium/transactions`).
+- `app/(tabularium)/tabularium/components/TabulariumSubNav.tsx` — `'use client'` sub-nav with three active-state links (`/tabularium/portfolio`, `/tabularium/transactions`, `/tabularium/etf-registry`).
 - `app/(tabularium)/tabularium/transactions/page.tsx` — Server Component; calls `GET /transactions` with `{ next: { tags: ['transactions'] } }` cache tag; renders an 11-column chronological table.
 - `app/(tabularium)/tabularium/transaction-schema.ts` — Shared Zod schema (`TransactionFormSchema`); no server/client directive; imported by both `actions.ts` and `TransactionForm.tsx`.
 - `app/(tabularium)/tabularium/actions.ts` — `createTransaction` Server Action; Zod re-validation; `POST /transactions`; calls `revalidateTag('transactions')`.
@@ -118,6 +118,7 @@ Traffic flows: browser → Nginx → Next.js frontend (SSR) → FastAPI backend 
 | `GET /tabularium` | Tabularium landing (App Router) |
 | `GET /tabularium/portfolio` | Portfolio dashboard placeholder |
 | `GET /tabularium/transactions` | Transaction Ledger (server-rendered) |
+| `GET /tabularium/etf-registry` | ETF Registry (App Router; edit/delete/holdings upload, "Update prices" control) |
 | `GET /codex/**` | Codex MDX wiki (Nextra) |
 
 **Key invariants:**
@@ -126,7 +127,7 @@ Traffic flows: browser → Nginx → Next.js frontend (SSR) → FastAPI backend 
 - All LaTeX pre-rendered at build time — no KaTeX JS bundle shipped to the browser.
 - `<Search />` must be passed as `children` to `CustomNavbar` in `app/[[...slug]]/layout.tsx`; removing it breaks Pagefind in Codex headers.
 - `content/tabularium.mdx` must not be re-created; its absence lets the App Router route group own `/tabularium`.
-- The Tabularium has exactly **two sub-routes**: `/tabularium/portfolio` and `/tabularium/transactions`. Do not add a third without consolidating or splitting the existing `portfolio` page.
+- The Tabularium has exactly **three sub-routes**: `/tabularium/portfolio`, `/tabularium/transactions` and `/tabularium/etf-registry`. Do not add a fourth without consolidating or splitting an existing one.
 - Any Server Action that writes transaction data must call `revalidateTag('transactions')`.
 - `CustomNavbar` must remain free of Nextra-specific imports — it is reused in the Tabularium layout which has no Nextra context.
 

@@ -18,6 +18,8 @@
 - `frontend/app/(tabularium)/tabularium/components/PriceUpdateButton.tsx` — deleted
 - `frontend/app/(tabularium)/tabularium/components/PriceHistoryRow.tsx` — deleted (not in the planning doc; its only consumer is the history sub-table and its only actions are the two removed Server Actions)
 - `frontend/app/(tabularium)/tabularium/components/EtfForm.tsx` — `price_symbol` field and `EtfResponse.price_symbol`
+- `frontend/app/(tabularium)/tabularium/components/TabulariumSubNav.tsx`, `AddEtfButton.tsx` — docstring corrections only (see Documentation updates)
+- `frontend/README.md`, `README.md`, `CLAUDE.md` — repository documentation corrections for the ETF Registry route and this task's changes (see Documentation updates)
 
 **Out of scope:**
 
@@ -26,6 +28,8 @@
 - Removing the manual `POST`/`PUT`/`DELETE /etfs/{id}/price…` backend endpoints (the RFC keeps them)
 - Clearing a set `price_symbol` back to `NULL` through the form (see Open Questions)
 - Adding a frontend test framework (none exists; see Testing Strategy)
+- Adding `/tabularium/etf-registry` to `.lighthouserc.js` (the route is currently not audited; nothing documents that it should be)
+- Editing previous initiatives' documents (`.claude/14-*`, the RFC and planning doc of this initiative): they are historical artifacts
 
 ---
 
@@ -77,10 +81,15 @@ No new packages required. `zod` (already `^4.4.3`) validates the selection; `luc
 | `frontend/app/(tabularium)/tabularium/etf-schema.ts`                            | Modify | `price_symbol` in `EtfFormSchema`; `EtfPriceRefreshSchema`                                        |
 | `frontend/app/(tabularium)/tabularium/components/UpdatePricesButton.tsx`        | Create | Trigger, selection, pending state, per-ETF results                                                |
 | `frontend/app/(tabularium)/tabularium/etf-registry/page.tsx`                    | Modify | Render `<UpdatePricesButton>` when there is at least one ETF                                      |
-| `frontend/app/(tabularium)/tabularium/components/EtfRegistryTable.tsx`          | Modify | Drop `expandedEtfId`, `priceHistoryMap`, `refreshPriceHistory`, `handleRowClick`, the history `<tr>`, the `▸`/`▾` marker, the row-click handler and `cursor-pointer`, and the imports `Fragment`, `fetchPriceHistory`, `EtfPriceEntry`, `PriceUpdateButton`, `PriceHistoryRow` |
+| `frontend/app/(tabularium)/tabularium/components/EtfRegistryTable.tsx`          | Modify | Drop `expandedEtfId`, `priceHistoryMap`, `refreshPriceHistory`, `handleRowClick`, the history `<tr>`, the `▸`/`▾` marker, the row-click handler and `cursor-pointer`, and the imports `Fragment`, `fetchPriceHistory`, `EtfPriceEntry`, `PriceUpdateButton`, `PriceHistoryRow`; update the component docstring, which still lists `PriceUpdateButton` among the per-row actions |
 | `frontend/app/(tabularium)/tabularium/components/PriceUpdateButton.tsx`         | Delete | Manual price entry                                                                                |
 | `frontend/app/(tabularium)/tabularium/components/PriceHistoryRow.tsx`           | Delete | Manual price edit/delete row                                                                      |
 | `frontend/app/(tabularium)/tabularium/components/EtfForm.tsx`                   | Modify | `price_symbol` input, state, initial value and empty-string handling                              |
+| `frontend/app/(tabularium)/tabularium/components/TabulariumSubNav.tsx`          | Modify | Docstring only: three links / three sub-routes                                                    |
+| `frontend/app/(tabularium)/tabularium/components/AddEtfButton.tsx`              | Modify | Docstring only: mounted in `etf-registry/page.tsx`, not `portfolio/page.tsx`                      |
+| `frontend/README.md`                                                            | Modify | See Documentation updates                                                                         |
+| `README.md`                                                                     | Modify | ETF Registry feature bullets                                                                      |
+| `CLAUDE.md`                                                                     | Modify | Sub-route invariant                                                                               |
 
 ---
 
@@ -121,7 +130,7 @@ export function UpdatePricesButton({ etfs }: UpdatePricesButtonProps): JSX.Eleme
   // Selection disclosure + "Update prices" button; calls refreshEtfPrices in a transition and renders the result summary.
 ```
 
-- Notes: the button label shows the selection ("Update prices · All ETFs" / "· 2 of 3"), is disabled while pending or with nothing selected, and shows "Updating…" while pending (a first full-history fetch can take several seconds). Results render as one row per ETF — ticker, `Updated · N rows` or `Failed · <error>` (failed in `roman-terracotta`) — under a one-line count ("3 updated, 1 failed"), with a dismiss control. Component state survives the `revalidateTag` refresh because the component is not remounted.
+- Notes: the button label shows the selection ("Update prices · All ETFs" / "· 2 of 3"), is disabled while pending or with nothing selected, and shows "Updating…" while pending (a first full-history fetch can take several seconds). Results render as one row per ETF — ticker, `Updated · N rows` or `Failed · <error>` (failed in `roman-terracotta`) — under a one-line count ("3 updated, 1 failed"), with a dismiss control. When at least one ETF failed, one static hint line follows the summary: "Failed updates usually mean the ETF's price symbol is missing or wrong — set it with Edit (e.g. VWCE.DE)." Component state survives the `revalidateTag` refresh because the component is not remounted.
 
 ```ts
 // components/EtfForm.tsx — additions
@@ -130,7 +139,7 @@ export function UpdatePricesButton({ etfs }: UpdatePricesButtonProps): JSX.Eleme
 //   handleSubmit: if (formState.price_symbol === "") delete rawData.price_symbol
 ```
 
-- Notes: the input sits with the identification fields (ticker, ISIN), placeholder `e.g. VWCE.DE`, with a short hint: "Market-data symbol used for automatic price updates. Leave empty to use the ticker." Empty strings are dropped before validation, matching the other optional fields.
+- Notes: the input sits with the identification fields (ticker, ISIN), placeholder `e.g. VWCE.DE`, with a short hint: "Market-data symbol used for automatic price updates. Leave empty to use the ticker, or enter the ticker to go back to it." Empty strings are dropped before validation, matching the other optional fields.
 
 ---
 
@@ -145,15 +154,47 @@ price_symbol: z.string().max(30).optional(),
 
 ---
 
+### Documentation updates
+
+The ETF Registry has been its own route (`/tabularium/etf-registry`) and sub-nav tab for some time; the code is right and the documentation lags. This task corrects it, in the same pass that documents its own changes.
+
+**`frontend/README.md`**
+
+- Key components, `TabulariumSubNav`: three nav links, adding `/tabularium/etf-registry`
+- Key components, `AddEtfButton`: mounted in `etf-registry/page.tsx` (not in `PortfolioPageClient`'s tab body)
+- Key components: add `etf-registry/page.tsx` (Server Component, `force-dynamic`, `GET /etfs` with the `etfs` tag; renders the header with `AddEtfButton`, `UpdatePricesButton`, and `EtfRegistryTable`) and the new `UpdatePricesButton`
+- Key components, `EtfRegistryTable`: drop the history sub-table, `expandedEtfId`, `priceHistoryMap` and `PriceUpdateButton`; remove `PriceUpdateButton` and `PriceHistoryRow` entries if present
+- Key components, `etf-actions.ts` and `etf-schema.ts`: add `refreshEtfPrices` / `EtfPriceRefreshSchema` / `price_symbol`; drop the three removed price Server Actions
+- Public interfaces: add `GET /tabularium/etf-registry`
+- Constraints / invariants: "exactly **two** sub-routes" becomes "exactly **three** sub-routes: `/tabularium/portfolio`, `/tabularium/transactions` and `/tabularium/etf-registry`", keeping the rule against adding another without first consolidating or splitting
+- Changelog: new entry for this task; existing history entries stay untouched
+
+**Docstrings**
+
+- `TabulariumSubNav.tsx`: "Renders two links covering the two Tabularium sub-routes" becomes three links / three sub-routes
+- `AddEtfButton.tsx`: "Mounted inside portfolio/page.tsx" becomes `etf-registry/page.tsx`
+
+**`README.md` (root)**
+
+- "ETF Registry" section: replace "Manual price snapshots" with automated price retrieval and history (Update prices button, per-ETF selection, Timeline Chart arriving in TASK-4), and "price update" in the registry-table bullet accordingly
+
+**`CLAUDE.md`**
+
+- Frontend key invariants (line 129): the same "exactly two sub-routes" rule, updated to three as above
+- Frontend key files (line 103): `TabulariumSubNav` is described as having "two active-state links"; make it three, adding `/tabularium/etf-registry`
+- Frontend public routes table: add `GET /tabularium/etf-registry` if it is missing
+
+---
+
 ### Testing Strategy
 
-The frontend has no unit-test framework (only a Playwright screenshot spec) and this task does not add one, so verification is static plus manual.
+The frontend has no unit-test framework; Playwright runs in CI only for Home/Codex visual regression, without a backend. This task adds no tests, so verification is static plus manual.
 
 **Static checks** (from `frontend/`):
 
-- `npx tsc --noEmit` — no references remain to the deleted actions/components, and the new types line up
-- `npm run lint` — if the project's lint is configured (confirm it does not prompt for interactive setup)
+- `npx tsc --noEmit` — clean today (baseline checked); no references remain to the deleted actions/components, and the new types line up. There is no ESLint config or dependency, so `npm run lint` is not a usable check
 - `npm run build` — the production build, as CI runs it; the ETF Registry route compiles
+- `grep -rniE "two sub-route|two (nav )?links|inside portfolio/page|ETF Registry\" tab" README.md CLAUDE.md frontend/README.md frontend/app frontend/theme` — no stale statement remains outside the changelog history entries
 
 **Manual verification** (`just run_services`, `just frontend-dev-watch`, `just seed_data` after migrations; `price_symbol` comes from the seed JSON):
 
@@ -176,10 +217,10 @@ The frontend has no unit-test framework (only a Playwright screenshot spec) and 
 
 ### Open Questions / Risks
 
-- [ ] **The registry is no longer a Portfolio tab:** the RFC, planning doc and frontend README describe the ETF Registry as a tab inside `/tabularium/portfolio` and the Tabularium as having exactly two sub-routes, but the code already serves it at `/tabularium/etf-registry` (with `TabulariumSubNav` listing three links). This spec mounts the control in `etf-registry/page.tsx`. The README invariant and the RFC wording are stale; the README gets corrected when this task lands. **Target:** confirm at implementation start
-- [ ] **`PriceHistoryRow.tsx` also deleted:** it is not in the planning doc, but it is only used by the history sub-table being removed and is the sole caller of `updatePriceSnapshot`/`deletePriceSnapshot`. **Target:** confirm at implementation start
-- [ ] **Five cache tags, not three:** the RFC and planning doc name `etfs`, `portfolio-overview` and `holdings-exposure`; every existing ETF write action also revalidates `holdings-geography` and `holdings-sectors`. `refreshEtfPrices` follows the code (five), since price changes alter the values those views derive. **Target:** none unless you object
-- [ ] **`price_symbol` cannot be cleared from the form:** `PUT /etfs/{id}` ignores `null` fields, so emptying the input leaves the stored value. Decision for this task: not clearable; setting it equal to the ticker is behaviourally the same as `NULL` (fallback is the ticker). **Target:** revisit only if a real need appears
-- [ ] **ETFs created before TASK-2 have no `price_symbol`:** a bare ticker like `VWCE` is not a valid Yahoo symbol, so those ETFs show `Failed · Provider returned HTTP 404`. The user sets the symbol via Edit (the seed JSON already carries it). Consider a friendlier hint in the failure row if this proves confusing. **Target:** after first real use
-- [ ] **Long-running Server Action:** a first full-history refresh for several ETFs is one synchronous request; the UI only shows "Updating…". Acceptable at the current registry size (RFC FAQ). **Target:** revisit if the registry grows
-- [ ] **No frontend test coverage:** the Server Action, the empty-selection guard and the component are verified manually only. **Target:** decide separately whether to introduce a test framework
+- [x] **ETF Registry route vs. documentation:** the registry is its own route and sub-nav tab; the stale statements were in the frontend README, two docstrings and `CLAUDE.md` (the RFC and planning doc also say "tab" / "two sub-routes" but are historical artifacts, left as they are). Resolved: this task fixes them (see Documentation updates) and mounts the control in `etf-registry/page.tsx`. **Answer:** repository documentation must be updated.
+- [x] **`PriceHistoryRow.tsx` also deleted:** verified by grep: `PriceHistoryRow`, `PriceUpdateButton`, `addPriceSnapshot`, `updatePriceSnapshot` and `deletePriceSnapshot` are referenced only by `EtfRegistryTable.tsx`, each other and `etf-actions.ts`, so deleting them leaves no dangling import. **Decision:** delete `PriceHistoryRow.tsx` along with `PriceUpdateButton.tsx`.
+- [x] **Five cache tags, not three:** verified: every ETF write path (`createEtf`, `updateEtf`, `deleteEtf` and the price actions) revalidates `etfs`, `portfolio-overview`, `holdings-exposure`, `holdings-geography` and `holdings-sectors`. **Decision:** `refreshEtfPrices` revalidates the same five, since new prices change what the portfolio, geography and sector views derive.
+- [x] **`price_symbol` cannot be cleared from the form:** `PUT /etfs/{id}` ignores `null` fields, so emptying the input leaves the stored value. **Decision:** not clearable in this task; the form hint tells users to enter the ticker to get the fallback behaviour (a `price_symbol` equal to the ticker is equivalent to `NULL`). Revisit only if a real need appears.
+- [x] **ETFs created before TASK-2 have no `price_symbol`:** a bare ticker like `VWCE` is not a valid Yahoo symbol, so those ETFs fail with `Provider returned HTTP 404`. **Decision:** when any ETF in a result set failed, `UpdatePricesButton` shows one static hint line under the summary: "Failed updates usually mean the ETF's price symbol is missing or wrong — set it with Edit (e.g. VWCE.DE)." No per-error parsing. The seed JSON already carries `price_symbol`, so a fresh `just seed_data` is unaffected.
+- [x] **Long-running Server Action:** a first full-history refresh is one synchronous request (it took seconds for the three seed ETFs). The backend bounds each provider call at 15 s and runs at most 3 in parallel. **Decision:** accepted at the current registry size. One deployment caveat: `nginx/subdomain.conf` and `path-based.conf` set no `proxy_read_timeout`, so behind nginx the default of 60 s applies and a very long refresh would surface as a 504; direct `npm run dev` / `npm run start` has no such limit. Revisit (raise the timeout or move to a background job) if the registry grows.
+- [x] **No frontend test coverage:** correction to the earlier wording — Playwright is installed and runs in CI, but only for visual/mobile regression of the Home and Codex pages (`tests/mobile-screenshot.spec.ts`), and the CI job has no backend or database, so it cannot exercise this feature. **Decision:** no test framework or e2e test is added in this task; verification is `tsc` + `build` + the manual checklist.

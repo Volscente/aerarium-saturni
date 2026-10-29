@@ -25,6 +25,7 @@ export interface EtfResponse {
   volatility_1y: string | null;
   volatility_3y: string | null;
   holdings_overview: string | null;
+  price_symbol: string | null;
   geographical_distribution: Record<string, number>;
   sector_distribution: Record<string, number>;
   bond_maturities: Record<string, number> | null;
@@ -57,6 +58,7 @@ interface FormState {
   volatility_1y: string;
   volatility_3y: string;
   holdings_overview: string;
+  price_symbol: string;
   bond_maturities: string;
   bond_credit_scores: string;
 }
@@ -83,6 +85,7 @@ function initialState(etf?: EtfResponse): FormState {
       volatility_1y: etf.volatility_1y ?? "",
       volatility_3y: etf.volatility_3y ?? "",
       holdings_overview: etf.holdings_overview ?? "",
+      price_symbol: etf.price_symbol ?? "",
       bond_maturities: etf.bond_maturities
         ? JSON.stringify(etf.bond_maturities, null, 2)
         : "",
@@ -111,6 +114,7 @@ function initialState(etf?: EtfResponse): FormState {
     volatility_1y: "",
     volatility_3y: "",
     holdings_overview: "",
+    price_symbol: "",
     bond_maturities: "",
     bond_credit_scores: "",
   };
@@ -204,6 +208,7 @@ export function EtfForm({ onSuccess, etf }: EtfFormProps): JSX.Element {
     if (formState.volatility_1y === "") delete rawData.volatility_1y;
     if (formState.volatility_3y === "") delete rawData.volatility_3y;
     if (formState.holdings_overview === "") delete rawData.holdings_overview;
+    if (formState.price_symbol === "") delete rawData.price_symbol;
     if (formState.bond_maturities === "") delete rawData.bond_maturities;
     if (formState.bond_credit_scores === "") delete rawData.bond_credit_scores;
 
@@ -276,6 +281,25 @@ export function EtfForm({ onSuccess, etf }: EtfFormProps): JSX.Element {
           className={inputClass}
         />
         <FieldError errors={fieldErrors.isin} />
+      </div>
+
+      {/* Price symbol */}
+      <div>
+        <Label htmlFor="price_symbol">Price Symbol (optional)</Label>
+        <input
+          id="price_symbol"
+          type="text"
+          value={formState.price_symbol}
+          onChange={set("price_symbol")}
+          placeholder="e.g. VWCE.DE"
+          maxLength={30}
+          className={inputClass}
+        />
+        <p className="mt-1 text-xs text-roman-stone/70">
+          Market-data symbol used for automatic price updates. Leave empty to
+          use the ticker, or enter the ticker to go back to it.
+        </p>
+        <FieldError errors={fieldErrors.price_symbol} />
       </div>
 
       {/* Name */}

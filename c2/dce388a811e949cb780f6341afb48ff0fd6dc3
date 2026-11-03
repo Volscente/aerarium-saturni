@@ -1,0 +1,14 @@
+.claude/17-portfolio-timeline/initiative.md
+  h_68a16e6033d539 1-25
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "c2dce388a811e949cb780f6341afb48ff0fd6dc3",
+  "prompts": {},
+  "humans": {
+    "h_68a16e6033d539": {
+      "author": "Simone Porreca <porrecasimone@gmail.com>"
+    }
+  }
+}

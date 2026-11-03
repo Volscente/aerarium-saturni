@@ -18,6 +18,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Frontend**: `UpdatePricesButton` accepts an optional `onUpdated` callback; the ETF Registry page mounts `RegistryPriceSection` instead of the bare button.
 - **Docs**: Frontend README, root README and `CLAUDE.md` describe the Timeline Chart and the extended Lighthouse list.
 
+### Fixed
+
+- **Frontend**: The Timeline Chart gains a "% change" mode (change since the start, e.g. +664%), and the rebased tooltip shows the change since the start next to the index.
+- **Backend**: `YahooPriceProvider` requested the full history with `range=max`, for which Yahoo ignores `interval=1d` and returns monthly bars (EUNL: 206 monthly rows since 2009). The full history is now requested with `period1=0`, which returns daily bars. ETFs already stored with monthly rows must have their price rows deleted once before the next refresh, because refreshes only fetch after the latest stored date.
+- **Frontend**: The Timeline Chart showed the "no overlapping date range" notice whenever the series' first dates differed after rebasing; it now appears only when the ranges genuinely do not overlap.
+
 ### Notes
 
 - This is TASK-4 of the **ETF Price History** initiative (see `.claude/16-etf-price-history/rfc.md`). Lighthouse performance measured locally on the production build: 0.91 on `/tabularium/etf-registry`, 0.96 on `/tabularium/portfolio`.

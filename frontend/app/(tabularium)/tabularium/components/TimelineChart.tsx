@@ -27,7 +27,7 @@ export interface SeriesPoint {
   value: number
 }
 
-type ChartMode = 'rebased' | 'absolute'
+type ChartMode = 'rebased' | 'percent' | 'absolute'
 
 interface ChartLine {
   etfId: string
@@ -74,6 +74,26 @@ function toSeries(entries: EtfPriceEntry[]): SeriesPoint[] {
   )
 }
 
+function commonStartOf(series: { points: SeriesPoint[] }[]): string | null {
+  /**
+   * Finds the date on which all series can be compared.
+   *
+   * Args:
+   *   series: Series with ascending daily points; empty series are ignored.
+   *
+   * Returns:
+   *   The latest first date across the series, or null when some series ends
+   *   before that date (no overlapping range) or there is nothing to compare.
+   */
+  const nonEmpty = series.filter((s) => s.points.length > 0)
+  if (nonEmpty.length === 0) return null
+  const start = nonEmpty.reduce(
+    (latest, s) => (s.points[0].date > latest ? s.points[0].date : latest),
+    nonEmpty[0].points[0].date
+  )
+  return nonEmpty.every((s) => s.points[s.points.length - 1].date >= start) ? start : null
+}
+
 function buildChartLines(
   series: { etfId: string; ticker: string; points: SeriesPoint[] }[],
   mode: ChartMode,
@@ -81,16 +101,17 @@ function buildChartLines(
   /**
    * Prepares the plotted lines for the selected mode.
    *
-   * Absolute mode passes the series through. Rebased mode cuts every series at
+   * Absolute mode passes the series through. Rebased and percent modes cut every series at
    * the common start (the latest first date across the series) and indexes each
    * to 100 at its value on that day, or on its first day after it. If some
    * series ends before the common start there is no overlapping range, so each
-   * series is indexed to its own first point instead. Series without points are
+   * series is indexed to its own first point instead. Percent mode is the rebased
+   * index minus 100 (the change since the start, in %). Series without points are
    * excluded; the caller reports them separately.
    *
    * Args:
    *   series: Selected ETFs with their ascending daily points.
-   *   mode: "rebased" (index to 100) or "absolute" (raw closes).
+   *   mode: "rebased" (index to 100), "percent" (change since start) or "absolute" (raw closes).
    *
    * Returns:
    *   One ChartLine per series that has points.
@@ -98,18 +119,17 @@ function buildChartLines(
   const nonEmpty = series.filter((s) => s.points.length > 0)
   if (mode === 'absolute' || nonEmpty.length === 0) return nonEmpty
 
-  const commonStart = nonEmpty.reduce(
-    (latest, s) => (s.points[0].date > latest ? s.points[0].date : latest),
-    nonEmpty[0].points[0].date
-  )
-  const hasOverlap = nonEmpty.every((s) => s.points[s.points.length - 1].date >= commonStart)
+  const commonStart = commonStartOf(nonEmpty)
 
   return nonEmpty.map((s) => {
-    const cut = hasOverlap ? s.points.filter((p) => p.date >= commonStart) : s.points
+    const cut = commonStart ? s.points.filter((p) => p.date >= commonStart) : s.points
     const base = cut[0].value
     return {
       ...s,
-      points: cut.map((p) => ({ date: p.date, value: (p.value / base) * REBASE_BASE })),
+      points: cut.map((p) => ({
+        date: p.date,
+        value: (p.value / base) * REBASE_BASE - (mode === 'percent' ? REBASE_BASE : 0),
+      })),
     }
   })
 }
@@ -222,8 +242,9 @@ export function TimelineChart({ etfs, priceVersion }: TimelineChartProps): JSX.E
    * exist in `etfs` (deleted ETF) are ignored.
    *
    * The default "rebased" mode indexes the lines to 100 on their common start
-   * so ETFs at different price levels are comparable; "absolute" shows raw EUR
-   * closes. Rendering is a plain fluid SVG (container width measured with a
+   * so ETFs at different price levels are comparable (its tooltip also shows the
+   * change since the start); "percent" plots that change in %; "absolute" shows
+   * raw EUR closes. Rendering is a plain fluid SVG (container width measured with a
    * ResizeObserver) with a pointer-driven crosshair and tooltip, no charting
    * library. Series are identified by colour and by legend/tooltip labels.
    *
@@ -282,20 +303,18 @@ export function TimelineChart({ etfs, priceVersion }: TimelineChartProps): JSX.E
     return () => observer.disconnect()
   }, [hasPlot])
 
-  const lines = useMemo(
+  const readySeries = useMemo(
     () =>
-      buildChartLines(
-        selectedEtfs.flatMap((etf) => {
-          const state = series[etf.id]
-          return state?.status === 'ready'
-            ? [{ etfId: etf.id, ticker: etf.ticker, points: state.points }]
-            : []
-        }),
-        mode
-      ),
+      selectedEtfs.flatMap((etf) => {
+        const state = series[etf.id]
+        return state?.status === 'ready' && state.points.length > 0
+          ? [{ etfId: etf.id, ticker: etf.ticker, points: state.points }]
+          : []
+      }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [selectedKey, series, mode]
+    [selectedKey, series]
   )
+  const lines = useMemo(() => buildChartLines(readySeries, mode), [readySeries, mode])
 
   const plotWidth = Math.max(width - MARGIN.left - MARGIN.right, 0)
   const plotHeight = CHART_HEIGHT_PX - MARGIN.top - MARGIN.bottom
@@ -321,9 +340,14 @@ export function TimelineChart({ etfs, priceVersion }: TimelineChartProps): JSX.E
     })
     .map((etf) => etf.ticker)
   const isLoading = selectedEtfs.some((etf) => series[etf.id]?.status === 'loading')
-  const startsDiffer =
-    mode === 'rebased' && new Set(lines.map((l) => l.points[0].date)).size > 1
-  const formatValue = (value: number) => (mode === 'rebased' ? value.toFixed(1) : value.toFixed(2))
+  const noOverlap =
+    mode !== 'absolute' && readySeries.length > 1 && commonStartOf(readySeries) === null
+  const formatValue = (value: number) =>
+    mode === 'percent'
+      ? `${value >= 0 ? '+' : ''}${value.toFixed(1)}%`
+      : mode === 'rebased'
+        ? value.toFixed(1)
+        : value.toFixed(2)
 
   const toggleEtf = (id: string) => {
     setSelected((prev) => {
@@ -375,7 +399,7 @@ export function TimelineChart({ etfs, priceVersion }: TimelineChartProps): JSX.E
           )
         })}
         <div className="ml-auto flex overflow-hidden rounded border border-roman-stone/30 text-xs">
-          {(['rebased', 'absolute'] as const).map((value) => (
+          {(['rebased', 'percent', 'absolute'] as const).map((value) => (
             <button
               key={value}
               onClick={() => setMode(value)}
@@ -386,7 +410,7 @@ export function TimelineChart({ etfs, priceVersion }: TimelineChartProps): JSX.E
                   : 'text-roman-stone hover:text-roman-gold'
               }`}
             >
-              {value === 'rebased' ? 'Rebased to 100' : 'Absolute'}
+              {value === 'rebased' ? 'Rebased to 100' : value === 'percent' ? '% change' : 'Absolute'}
             </button>
           ))}
         </div>
@@ -401,7 +425,11 @@ export function TimelineChart({ etfs, priceVersion }: TimelineChartProps): JSX.E
           {scales ? (
             <>
               <p className="mb-1 text-xs text-roman-stone">
-                {mode === 'rebased' ? 'Index (start = 100)' : SERIES_CURRENCY}
+                {mode === 'rebased'
+                  ? 'Index (start = 100)'
+                  : mode === 'percent'
+                    ? 'Change since start'
+                    : SERIES_CURRENCY}
               </p>
               <svg
                 width={width}
@@ -511,7 +539,16 @@ export function TimelineChart({ etfs, priceVersion }: TimelineChartProps): JSX.E
                           style={{ backgroundColor: colorOf(line.etfId) }}
                         />
                         <span className="font-mono">{line.ticker}</span>
-                        <span>{value === undefined ? '—' : formatValue(value)}</span>
+                        <span>
+                          {value === undefined ? '—' : formatValue(value)}
+                          {value !== undefined && mode === 'rebased' && (
+                            <span className="text-roman-stone/70">
+                              {' '}
+                              ({value >= REBASE_BASE ? '+' : ''}
+                              {(value - REBASE_BASE).toFixed(1)}%)
+                            </span>
+                          )}
+                        </span>
                       </div>
                     )
                   })}
@@ -546,7 +583,7 @@ export function TimelineChart({ etfs, priceVersion }: TimelineChartProps): JSX.E
           No price history for {emptyTickers.join(', ')}.
         </p>
       )}
-      {startsDiffer && (
+      {noOverlap && (
         <p className="mt-2 text-xs text-roman-stone/70">
           The selected ETFs share no overlapping date range, so each line starts at 100 on its own first day.
         </p>

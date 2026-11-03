@@ -27,9 +27,10 @@ class YahooPriceProvider:
     async def fetch_daily_prices(self, symbol: str, start: date | None = None) -> list[PricePoint]:
         """Fetch and parse daily closes for ``symbol``.
 
-        With ``start=None`` the full available history is requested
-        (``range=max``); otherwise ``period1`` is ``start`` at 00:00 UTC and
-        ``period2`` is now.
+        ``period1`` is ``start`` at 00:00 UTC (the Unix epoch when ``start`` is
+        ``None``, i.e. the full available history) and ``period2`` is now.
+        ``range=max`` is deliberately not used: for long histories Yahoo then
+        ignores ``interval=1d`` and returns monthly bars.
 
         Args:
             symbol: Yahoo symbol including the exchange suffix (e.g. ``EUNL.DE``).
@@ -43,11 +44,10 @@ class YahooPriceProvider:
                 body, or a payload with ``chart.error`` / no ``result`` (unknown symbol).
         """
         params: dict[str, str | int] = {"interval": "1d"}
-        if start is None:
-            params["range"] = "max"
-        else:
-            params["period1"] = int(datetime.combine(start, time.min, tzinfo=UTC).timestamp())
-            params["period2"] = int(datetime.now(UTC).timestamp())
+        params["period1"] = (
+            0 if start is None else int(datetime.combine(start, time.min, tzinfo=UTC).timestamp())
+        )
+        params["period2"] = int(datetime.now(UTC).timestamp())
 
         try:
             response = await self._client.get(

@@ -66,8 +66,8 @@ def test_fetch_drops_null_closes_and_collapses_duplicate_dates():
     ]
 
 
-def test_fetch_without_start_requests_max_range():
-    """start=None sends range=max and no period parameters."""
+def test_fetch_without_start_requests_full_history_from_epoch():
+    """start=None sends period1=0 and no range (range=max makes Yahoo return monthly bars)."""
     seen = {}
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -76,9 +76,10 @@ def test_fetch_without_start_requests_max_range():
         return httpx.Response(200, json=_payload([_ts(2026, 10, 19)], [100.0]))
 
     _fetch(handler, symbol="EUNL.DE")
-    assert seen["range"] == "max"
+    assert "range" not in seen
     assert seen["interval"] == "1d"
-    assert "period1" not in seen
+    assert int(seen["period1"]) == 0
+    assert int(seen["period2"]) > 0
     assert seen["path"].endswith("/EUNL.DE")
 
 

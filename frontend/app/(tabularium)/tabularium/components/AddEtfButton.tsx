@@ -10,8 +10,8 @@ export function AddEtfButton(): JSX.Element {
    *
    * Manages isDrawerOpen boolean state locally. Renders a "+ Add ETF" button
    * (Lucide Plus icon, roman-* Tailwind tokens) and an EtfDrawer in create
-   * mode (no etf prop). Mounted inside portfolio/page.tsx — not in the layout —
-   * so it only appears on the ETF registry view.
+   * mode (no etf prop). Mounted in etf-registry/page.tsx — not in the layout —
+   * so it only appears on the ETF registry route.
    *
    * Returns:
    *   JSX containing the trigger button and EtfDrawer, always mounted.

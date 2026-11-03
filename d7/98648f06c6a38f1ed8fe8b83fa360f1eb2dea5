@@ -1,0 +1,33 @@
+backend/README.md
+  s_99106f779a37d0::t_f286aca24b770d 22,174
+README.md
+  s_99106f779a37d0::t_9a7622ed376fbb 36
+backend/src/backend/providers/yahoo.py
+  s_99106f779a37d0::t_f286aca24b770d 30-33,47-50
+CHANGELOG.md
+  s_99106f779a37d0::t_105cfccc9e5ebb 21-22,24-26
+  s_99106f779a37d0::t_9a7622ed376fbb 23
+frontend/app/(tabularium)/tabularium/components/TimelineChart.tsx
+  s_99106f779a37d0::t_b2df7e06b12bf0 30,104,108-109,114,129-132,245-247,344-350,402,413,428-432,542-551
+  s_99106f779a37d0::t_6d9af53076cf8f 77-96,122,125,306,308-313,315,317,343,586
+backend/tests/providers/test_yahoo.py
+  s_99106f779a37d0::t_f286aca24b770d 69-70,79,81-82
+frontend/README.md
+  s_99106f779a37d0::t_9a7622ed376fbb 38,67,176
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "d798648f06c6a38f1ed8fe8b83fa360f1eb2dea5",
+  "prompts": {},
+  "sessions": {
+    "s_99106f779a37d0": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "0df73eae-2d51-400d-bee8-4bdf21155744",
+        "model": "claude-sonnet-5-5"
+      },
+      "human_author": "Simone Porreca <porrecasimone@gmail.com>"
+    }
+  }
+}

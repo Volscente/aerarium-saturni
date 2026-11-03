@@ -1,0 +1,20 @@
+.claude/17-portfolio-timeline/proposal.md
+  s_8cbf762c4110a5::t_e6109cfb473978 38,42,46-50,54-58,62,66,70-74
+  s_8cbf762c4110a5::t_d8bfaaa4164de8 9-17,19-24,26-28
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "6b5de9422196b1a6cf7f30204338e7a625bc5b23",
+  "prompts": {},
+  "sessions": {
+    "s_8cbf762c4110a5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c6936fea-bdd1-402e-b9e7-e8775bb85a27",
+        "model": "claude-sonnet-5-5"
+      },
+      "human_author": "Simone Porreca <porrecasimone@gmail.com>"
+    }
+  }
+}

@@ -2,6 +2,8 @@ import os
 
 os.environ["DATABASE_URL"] = "postgresql+psycopg://test:test@localhost/test"
 
+import itertools
+from contextlib import ExitStack
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -9,10 +11,12 @@ from uuid import uuid4
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy.exc import IntegrityError
 
 from backend.db import get_session
 from backend.main import app
 from backend.models import Etf, EtfPriceHistory, Transaction
+from backend.routers.etfs import get_price_provider
 
 VALID_ETF_PAYLOAD = {
     "ticker": "VWCE",
@@ -166,6 +170,7 @@ def _make_mock_etf_row(**overrides) -> MagicMock:
     row.sector_distribution = overrides.get("sector_distribution", {"Technology": 25.0, "Financials": 18.0})
     row.bond_maturities = overrides.get("bond_maturities", None)
     row.bond_credit_scores = overrides.get("bond_credit_scores", None)
+    row.price_symbol = overrides.get("price_symbol", None)
     row.created_at = overrides.get("created_at", datetime(2026, 6, 19, 12, 0, 0, tzinfo=timezone.utc))
     return row
 
@@ -1053,4 +1058,88 @@ def client_etf_not_found(mock_session_etf_not_found):
     with patch("backend.main.engine", mock_engine):
         with TestClient(app) as c:
             yield c
+    app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def mock_session_price_conflict():
+    """Async session whose commit raises IntegrityError (same-day price collision)."""
+    session = AsyncMock()
+    session.add = MagicMock()
+    result = MagicMock()
+    result.scalar_one_or_none.return_value = _make_mock_price_row()
+    session.execute = AsyncMock(return_value=result)
+    session.commit = AsyncMock(side_effect=IntegrityError("INSERT", {}, Exception("duplicate key")))
+    session.rollback = AsyncMock()
+    return session
+
+
+@pytest.fixture
+def client_price_conflict(mock_session_price_conflict):
+    async def override_get_session():
+        yield mock_session_price_conflict
+
+    app.dependency_overrides[get_session] = override_get_session
+    mock_engine = MagicMock()
+    mock_conn = AsyncMock()
+    mock_conn.run_sync = AsyncMock()
+    mock_engine.begin.return_value = _make_async_cm(mock_conn)
+    with patch("backend.main.engine", mock_engine):
+        with TestClient(app) as c:
+            yield c
+    app.dependency_overrides.clear()
+
+
+class StubPriceProvider:
+    """PriceProvider stub: maps symbol -> points (or an exception to raise) and records calls."""
+
+    def __init__(self, outcomes: dict):
+        self.outcomes = outcomes
+        self.calls: list[tuple[str, date | None]] = []
+
+    async def fetch_daily_prices(self, symbol, start=None):
+        self.calls.append((symbol, start))
+        outcome = self.outcomes[symbol]
+        if isinstance(outcome, Exception):
+            raise outcome
+        return outcome
+
+
+@pytest.fixture
+def make_refresh_client():
+    """Factory for a TestClient wired to a mocked session and a stub price provider.
+
+    The mocked session's ``execute`` yields, in order: the ETF select, the latest-price
+    group-by, then one result per upsert; entries in ``execute_errors`` (index into the
+    upsert calls) are raised instead.
+    """
+    stack = ExitStack()
+
+    def _make(etfs, provider, latest=None, execute_errors=None):
+        session = AsyncMock()
+        etf_result = MagicMock()
+        etf_result.scalars.return_value.all.return_value = etfs
+        latest_result = MagicMock()
+        latest_result.all.return_value = latest or []
+        upserts = [
+            (execute_errors or {}).get(i, MagicMock()) for i in range(max(len(etfs), 1))
+        ]
+        session.execute = AsyncMock(
+            side_effect=itertools.chain([etf_result, latest_result], upserts)
+        )
+
+        async def override_get_session():
+            yield session
+
+        app.dependency_overrides[get_session] = override_get_session
+        app.dependency_overrides[get_price_provider] = lambda: provider
+        mock_engine = MagicMock()
+        mock_conn = AsyncMock()
+        mock_conn.run_sync = AsyncMock()
+        mock_engine.begin.return_value = _make_async_cm(mock_conn)
+        stack.enter_context(patch("backend.main.engine", mock_engine))
+        return stack.enter_context(TestClient(app)), session
+
+    yield _make
+    stack.close()
     app.dependency_overrides.clear()

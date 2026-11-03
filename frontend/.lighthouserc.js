@@ -10,6 +10,7 @@ module.exports = {
         'http://localhost:3000/tabularium',
         'http://localhost:3000/tabularium/transactions',
         'http://localhost:3000/tabularium/portfolio',
+        'http://localhost:3000/tabularium/etf-registry',
         'http://localhost:3000/codex/fundamentals',
       ],
     },

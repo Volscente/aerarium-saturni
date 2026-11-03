@@ -25,5 +25,6 @@
     "Healthcare": 11.0,
     "Industrials": 11.0,
     "Other": 38.0
-  }
+  },
+  "price_symbol": "VWCE.DE"
 }

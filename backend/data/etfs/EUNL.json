@@ -26,5 +26,6 @@
     "Industrials": 11.0,
     "Consumer Discretionary": 10.0,
     "Other": 27.0
-  }
+  },
+  "price_symbol": "EUNL.DE"
 }

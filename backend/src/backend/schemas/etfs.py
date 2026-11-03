@@ -1,5 +1,6 @@
 from datetime import date, datetime
 from decimal import Decimal
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -29,6 +30,7 @@ class EtfCreate(BaseModel):
     holdings_overview: str | None = Field(default=None)
     bond_maturities: dict[str, float] | None = Field(default=None)
     bond_credit_scores: dict[str, float] | None = Field(default=None)
+    price_symbol: str | None = Field(default=None, min_length=1, max_length=30)
 
     @field_validator("isin")
     @classmethod
@@ -97,6 +99,7 @@ class EtfUpdate(BaseModel):
     holdings_overview: str | None = Field(default=None)
     bond_maturities: dict[str, float] | None = Field(default=None)
     bond_credit_scores: dict[str, float] | None = Field(default=None)
+    price_symbol: str | None = Field(default=None, min_length=1, max_length=30)
 
 
 class EtfResponse(BaseModel):
@@ -126,6 +129,7 @@ class EtfResponse(BaseModel):
     sector_distribution: dict[str, float]
     bond_maturities: dict[str, float] | None
     bond_credit_scores: dict[str, float] | None
+    price_symbol: str | None
     created_at: datetime
 
 
@@ -149,6 +153,20 @@ class EtfPriceResponse(BaseModel):
     price: Decimal
     currency: str
     timestamp: datetime
+
+
+class EtfPriceRefreshRequest(BaseModel):
+    etf_ids: list[UUID] | None = Field(
+        default=None, description="ETFs to update; omitted or empty means all"
+    )
+
+
+class EtfPriceRefreshResult(BaseModel):
+    etf_id: UUID
+    ticker: str
+    status: Literal["updated", "failed"]
+    rows_written: int = Field(ge=0)
+    error: str | None = None
 
 
 class EtfHoldingRow(BaseModel):

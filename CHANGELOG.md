@@ -5,6 +5,80 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.6] - 2026-10-29
+
+### Added
+
+- **Frontend**: New `TimelineChart` component (`frontend/app/(tabularium)/tabularium/components/TimelineChart.tsx`) on the ETF Registry page — a hand-rolled SVG line chart of ETF price history with ETF selection (first ETF by default), multi-ETF overlay, legend, hover tooltip, a rebased-to-100 default view with an absolute-price toggle, and empty/error states. Only EUR rows are plotted.
+- **Frontend**: New `RegistryPriceSection` component that groups the "Update prices" control and the chart and reloads the chart's cached series after each completed update.
+- **Infrastructure**: `/tabularium/etf-registry` added to the Lighthouse CI URL list.
+
+### Changed
+
+- **Frontend**: `UpdatePricesButton` accepts an optional `onUpdated` callback; the ETF Registry page mounts `RegistryPriceSection` instead of the bare button.
+- **Docs**: Frontend README, root README and `CLAUDE.md` describe the Timeline Chart and the extended Lighthouse list.
+
+### Fixed
+
+- **Frontend**: The Timeline Chart gains a "% change" mode (change since the start, e.g. +664%), and the rebased tooltip shows the change since the start next to the index.
+- **Backend**: `YahooPriceProvider` requested the full history with `range=max`, for which Yahoo ignores `interval=1d` and returns monthly bars (EUNL: 206 monthly rows since 2009). The full history is now requested with `period1=0`, which returns daily bars. ETFs already stored with monthly rows must have their price rows deleted once before the next refresh, because refreshes only fetch after the latest stored date.
+- **Frontend**: The Timeline Chart showed the "no overlapping date range" notice whenever the series' first dates differed after rebasing; it now appears only when the ranges genuinely do not overlap.
+
+### Notes
+
+- This is TASK-4 of the **ETF Price History** initiative (see `.claude/16-etf-price-history/rfc.md`). Lighthouse performance measured locally on the production build: 0.91 on `/tabularium/etf-registry`, 0.96 on `/tabularium/portfolio`.
+
+## [0.5.5] - 2026-10-29
+
+### Added
+
+- **Frontend**: New `UpdatePricesButton` component (`frontend/app/(tabularium)/tabularium/components/UpdatePricesButton.tsx`) on the ETF Registry page — an "Update prices" button with an ETF selection (all by default), a pending state, and an inline per-ETF result summary (updated rows or the failure reason, with a hint to check the price symbol).
+- **Frontend**: New `refreshEtfPrices` Server Action and `EtfPriceRefreshSchema` — call `POST /etfs/prices/refresh`, reject an empty selection (the backend would read it as "all ETFs"), and revalidate the five ETF-derived cache tags.
+- **Frontend**: Optional **Price Symbol** field on the ETF form (`price_symbol`, e.g. `VWCE.DE`).
+
+### Changed
+
+- **Frontend**: The ETF Registry no longer offers manual price entry or the expandable per-row price history table.
+- **Docs**: Corrected the frontend README, root README, `CLAUDE.md` and two docstrings to reflect that the ETF Registry is its own route (`/tabularium/etf-registry`) — the Tabularium has three sub-routes, not two.
+
+### Removed
+
+- **Frontend**: `PriceUpdateButton` and `PriceHistoryRow` components, and the `addPriceSnapshot`, `updatePriceSnapshot` and `deletePriceSnapshot` Server Actions.
+
+### Notes
+
+- This is TASK-3 of the **ETF Price History** initiative (see `.claude/16-etf-price-history/rfc.md`). The backend manual price endpoints are unchanged. The Timeline Chart follows in TASK-4.
+
+## [0.5.4] - 2026-10-27
+
+### Added
+
+- **Backend**: New `POST /etfs/prices/refresh` endpoint (`backend/src/backend/routers/etfs.py`) — fetches daily prices from an external provider and upserts them into `etf_price_history` for all ETFs or a selected subset, with a per-ETF result (`updated` / `failed`, rows written, error). The first run per ETF fetches the full available history; later runs fetch only from the latest stored day. Re-running never duplicates rows, and retrieved prices overwrite a manual snapshot for the same UTC day.
+- **Backend**: New `backend/src/backend/providers/` package — `PriceProvider` protocol, `PricePoint`, `PriceProviderError`, and `YahooPriceProvider`, a free keyless adapter over Yahoo Finance's public chart endpoint.
+- **Backend**: `EtfPriceRefreshRequest` and `EtfPriceRefreshResult` Pydantic schemas.
+- **Data**: `price_symbol` (`EUNL.DE`, `VWCE.DE`, `LYP6.DE`) added to the seed ETF JSON files so `just create_etfs` produces refreshable ETFs.
+- **Tests**: Adapter tests (parsing, error mapping, request parameters) and refresh endpoint tests (all/subset/404, partial failure, non-EUR currency, incremental start date, symbol fallback, per-ETF commit and rollback).
+
+### Notes
+
+- This is TASK-2 of the **ETF Price History** initiative (see `.claude/16-etf-price-history/rfc.md`). Prices are assumed to be EUR; the provider is unofficial (Yahoo) and isolated behind `PriceProvider`.
+
+## [0.5.3] - 2026-10-26
+
+### Added
+
+- **Backend**: New Alembic migration `006` (`backend/alembic/versions/006_add_etf_price_symbol_and_daily_unique.py`) — nullable `etfs.price_symbol` column (provider symbol for automated price retrieval; `NULL` falls back to `ticker`) and a unique index `uq_etf_price_history_etf_id_day` enforcing one price per ETF per UTC day, after collapsing any existing same-day rows (latest `timestamp` kept).
+- **Backend**: `price_symbol` field on `EtfCreate`, `EtfUpdate` and `EtfResponse`.
+- **Tests**: `price_symbol` schema validation tests, a create/list round-trip test, and 409 tests for both manual price endpoints.
+
+### Changed
+
+- **Backend**: `POST /etfs/{id}/price` and `PUT /etfs/{id}/price/{price_id}` now return HTTP 409 (after a session rollback) instead of a 500 when the write collides with an existing price for the same ETF and UTC day.
+
+### Notes
+
+- This is TASK-1 of the **ETF Price History** initiative (see `.claude/16-etf-price-history/rfc.md`) — schema groundwork for the provider adapter and refresh endpoint (TASK-2).
+
 ## [0.5.2] - 2026-09-01
 
 ### Added

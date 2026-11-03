@@ -24,6 +24,15 @@ def test_create_etf_valid(client):
     assert data["isin"] == "IE00B3RBWM25"
 
 
+def test_create_etf_with_price_symbol_round_trips(client_with_etfs):
+    """POST /etfs with price_symbol returns 201 and GET /etfs rows expose the field."""
+    response = client_with_etfs.post("/etfs", json={**VALID_ETF_PAYLOAD, "price_symbol": "VWCE.DE"})
+    assert response.status_code == 201
+    assert "price_symbol" in response.json()
+    listing = client_with_etfs.get("/etfs")
+    assert all("price_symbol" in row for row in listing.json())
+
+
 def test_create_etf_defaults_empty_distributions(client):
     """A newly created ETF has empty geographical_distribution/sector_distribution -- both are derived from holdings uploads, not user-entered."""
     response = client.post("/etfs", json=VALID_ETF_PAYLOAD)
@@ -112,6 +121,23 @@ def test_create_price_valid(client_with_etfs):
     }
     response = client_with_etfs.post(f"/etfs/{DUMMY_ETF_ID}/price", json=payload)
     assert response.status_code == 201
+
+
+def test_create_price_same_day_conflict_returns_409(client_price_conflict, mock_session_price_conflict):
+    """POST /etfs/{id}/price returns 409 and rolls back when the daily unique index is hit."""
+    payload = {"price": "100.50", "currency": "EUR", "timestamp": "2026-06-19T12:00:00Z"}
+    response = client_price_conflict.post(f"/etfs/{DUMMY_ETF_ID}/price", json=payload)
+    assert response.status_code == 409
+    mock_session_price_conflict.rollback.assert_awaited_once()
+
+
+def test_update_price_same_day_conflict_returns_409(client_price_conflict, mock_session_price_conflict):
+    """PUT /etfs/{id}/price/{price_id} returns 409 and rolls back on a same-day collision."""
+    response = client_price_conflict.put(
+        f"/etfs/{DUMMY_ETF_ID}/price/{DUMMY_ETF_ID}", json={"timestamp": "2026-06-20T12:00:00Z"}
+    )
+    assert response.status_code == 409
+    mock_session_price_conflict.rollback.assert_awaited_once()
 
 
 def test_upload_holdings_valid(client_with_etfs):

@@ -31,6 +31,7 @@ export const EtfFormSchema = z.object({
   volatility_1y: z.coerce.number().min(0).optional(),
   volatility_3y: z.coerce.number().min(0).optional(),
   holdings_overview: z.string().optional(),
+  price_symbol: z.string().max(30).optional(),
   bond_maturities: z
     .string()
     .refine((val) => !val || isValidJson(val), 'Must be valid JSON')
@@ -42,3 +43,7 @@ export const EtfFormSchema = z.object({
 })
 
 export type EtfFormValues = z.infer<typeof EtfFormSchema>
+
+export const EtfPriceRefreshSchema = z.object({
+  etf_ids: z.array(z.uuid()).min(1, 'Select at least one ETF'),
+})

@@ -29,14 +29,14 @@
 
 ## Motivation {#motivation}
 
-The Portfolio page only shows current-state snapshots (Overview, Holdings, Geography, Sectors), all driven by the latest prices and holdings, so there is no way to see how portfolio value or individual ETFs have evolved or to compare owners, brokers and ETFs historically. Daily ETF prices are now stored, but nothing combines them with transaction history into portfolio-level value over time. The solution must keep historical charts separate from the snapshot tabs (the Global Scope Filter must not appear to govern them), stay inside `/tabularium/portfolio` (the Tabularium is limited to three sub-routes), and preserve the Lighthouse performance score ≥ 90. For full context, see the [Notion initiative page](https://app.notion.com/p/17-Portfolio-Timeline-3f75cc6c0f078057b978ede9a2a0a52f).
+The Portfolio page only shows current-state snapshots (Overview, Holdings, Geography, Sectors), all driven by the latest prices and holdings, so there is no way to see how the value of what an owner actually holds has evolved, or to compare owners, brokers and ETFs historically. The goal is the value of the holdings, not the ETF's market price: for example, 10,000 € of EUNL bought in 2025 plus a 100 € monthly purchase should appear as one line that grows with both the market and each contribution. Daily ETF prices are now stored, but nothing combines them with transaction history into holdings value over time. The solution must keep historical charts separate from the snapshot tabs (the Global Scope Filter must not appear to govern them), stay inside `/tabularium/portfolio` (the Tabularium is limited to three sub-routes), and preserve the Lighthouse performance score ≥ 90. For full context, see the [Notion initiative page](https://app.notion.com/p/17-Portfolio-Timeline-3f75cc6c0f078057b978ede9a2a0a52f).
 
 ## Objectives {#objectives}
 
 - **Derive historical value**: A new backend endpoint returns daily EUR value series per owner, per `(owner, broker)` and per `(owner, broker, ETF)`, computed from transactions and `etf_price_history`.
 - **Add a Timeline tab**: The Portfolio tab bar gains a visually separated "Timeline" tab whose state is independent of the Global Scope Filter.
 - **Render macro and micro charts**: Each chart has a tree selector (Owner > Broker for the top chart, Owner > Broker > ETF for the bottom chart); every checked node plots one line showing the value of what that owner actually holds at that scope.
-- **Support fair comparison**: The X-axis shows daily points, and the Y-axis switches between Absolute Value and Normalized Growth (%) without refetching.
+- **Support fair comparison**: The X-axis shows one point per calendar day (ISO dates such as `2026-01-01`, including weekends), and the Y-axis switches between Absolute Value and Normalized Growth (%) without refetching.
 - **Stay fresh and fast**: The new data is invalidated by every write path and the page keeps Lighthouse performance ≥ 90.
 
 ## Scope {#scope}
@@ -144,7 +144,7 @@ A:
 | Risk / Question | Likelihood | Mitigation / Answer |
 | :-- | :-- | :-- |
 | Daily replay makes the endpoint slow | Low | Expected volume is small (<~100 transactions per year); compute on request and measure on real data |
-| Missing prices on weekends, holidays and gaps distort values | Medium | Carry forward the latest earlier price; transactions never pre-date price history, so no ETF is unpriced while held |
+| A purchase is valued at the day's close, not at its transaction price, so value can jump slightly on a buy day | Low | Accepted; weekends, holidays and gaps carry the last close forward (value stays flat), and transactions never pre-date price history, so no ETF is unpriced while held |
 | Flow-adjusted chaining overlaps conceptually with the TWR metric deferred as out-of-scope | Low | Decided: use the minimal flow-adjusted daily chain for normalization; scope-out is reworded to full TWR/MWR reporting |
 | Transaction-price flows may not match brokers' real cash flows, and dividends are ignored | Medium | Document the assumption; fees are counted, dividends and non-EUR/price-less transactions are skipped |
 | Hand-rolled SVG with many daily points and checked nodes degrades interactivity | Low | Lazy tab mount; downsample rendered points if needed |

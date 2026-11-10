@@ -1,0 +1,19 @@
+.claude/17-portfolio-timeline/planning.md
+  s_8cbf762c4110a5::t_32a8eb559d97af 1-214
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "043a7eba64b573c64c8153dbd2ae0e825ecfab89",
+  "prompts": {},
+  "sessions": {
+    "s_8cbf762c4110a5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c6936fea-bdd1-402e-b9e7-e8775bb85a27",
+        "model": "claude-sonnet-5-5"
+      },
+      "human_author": "Simone Porreca <porrecasimone@gmail.com>"
+    }
+  }
+}

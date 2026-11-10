@@ -1,0 +1,21 @@
+.claude/17-portfolio-timeline/rfc.md
+  s_8cbf762c4110a5::t_912c6ba82a7576 147
+  s_8cbf762c4110a5::t_8eb1ab196960e4 39
+  s_8cbf762c4110a5::t_af1f4d311c8925 32
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "01ad17491f18eb798ef711d65699566223a8bbf9",
+  "prompts": {},
+  "sessions": {
+    "s_8cbf762c4110a5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c6936fea-bdd1-402e-b9e7-e8775bb85a27",
+        "model": "claude-sonnet-5-5"
+      },
+      "human_author": "Simone Porreca <porrecasimone@gmail.com>"
+    }
+  }
+}

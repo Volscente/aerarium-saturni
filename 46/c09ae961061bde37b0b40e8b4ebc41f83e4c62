@@ -1,0 +1,20 @@
+.claude/17-portfolio-timeline/rfc.md
+  s_8cbf762c4110a5::t_5a47722e369bca 36,38,47-48,55-57,74,76,82,88-89,91,95,146-151
+  s_8cbf762c4110a5::t_28b9c4e3608900 1-35,37,39-46,49-54,58-73,75,77-81,83-87,90,92-94,96-145,152-156
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "46c09ae961061bde37b0b40e8b4ebc41f83e4c62",
+  "prompts": {},
+  "sessions": {
+    "s_8cbf762c4110a5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c6936fea-bdd1-402e-b9e7-e8775bb85a27",
+        "model": "claude-sonnet-5-5"
+      },
+      "human_author": "Simone Porreca <porrecasimone@gmail.com>"
+    }
+  }
+}

@@ -55,6 +55,7 @@ The Portfolio page only shows current-state snapshots (Overview, Holdings, Geogr
 - **Full portfolio metrics such as TWR/MWR reporting**: deferred to a future analytics initiative (backend README)
 - **Non-EUR price series and transactions**: price refresh is EUR-only (backend README); non-EUR and price-less transactions are skipped
 - **Dividends**: ignored in this iteration; they are neither value nor cash flow
+- **Stock splits**: ignored in this iteration; no held ETF has split, and split rows are not applied
 - **New Tabularium sub-route**: Timeline must live as a tab inside /tabularium/portfolio (frontend README invariant)
 
 **Constraints:**
@@ -71,7 +72,7 @@ The Portfolio page only shows current-state snapshots (Overview, Holdings, Geogr
 
 ## Approach Overview {#approach-overview}
 
-The backend gains a read-only `GET /portfolio/timeline` endpoint. It loads all buy/sell/split transactions and all `etf_price_history` rows for the held ISINs, then replays them day by day from the first transaction date to today. For each day it tracks net quantity per `(owner, broker, ISIN)` and values each position at the latest price on or before that day (carry-forward over weekends, holidays and gaps). It aggregates these into three series families, one per tree level: `owner`, `(owner, broker)` and `(owner, broker, ETF)`. Transactions with a non-EUR currency or without a price are skipped. Since every transaction (2025 onwards) post-dates the first stored price (2024), every held ETF is priced on every day it is held, and carry-forward is only needed for weekends, holidays and gaps. Each point carries the day's value and that day's net cash flow (buys minus sells at transaction price, with fees counted as part of the flow), so that growth can be normalized without distorting for contributions. The computation is done in Python (pandas is already part of the backend toolbox), not in SQL, as split handling and carry-forward are simpler to express and test there.
+The backend gains a read-only `GET /portfolio/timeline` endpoint. It loads all buy/sell transactions and all `etf_price_history` rows for the held ISINs, then replays them day by day from the first transaction date to today. For each day it tracks net quantity per `(owner, broker, ISIN)` and values each position at the latest price on or before that day (carry-forward over weekends, holidays and gaps). It aggregates these into three series families, one per tree level: `owner`, `(owner, broker)` and `(owner, broker, ETF)`. Transactions with a non-EUR currency or without a price are skipped. Since every transaction (2025 onwards) post-dates the first stored price (2024), every held ETF is priced on every day it is held, and carry-forward is only needed for weekends, holidays and gaps. Each point carries the day's value and that day's net cash flow (buys minus sells at transaction price, with fees counted as part of the flow), so that growth can be normalized without distorting for contributions. The computation is done in plain Python with `Decimal` arithmetic (no new dependency), not in SQL, as split handling and carry-forward are simpler to express and test there.
 
 The frontend adds a `'timeline'` value to `PortfolioPageClient`'s `activeTab`, rendered conditionally like the other tabs so its chart code is never mounted unless opened. The tab button is separated from the four snapshot tabs by a divider and a chart icon. The Server Component `page.tsx` is not changed to fetch eagerly; instead the Timeline tab is fed by a Server Action (same pattern as `fetchPriceHistory` in `etf-actions.ts`) invoked on first open and cached in component state, so the other tabs' payload and Lighthouse score are unaffected. Selection state (checked tree nodes, Y-axis mode) lives inside the Timeline component and never reads the Global Scope Filter. Switching between Absolute and Normalized is computed client-side from the already-fetched series.
 
@@ -88,7 +89,7 @@ Response shape (illustrative):
 - `owners`: `[{ owner, points: Point[], brokers: [{ broker_platform, points: Point[], etfs: [{ etf_ticker, etf_name, points: Point[] }] }] }]`, mirroring the Owner > Broker > ETF selection tree.
 - `Point`: `{ date, value, net_flow }`; each series starts on the first day its node holds a non-zero position, so lines start where data is real. An owner's line aggregates all its brokers; a broker's line aggregates its ETFs. The same ETF held at two brokers appears as two separate lines.
 
-Rules: splits adjust quantity by `ratio`; positions with zero quantity on a day contribute zero; dates are UTC days matching the `etf_price_history` unique daily index; the range runs from the earliest transaction to the latest price date. The first iteration computes on request; with an expected volume of under ~100 transactions per year across all owners the replay is small, so precomputation or a materialized table is not planned.
+Rules: dividends and splits are ignored; positions with zero quantity on a day contribute zero; dates are UTC days matching the `etf_price_history` unique daily index; the range runs from the earliest transaction to the latest price date. The first iteration computes on request; with an expected volume of under ~100 transactions per year across all owners the replay is small, so precomputation or a materialized table is not planned.
 
 ## Timeline UI {#timeline-ui}
 
@@ -115,7 +116,7 @@ Two stacked SVG line charts, each with a left-side collapsible tree selector. Th
 
 **Q: Why compute the history in the backend rather than the browser?**
 
-A: The backend owns all financial data access and already has the netting logic. Shipping all transactions and all price histories to the browser would expose more data than needed and duplicate split and carry-forward logic.
+A: The backend owns all financial data access and already has the netting logic. Shipping all transactions and all price histories to the browser would expose more data than needed and duplicate the carry-forward logic.
 
 **Q: Why not add the charts to the Overview tab?**
 

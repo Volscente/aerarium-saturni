@@ -1,0 +1,19 @@
+.claude/17-portfolio-timeline/2-timeline-api-endpoint.md
+  s_8cbf762c4110a5::t_d1f64af0a0ef71 1-195
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "440f0eac08b6470cbcd8ff258b017ff86b3c6b67",
+  "prompts": {},
+  "sessions": {
+    "s_8cbf762c4110a5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c6936fea-bdd1-402e-b9e7-e8775bb85a27",
+        "model": "claude-sonnet-5-5"
+      },
+      "human_author": "Simone Porreca <porrecasimone@gmail.com>"
+    }
+  }
+}

@@ -1,0 +1,32 @@
+backend/data/transactions/transactions.json
+  s_8cbf762c4110a5::t_b4c43b3b4b9565 10,23,36,49,62,75,100,113,126,139,152,165,178,191
+.claude/17-portfolio-timeline/planning.md
+  s_8cbf762c4110a5::t_08f4b0a458aef7 38,42,167
+.claude/17-portfolio-timeline/1-timeline-computation-engine.md
+  s_8cbf762c4110a5::t_e0ca671068176b 55
+  s_8cbf762c4110a5::t_08f4b0a458aef7 196-197,223,225
+  s_8cbf762c4110a5::t_cad72c08f067a0 1-13,15-19,22-34,37-40,42-51,53-54,56-70,72-89,91-96,98-99,103-113,115-127,129-195,198-200,202-219,228-230
+  s_8cbf762c4110a5::t_81163fd98ae44e 231
+  s_8cbf762c4110a5::t_c08b67fa79616f 14,20-21,35-36,41
+  s_8cbf762c4110a5::t_4f5335d24114a8 71,97,100,114,128,201
+  s_8cbf762c4110a5::t_f0ddd9c51f935c 52,90,101-102,220-222,224,226-227
+.claude/17-portfolio-timeline/rfc.md
+  s_8cbf762c4110a5::t_08f4b0a458aef7 75,92
+  s_8cbf762c4110a5::t_74a238274a6343 58,119
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "c66dfcab5dc8556c26aa5af2b9aff6a3ac62bc3d",
+  "prompts": {},
+  "sessions": {
+    "s_8cbf762c4110a5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c6936fea-bdd1-402e-b9e7-e8775bb85a27",
+        "model": "claude-sonnet-5-5"
+      },
+      "human_author": "Simone Porreca <porrecasimone@gmail.com>"
+    }
+  }
+}

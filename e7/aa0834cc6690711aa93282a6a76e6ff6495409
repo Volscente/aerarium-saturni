@@ -1,0 +1,39 @@
+backend/src/backend/routers/portfolio.py
+  s_8cbf762c4110a5::t_153607326cda54 6,21,25-30,653-755
+backend/pyproject.toml
+  s_8cbf762c4110a5::t_cdc0840b791256 3
+CHANGELOG.md
+  s_8cbf762c4110a5::t_32ed25857c0fc3 8-23
+backend/tests/routers/test_portfolio.py
+  s_8cbf762c4110a5::t_209d988e1cf0ae 316-368
+pyproject.toml
+  s_8cbf762c4110a5::t_cdc0840b791256 3
+frontend/package.json
+  s_8cbf762c4110a5::t_cdc0840b791256 3
+backend/src/backend/schemas/portfolio.py
+  s_8cbf762c4110a5::t_153607326cda54 170-174,177-215
+  s_8cbf762c4110a5::t_8c7ee9705dbea8 1,175-176
+backend/README.md
+  s_8cbf762c4110a5::t_32ed25857c0fc3 28-30,56,87-88,174-182
+  s_8cbf762c4110a5::t_c71fdebd3174d3 183
+backend/tests/conftest.py
+  s_8cbf762c4110a5::t_209d988e1cf0ae 1146-1264
+uv.lock
+  s_8cbf762c4110a5::t_7e416f6f6aa9a2 13,62
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "e7aa0834cc6690711aa93282a6a76e6ff6495409",
+  "prompts": {},
+  "sessions": {
+    "s_8cbf762c4110a5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c6936fea-bdd1-402e-b9e7-e8775bb85a27",
+        "model": "claude-sonnet-5-5"
+      },
+      "human_author": "Simone Porreca <porrecasimone@gmail.com>"
+    }
+  }
+}

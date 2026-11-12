@@ -313,3 +313,56 @@ def test_get_holdings_sectors_missing_price_skipped(client_exposure_missing_pric
     response = client_exposure_missing_price.get("/portfolio/holdings/sectors")
     assert response.status_code == 200
     assert "LYP6" in response.json()["skipped_etfs"]
+
+
+def test_get_portfolio_timeline_empty(client_timeline_empty):
+    """GET /portfolio/timeline returns 200 with no owners and no skipped transactions when nothing exists."""
+    response = client_timeline_empty.get("/portfolio/timeline")
+    assert response.status_code == 200
+    assert response.json() == {"owners": [], "skipped_transactions": 0}
+
+
+def test_get_portfolio_timeline_multi_owner_broker_shape(client_timeline_multi):
+    """GET /portfolio/timeline returns the Owner > Broker > ETF tree with points at every level."""
+    response = client_timeline_multi.get("/portfolio/timeline")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["skipped_transactions"] == 0
+
+    owners = {o["owner"]: o for o in data["owners"]}
+    assert set(owners) == {"owner_a", "owner_b"}
+    assert {b["broker_platform"] for b in owners["owner_a"]["brokers"]} == {"ibkr", "n26"}
+    assert [b["broker_platform"] for b in owners["owner_b"]["brokers"]] == ["ibkr"]
+
+    for owner in data["owners"]:
+        assert owner["points"]
+        for broker in owner["brokers"]:
+            assert broker["points"]
+            for etf in broker["etfs"]:
+                assert set(etf.keys()) == {"isin", "etf_ticker", "etf_name", "points"}
+                assert etf["points"]
+                assert set(etf["points"][0].keys()) == {"date", "value", "net_flow"}
+                assert etf["points"][0]["date"] == "2026-01-02" or etf["points"][0]["date"] == "2026-01-03"
+                assert isinstance(etf["points"][0]["value"], float)
+                assert isinstance(etf["points"][0]["net_flow"], float)
+
+
+def test_get_portfolio_timeline_counts_skipped_transactions(client_timeline_skipped):
+    """A non-EUR buy is counted in skipped_transactions while the usable buy is still plotted."""
+    response = client_timeline_skipped.get("/portfolio/timeline")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["skipped_transactions"] == 1
+    assert len(data["owners"]) == 1
+    assert data["owners"][0]["brokers"][0]["etfs"][0]["points"]
+
+
+def test_get_portfolio_timeline_single_buy_values(client_timeline_single_buy):
+    """A single buy returns value = quantity x close and net_flow = quantity x price + fees on the buy day."""
+    response = client_timeline_single_buy.get("/portfolio/timeline")
+    points = response.json()["owners"][0]["brokers"][0]["etfs"][0]["points"]
+
+    assert points[0]["date"] == "2026-01-03"
+    assert points[0]["value"] == pytest.approx(1020.0)  # 10 x 102
+    assert points[0]["net_flow"] == pytest.approx(1001.0)  # 10 x 100 + 1 fee
+    assert points[1]["net_flow"] == pytest.approx(0.0)

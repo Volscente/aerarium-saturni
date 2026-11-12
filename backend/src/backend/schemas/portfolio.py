@@ -1,3 +1,4 @@
+import datetime as dt
 from datetime import date
 from typing import Literal
 
@@ -165,4 +166,50 @@ class HoldingsSectorsResponse(BaseModel):
     skipped_etfs: list[str] = Field(
         default_factory=list,
         description="Tickers of owned ETFs excluded from the aggregation because they have no price record in etf_price_history.",
+    )
+
+
+class TimelinePointResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    # ``dt.date``, not ``date``: a field named ``date`` shadows the imported type inside the class body.
+    date: dt.date = Field(description="Calendar day (ISO date).")
+    value: float = Field(description="End-of-day holdings value in EUR.")
+    net_flow: float = Field(description="That day's contributions net of withdrawals in EUR, fees included.")
+
+
+class TimelineEtfResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    isin: str = Field(description="ETF ISIN.")
+    etf_ticker: str = Field(description="ETF ticker.")
+    etf_name: str = Field(description="ETF name.")
+    points: list[TimelinePointResponse] = Field(
+        description="Daily series for this owner's position in the ETF at one broker."
+    )
+
+
+class TimelineBrokerResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    broker_platform: str = Field(description="Broker platform identifier (e.g. 'ibkr', 'n26').")
+    points: list[TimelinePointResponse] = Field(description="Daily series for the owner's holdings at this broker.")
+    etfs: list[TimelineEtfResponse] = Field(description="One series per ETF held at this broker.")
+
+
+class TimelineOwnerResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    owner: str = Field(description="Portfolio owner name.")
+    points: list[TimelinePointResponse] = Field(description="Daily series for the owner's total holdings.")
+    brokers: list[TimelineBrokerResponse] = Field(description="One entry per broker the owner uses.")
+
+
+class PortfolioTimelineResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    owners: list[TimelineOwnerResponse] = Field(description="One entry per owner with usable transactions.")
+    skipped_transactions: int = Field(
+        description="Buy/sell rows that could not be valued: non-EUR, missing price/quantity/ISIN, "
+        "unknown ISIN, or a sell larger than the held quantity."
     )

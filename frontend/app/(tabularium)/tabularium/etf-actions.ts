@@ -62,6 +62,7 @@ export async function createEtf(
     revalidateTag('holdings-exposure')
     revalidateTag('holdings-geography')
     revalidateTag('holdings-sectors')
+    revalidateTag('portfolio-timeline')
     return { success: true }
   } catch (err) {
     return { error: err instanceof Error ? err.message : 'Network error' }
@@ -77,7 +78,8 @@ export async function updateEtf(
    *
    * PUTs to ${BACKEND_URL}/etfs/{id} sending only non-undefined fields. On
    * HTTP 200, calls revalidateTag('etfs'), revalidateTag('portfolio-overview'),
-   * and revalidateTag('holdings-exposure'). On 404, returns a descriptive error.
+   * and revalidateTag('holdings-exposure') (plus geography, sectors and
+   * 'portfolio-timeline'). On 404, returns a descriptive error.
    *
    * Args:
    *   id: UUID string of the ETF to update.
@@ -117,6 +119,7 @@ export async function updateEtf(
     revalidateTag('holdings-exposure')
     revalidateTag('holdings-geography')
     revalidateTag('holdings-sectors')
+    revalidateTag('portfolio-timeline')
     return { success: true }
   } catch (err) {
     return { error: err instanceof Error ? err.message : 'Network error' }
@@ -156,6 +159,7 @@ export async function deleteEtf(
     revalidateTag('holdings-exposure')
     revalidateTag('holdings-geography')
     revalidateTag('holdings-sectors')
+    revalidateTag('portfolio-timeline')
     return { success: true }
   } catch (err) {
     return { error: err instanceof Error ? err.message : 'Network error' }
@@ -204,7 +208,8 @@ export async function refreshEtfPrices(
    * backend answers HTTP 200 once the ids resolve and reports per-ETF failures
    * in the results, so a failed ETF is part of { results }, not { error }. On
    * 200, calls revalidateTag for 'etfs', 'portfolio-overview',
-   * 'holdings-exposure', 'holdings-geography' and 'holdings-sectors' (the same
+   * 'holdings-exposure', 'holdings-geography', 'holdings-sectors' and
+   * 'portfolio-timeline' (the same
    * set every other ETF write action revalidates) — even when some ETFs failed,
    * because the others were written.
    *
@@ -240,6 +245,7 @@ export async function refreshEtfPrices(
     revalidateTag('holdings-exposure')
     revalidateTag('holdings-geography')
     revalidateTag('holdings-sectors')
+    revalidateTag('portfolio-timeline')
     return { results }
   } catch (err) {
     return { error: err instanceof Error ? err.message : 'Network error' }

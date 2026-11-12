@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.2] - 2026-11-12
+
+### Added
+
+- **Frontend**: New **Timeline** tab on `/tabularium/portfolio`, separated from the four snapshot tabs by a divider and a chart icon. It is mounted only when opened and loads the timeline on first open; the result is kept in `PortfolioPageClient` state, so switching tabs does not refetch. The body is a shell with loading, error (with Retry), empty and skipped-transactions notices; the charts arrive in TASK-4/5.
+- **Frontend**: New `fetchPortfolioTimeline` Server Action (`portfolio/timeline-actions.ts`) calling `GET /portfolio/timeline` with the `portfolio-timeline` cache tag; it returns `{ error }` on failure instead of an empty payload.
+- **Frontend**: `PortfolioTimelineResponse`, `TimelineOwnerSeries`, `TimelineBrokerSeries`, `TimelineEtfSeries` and `TimelinePoint` TypeScript interfaces mirroring the backend schemas.
+
+### Changed
+
+- **Frontend**: `createTransaction`, `updateTransaction`, `deleteTransaction`, `createEtf`, `updateEtf`, `deleteEtf`, `refreshEtfPrices` and the holdings upload route handler now also call `revalidateTag('portfolio-timeline')`.
+- **Frontend**: `PortfolioPageClient` drops its cached timeline when the server refreshes its props after a write, and refetches if the Timeline tab is open.
+
+### Notes
+
+- This is TASK-3 of the **Portfolio Timeline** initiative (see `.claude/17-portfolio-timeline/rfc.md`). The holdings upload is a Route Handler and does not refresh the client route; holdings do not feed the timeline, so the tag there only follows the "every write path" rule.
+
 ## [0.6.1] - 2026-11-12
 
 ### Added

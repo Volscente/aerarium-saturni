@@ -1,6 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { LineChart } from 'lucide-react'
+import { fetchPortfolioTimeline } from '../timeline-actions'
 import { PortfolioOverviewTable } from './PortfolioOverviewTable'
 import { RiskAlertPanel } from './RiskAlertPanel'
 import { ConcentrationAlertBadge } from './ConcentrationAlertBadge'
@@ -92,7 +94,43 @@ export interface HoldingsSectorsResponse {
   skipped_etfs: string[]
 }
 
-type PortfolioTab = 'overview' | 'holdings' | 'geography' | 'sectors'
+export interface TimelinePoint {
+  date: string
+  value: number
+  net_flow: number
+}
+
+export interface TimelineEtfSeries {
+  isin: string
+  etf_ticker: string
+  etf_name: string
+  points: TimelinePoint[]
+}
+
+export interface TimelineBrokerSeries {
+  broker_platform: string
+  points: TimelinePoint[]
+  etfs: TimelineEtfSeries[]
+}
+
+export interface TimelineOwnerSeries {
+  owner: string
+  points: TimelinePoint[]
+  brokers: TimelineBrokerSeries[]
+}
+
+export interface PortfolioTimelineResponse {
+  owners: TimelineOwnerSeries[]
+  skipped_transactions: number
+}
+
+type TimelineState =
+  | { status: 'idle' }
+  | { status: 'loading' }
+  | { status: 'ready'; data: PortfolioTimelineResponse }
+  | { status: 'error'; message: string }
+
+type PortfolioTab = 'overview' | 'holdings' | 'geography' | 'sectors' | 'timeline'
 
 const TABS: { id: PortfolioTab; label: string }[] = [
   { id: 'overview', label: 'Overview' },
@@ -124,6 +162,46 @@ export function PortfolioPageClient({
    * tabs never re-fetches or loses data context.
    */
   const [activeTab, setActiveTab] = useState<PortfolioTab>('overview')
+  const [timeline, setTimeline] = useState<TimelineState>({ status: 'idle' })
+  // Identifies the latest timeline request so a response from a superseded one is dropped.
+  const requestId = useRef(0)
+  const isFirstRender = useRef(true)
+
+  const loadTimeline = useCallback(async () => {
+    /**
+     * Fetches the timeline once and stores the result in component state.
+     *
+     * Sets 'loading' first, so callers that gate on 'idle' cannot start a second
+     * request. The result is applied only if no newer request or reset has
+     * happened meanwhile (requestId check).
+     */
+    const id = ++requestId.current
+    setTimeline({ status: 'loading' })
+    const result = await fetchPortfolioTimeline()
+    if (id !== requestId.current) return
+    setTimeline(
+      'error' in result
+        ? { status: 'error', message: result.error }
+        : { status: 'ready', data: result }
+    )
+  }, [])
+
+  // First open (and re-open after an invalidation reset): fetch only while idle.
+  useEffect(() => {
+    if (activeTab === 'timeline' && timeline.status === 'idle') void loadTimeline()
+  }, [activeTab, timeline.status, loadTimeline])
+
+  // A write action revalidates the route, so the Server Component hands down fresh props.
+  // Drop the cached timeline then. This relies on prop identity: it stops working if
+  // overviewData is ever memoized so that it keeps the same reference across refreshes.
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false
+      return
+    }
+    requestId.current++
+    setTimeline({ status: 'idle' })
+  }, [overviewData])
 
   return (
     <div className="px-6 py-8">
@@ -142,6 +220,19 @@ export function PortfolioPageClient({
             {label}
           </button>
         ))}
+        <span aria-hidden="true" className="mx-2 self-stretch border-l border-roman-stone/20" />
+        <button
+          type="button"
+          onClick={() => setActiveTab('timeline')}
+          className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-all ${
+            activeTab === 'timeline'
+              ? 'border-b-2 border-roman-terracotta text-roman-terracotta'
+              : 'text-roman-stone hover:text-roman-gold'
+          }`}
+        >
+          <LineChart aria-hidden="true" className="h-4 w-4" />
+          Timeline
+        </button>
       </nav>
 
       {activeTab === 'overview' && (
@@ -189,6 +280,50 @@ export function PortfolioPageClient({
           )}
           <SectorBarChart sectors={sectorsData.sectors} />
           <SectorExposureTable sectors={sectorsData.sectors} />
+        </>
+      )}
+
+      {activeTab === 'timeline' && (
+        <>
+          {(timeline.status === 'idle' || timeline.status === 'loading') && (
+            <p className="rounded border border-roman-stone/30 p-6 text-center text-sm text-roman-stone">
+              Loading timeline…
+            </p>
+          )}
+          {timeline.status === 'error' && (
+            <div className="rounded border border-roman-terracotta/40 p-6 text-center text-sm text-roman-terracotta">
+              <p className="mb-3">Could not load the timeline: {timeline.message}</p>
+              <button
+                type="button"
+                onClick={() => void loadTimeline()}
+                className="rounded border border-roman-terracotta/40 px-3 py-1 hover:bg-roman-terracotta/10"
+              >
+                Retry
+              </button>
+            </div>
+          )}
+          {timeline.status === 'ready' && (
+            <>
+              {timeline.data.skipped_transactions > 0 && (
+                <p className="mb-4 text-sm text-roman-stone">
+                  {timeline.data.skipped_transactions} transaction(s) skipped (non-EUR, missing
+                  price or invalid).
+                </p>
+              )}
+              {timeline.data.owners.length === 0 ? (
+                <p className="rounded border border-roman-stone/30 p-6 text-center text-sm text-roman-stone">
+                  No priced transactions to plot yet.
+                </p>
+              ) : (
+                // TASK-4 mounts the macro and micro charts here.
+                <p className="rounded border border-roman-stone/30 p-6 text-center text-sm text-roman-stone">
+                  Timeline loaded: {timeline.data.owners.length} owner(s),{' '}
+                  {timeline.data.owners.reduce((n, o) => n + o.brokers.length, 0)} broker
+                  position(s).
+                </p>
+              )}
+            </>
+          )}
         </>
       )}
     </div>

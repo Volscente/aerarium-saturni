@@ -1143,3 +1143,122 @@ def make_refresh_client():
     yield _make
     stack.close()
     app.dependency_overrides.clear()
+
+
+def _make_timeline_transaction_row(**overrides) -> MagicMock:
+    row = MagicMock()
+    row.owner = overrides.get("owner", "owner_a")
+    row.broker_platform = overrides.get("broker_platform", "ibkr")
+    row.transaction_type = overrides.get("transaction_type", "buy")
+    row.isin = overrides.get("isin", "IE00B4L5Y983")
+    row.quantity = overrides.get("quantity", Decimal("10"))
+    row.price = overrides.get("price", Decimal("100"))
+    row.ratio = overrides.get("ratio", None)
+    row.currency = overrides.get("currency", "EUR")
+    row.fees = overrides.get("fees", Decimal("1"))
+    row.transaction_date = overrides.get("transaction_date", date(2026, 1, 3))
+    return row
+
+
+def _make_timeline_etf_row(isin: str, ticker: str, name: str) -> MagicMock:
+    row = MagicMock()
+    row.isin = isin
+    row.ticker = ticker
+    row.name = name
+    return row
+
+
+def _make_timeline_price_rows(isin: str, start: date, closes: list[str]) -> list[MagicMock]:
+    rows = []
+    for offset, close in enumerate(closes):
+        row = MagicMock()
+        row.isin = isin
+        row.day = start + timedelta(days=offset)
+        row.price = Decimal(close)
+        rows.append(row)
+    return rows
+
+
+def _make_timeline_session(transactions, etfs, prices) -> AsyncMock:
+    """Async session whose three executes return transactions, ETFs and prices, in that order."""
+    session = AsyncMock()
+    results = []
+    for rows in (transactions, etfs, prices):
+        result = MagicMock()
+        result.all.return_value = rows
+        results.append(result)
+    session.execute = AsyncMock(side_effect=results)
+    return session
+
+
+TIMELINE_ETF_ROWS = [
+    _make_timeline_etf_row("IE00B4L5Y983", "EUNL", "iShares Core MSCI World"),
+    _make_timeline_etf_row("IE00BK5BQT80", "VWCE", "Vanguard FTSE All-World"),
+]
+
+
+def _timeline_price_rows() -> list[MagicMock]:
+    return _make_timeline_price_rows(
+        "IE00B4L5Y983", date(2026, 1, 1), ["100", "101", "102", "103", "104"]
+    ) + _make_timeline_price_rows("IE00BK5BQT80", date(2026, 1, 1), ["50"] * 5)
+
+
+@pytest.fixture
+def mock_session_timeline_empty():
+    """Async session with no transactions, ETFs or prices."""
+    return _make_timeline_session([], [], [])
+
+
+@pytest.fixture
+def mock_session_timeline_multi():
+    """Two owners; owner_a at two brokers (ibkr: EUNL, n26: VWCE), owner_b at ibkr (EUNL)."""
+    transactions = [
+        _make_timeline_transaction_row(owner="owner_a", broker_platform="ibkr", transaction_date=date(2026, 1, 2)),
+        _make_timeline_transaction_row(
+            owner="owner_a",
+            broker_platform="n26",
+            isin="IE00BK5BQT80",
+            quantity=Decimal("5"),
+            transaction_date=date(2026, 1, 3),
+        ),
+        _make_timeline_transaction_row(
+            owner="owner_b", broker_platform="ibkr", quantity=Decimal("4"), transaction_date=date(2026, 1, 2)
+        ),
+    ]
+    return _make_timeline_session(transactions, TIMELINE_ETF_ROWS, _timeline_price_rows())
+
+
+@pytest.fixture
+def mock_session_timeline_skipped():
+    """One usable EUR buy and one non-EUR buy that must be skipped and counted."""
+    transactions = [
+        _make_timeline_transaction_row(),
+        _make_timeline_transaction_row(currency="USD"),
+    ]
+    return _make_timeline_session(transactions, TIMELINE_ETF_ROWS, _timeline_price_rows())
+
+
+@pytest.fixture
+def mock_session_timeline_single_buy():
+    """One buy of 10 shares at 100 with 1 EUR fee on 2026-01-03 (close that day: 102)."""
+    return _make_timeline_session([_make_timeline_transaction_row()], TIMELINE_ETF_ROWS, _timeline_price_rows())
+
+
+@pytest.fixture
+def client_timeline_empty(mock_session_timeline_empty):
+    yield from _make_bucket_client(mock_session_timeline_empty)
+
+
+@pytest.fixture
+def client_timeline_multi(mock_session_timeline_multi):
+    yield from _make_bucket_client(mock_session_timeline_multi)
+
+
+@pytest.fixture
+def client_timeline_skipped(mock_session_timeline_skipped):
+    yield from _make_bucket_client(mock_session_timeline_skipped)
+
+
+@pytest.fixture
+def client_timeline_single_buy(mock_session_timeline_single_buy):
+    yield from _make_bucket_client(mock_session_timeline_single_buy)

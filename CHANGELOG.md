@@ -5,6 +5,42 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.1] - 2026-11-12
+
+### Added
+
+- **Backend**: New `GET /portfolio/timeline` endpoint returning daily holdings `value` and `net_flow` per owner, `(owner, broker)` and `(owner, broker, ETF)` as an Owner > Broker > ETF tree, plus `skipped_transactions`. Data is read with three plain selects (transactions, ETFs, EUR daily prices keyed by the UTC date of each timestamp) and fed to `build_timeline`.
+- **Backend**: `PortfolioTimelineResponse`, `TimelineOwnerResponse`, `TimelineBrokerResponse`, `TimelineEtfResponse` and `TimelinePointResponse` Pydantic schemas.
+- **Tests**: Route tests for the timeline endpoint covering the empty case, multi-owner/broker shape, skipped count and single-buy values.
+
+### Changed
+
+- **Docs**: Backend README documents the endpoint, its response shape and the payload-size note.
+
+### Notes
+
+- This is TASK-2 of the **Portfolio Timeline** initiative (see `.claude/17-portfolio-timeline/rfc.md`). The route tests mock the session, so the SQL itself is verified manually with `curl` after re-seeding the corrected seed data.
+
+## [0.6.0] - 2026-11-10
+
+### Added
+
+- **Backend**: New `timeline.py` module with `build_timeline`, a database-free replay engine that turns transactions and daily ETF prices into daily holdings `value` and `net_flow` series per owner, `(owner, broker)` and `(owner, broker, ETF)`, plus a count of skipped transactions. Values are carried forward over weekends, holidays and gaps; non-EUR, price-less, quantity-less, ISIN-less, unknown-ISIN and oversell transactions are skipped and counted; dividends and splits are ignored.
+- **Tests**: `tests/test_timeline.py` with 14 unit tests covering the replay, aggregation levels, series start, skipped count and edge cases.
+
+### Changed
+
+- **Backend**: Seed data `data/transactions/transactions.json` now uses the stored close on each trade date as the buy/sell price, so paid amounts match market value on the buy day.
+- **Docs**: Backend README documents the timeline engine and its invariants.
+
+### Removed
+
+- **Backend**: The made-up `LYP6` stock-split row in the seed transactions (no held ETF has split).
+
+### Notes
+
+- This is TASK-1 of the **Portfolio Timeline** initiative (see `.claude/17-portfolio-timeline/rfc.md`). The engine is not yet exposed through an endpoint (TASK-2). Re-seed the database to pick up the new seed prices.
+
 ## [0.5.6] - 2026-10-29
 
 ### Added

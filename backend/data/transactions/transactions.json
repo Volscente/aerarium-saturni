@@ -7,7 +7,7 @@
     "ticker": "EUNL",
     "isin": "IE00B4L5Y983",
     "quantity": "10",
-    "price": "98.5000",
+    "price": "105.4600",
     "currency": "EUR",
     "fees": "1.2500",
     "transaction_date": "2025-01-15"
@@ -20,7 +20,7 @@
     "ticker": "VWCE",
     "isin": "IE00BK5BQT80",
     "quantity": "15",
-    "price": "118.4000",
+    "price": "130.3000",
     "currency": "EUR",
     "fees": "1.0000",
     "transaction_date": "2025-03-05"
@@ -33,7 +33,7 @@
     "ticker": "EUNL",
     "isin": "IE00B4L5Y983",
     "quantity": "5",
-    "price": "101.2000",
+    "price": "88.6200",
     "currency": "EUR",
     "fees": "1.2500",
     "transaction_date": "2025-04-10"
@@ -46,7 +46,7 @@
     "ticker": "EUNL",
     "isin": "IE00B4L5Y983",
     "quantity": "3",
-    "price": "108.4000",
+    "price": "106.5000",
     "currency": "EUR",
     "fees": "1.2500",
     "transaction_date": "2025-09-12"
@@ -59,7 +59,7 @@
     "ticker": "VWCE",
     "isin": "IE00BK5BQT80",
     "quantity": "10",
-    "price": "125.1000",
+    "price": "148.4000",
     "currency": "EUR",
     "fees": "1.0000",
     "transaction_date": "2026-01-14"
@@ -72,7 +72,7 @@
     "ticker": "EUNL",
     "isin": "IE00B4L5Y983",
     "quantity": "8",
-    "price": "112.3000",
+    "price": "113.7600",
     "currency": "EUR",
     "fees": "1.2500",
     "transaction_date": "2026-02-20"
@@ -97,7 +97,7 @@
     "ticker": "LYP6",
     "isin": "LU0908500753",
     "quantity": "20",
-    "price": "98.1000",
+    "price": "250.3000",
     "currency": "EUR",
     "fees": "0.00",
     "transaction_date": "2025-02-03"
@@ -110,22 +110,10 @@
     "ticker": "LYP6",
     "isin": "LU0908500753",
     "quantity": "5",
-    "price": "105.6000",
+    "price": "265.5500",
     "currency": "EUR",
     "fees": "1.0000",
     "transaction_date": "2025-08-18"
-  },
-  {
-    "owner": "owner_a",
-    "broker_platform": "n26",
-    "transaction_type": "split",
-    "asset_class": "etf",
-    "ticker": "LYP6",
-    "isin": "LU0908500753",
-    "ratio": "2:1",
-    "currency": "EUR",
-    "fees": "0.00",
-    "transaction_date": "2026-05-11"
   },
   {
     "owner": "owner_b",
@@ -135,7 +123,7 @@
     "ticker": "VWCE",
     "isin": "IE00BK5BQT80",
     "quantity": "25",
-    "price": "121.8000",
+    "price": "127.9600",
     "currency": "EUR",
     "fees": "1.5000",
     "transaction_date": "2025-06-02"
@@ -148,7 +136,7 @@
     "ticker": "EUNL",
     "isin": "IE00B4L5Y983",
     "quantity": "12",
-    "price": "106.7500",
+    "price": "109.2400",
     "currency": "EUR",
     "fees": "1.5000",
     "transaction_date": "2025-11-20"
@@ -161,7 +149,7 @@
     "ticker": "VWCE",
     "isin": "IE00BK5BQT80",
     "quantity": "10",
-    "price": "130.4000",
+    "price": "146.4000",
     "currency": "EUR",
     "fees": "1.5000",
     "transaction_date": "2026-03-09"
@@ -174,7 +162,7 @@
     "ticker": "EUNL",
     "isin": "IE00B4L5Y983",
     "quantity": "6",
-    "price": "99.9000",
+    "price": "99.8400",
     "currency": "EUR",
     "fees": "1.0000",
     "transaction_date": "2025-05-14"
@@ -187,7 +175,7 @@
     "ticker": "LYP6",
     "isin": "LU0908500753",
     "quantity": "30",
-    "price": "101.3500",
+    "price": "298.4500",
     "currency": "EUR",
     "fees": "1.0000",
     "transaction_date": "2026-04-22"
@@ -200,7 +188,7 @@
     "ticker": "VWCE",
     "isin": "IE00BK5BQT80",
     "quantity": "4",
-    "price": "128.9500",
+    "price": "165.2200",
     "currency": "EUR",
     "fees": "1.0000",
     "transaction_date": "2026-06-30"

@@ -3,7 +3,7 @@ from decimal import Decimal
 from uuid import UUID
 
 from fastapi import APIRouter, Depends
-from sqlalchemy import Select, case, func, select
+from sqlalchemy import Date, Select, case, cast, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.db import get_session
@@ -18,8 +18,15 @@ from backend.schemas.portfolio import (
     HoldingsSectorsResponse,
     PortfolioOverviewResponse,
     PortfolioRowResponse,
+    PortfolioTimelineResponse,
     RiskAlert,
     SectorExposureResponse,
+)
+from backend.timeline import (
+    TimelineEtf,
+    TimelinePrice,
+    TimelineTransaction,
+    build_timeline,
 )
 
 router = APIRouter()
@@ -643,3 +650,106 @@ async def get_holdings_sectors(
     ]
 
     return HoldingsSectorsResponse(sectors=sectors, skipped_etfs=sorted(skipped_etfs))
+
+
+async def _load_timeline_inputs(
+    session: AsyncSession,
+) -> tuple[
+    list[TimelineTransaction],
+    dict[str, TimelineEtf],
+    dict[str, list[TimelinePrice]],
+]:
+    """Read transactions, ETFs and EUR daily prices and map them to the engine's dataclasses.
+
+    Runs three plain selects (no CTE or aggregation: the volume is small and the replay
+    logic lives in ``build_timeline``). All transaction types are loaded; the engine
+    ignores dividends and splits. The day of a price is the UTC date of
+    ``EtfPriceHistory.timestamp``, matching the ``uq_etf_price_history_etf_id_day``
+    index. Only EUR price rows are kept, since the engine values every price as EUR;
+    legacy non-EUR rows are dropped, not converted.
+
+    Args:
+        session: Async SQLAlchemy session.
+
+    Returns:
+        The transactions, the ETF metadata keyed by ISIN, and the daily prices keyed by
+        the ETF's ISIN.
+
+    Raises:
+        sqlalchemy.exc.OperationalError: If the database is unreachable at query time.
+    """
+    transaction_rows = (
+        await session.execute(
+            select(
+                Transaction.owner,
+                Transaction.broker_platform,
+                Transaction.transaction_type,
+                Transaction.isin,
+                Transaction.quantity,
+                Transaction.price,
+                Transaction.ratio,
+                Transaction.currency,
+                Transaction.fees,
+                Transaction.transaction_date,
+            )
+        )
+    ).all()
+    etf_rows = (await session.execute(select(Etf.isin, Etf.ticker, Etf.name))).all()
+    price_rows = (
+        await session.execute(
+            select(
+                Etf.isin,
+                cast(func.timezone("UTC", EtfPriceHistory.timestamp), Date).label("day"),
+                EtfPriceHistory.price,
+            )
+            .join(Etf, Etf.id == EtfPriceHistory.etf_id)
+            .where(EtfPriceHistory.currency == "EUR")
+        )
+    ).all()
+
+    transactions = [
+        TimelineTransaction(
+            owner=row.owner,
+            broker_platform=row.broker_platform,
+            transaction_type=row.transaction_type,
+            isin=row.isin,
+            quantity=row.quantity,
+            price=row.price,
+            ratio=row.ratio,
+            currency=row.currency,
+            fees=row.fees,
+            transaction_date=row.transaction_date,
+        )
+        for row in transaction_rows
+    ]
+    etfs = {row.isin: TimelineEtf(ticker=row.ticker, name=row.name) for row in etf_rows}
+    prices: dict[str, list[TimelinePrice]] = {}
+    for row in price_rows:
+        prices.setdefault(row.isin, []).append(TimelinePrice(day=row.day, close=row.price))
+    return transactions, etfs, prices
+
+
+@router.get("/timeline", response_model=PortfolioTimelineResponse)
+async def get_portfolio_timeline(
+    session: AsyncSession = Depends(get_session),
+) -> PortfolioTimelineResponse:
+    """Return daily holdings value and net cash flow per owner, broker and ETF.
+
+    Loads transactions, ETFs and EUR daily prices (``_load_timeline_inputs``), replays
+    them with ``build_timeline`` and returns the Owner > Broker > ETF tree. Skipped
+    transactions (non-EUR, missing price/quantity/ISIN, unknown ISIN, oversells) are
+    reported in ``skipped_transactions``, never as an error, so the response is always
+    HTTP 200.
+
+    Args:
+        session: Async SQLAlchemy session injected by ``Depends(get_session)``.
+
+    Returns:
+        A ``PortfolioTimelineResponse``; ``owners`` is empty when nothing is usable.
+
+    Raises:
+        sqlalchemy.exc.OperationalError: If the database is unreachable at query time.
+    """
+    transactions, etfs, prices = await _load_timeline_inputs(session)
+    result = build_timeline(transactions, etfs, prices)
+    return PortfolioTimelineResponse.model_validate(result, from_attributes=True)

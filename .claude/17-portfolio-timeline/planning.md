@@ -35,11 +35,11 @@ A tested pure function that, given transactions and price history, returns daily
 ### Deliverables
 
 - `backend/src/backend/routers/portfolio.py` (or a helper module beside it) — day-by-day replay tracking net quantity per `(owner, broker, ISIN)`
-- `backend/tests/` — unit tests for buys, sells, splits, carry-forward, aggregation levels, series start date, and skipped transactions
+- `backend/tests/` — unit tests for buys, sells, carry-forward, aggregation levels, series start date, and skipped transactions
 
 ### Technical Overview
 
-Replay runs from the earliest transaction to the latest price date, one point per calendar day. Splits adjust quantity by `ratio`. Positions are valued at the latest close on or before each day (carry-forward over weekends, holidays and gaps). `net_flow` is buys minus sells at transaction price with fees counted. Non-EUR and price-less transactions are skipped and counted; dividends are ignored. Each series starts on the first day its node holds a non-zero position. Computation is done in Python (pandas), not SQL. Dates are UTC days matching the `etf_price_history` unique daily index.
+Replay runs from the earliest transaction to the latest price date, one point per calendar day. Positions are valued at the latest close on or before each day (carry-forward over weekends, holidays and gaps). `net_flow` is buys minus sells at transaction price with fees counted. Non-EUR and price-less transactions are skipped and counted; dividends and splits are ignored. Each series starts on the first day its node holds a non-zero position. Computation is done in Python (pandas), not SQL. Dates are UTC days matching the `etf_price_history` unique daily index.
 
 ---
 
@@ -164,7 +164,7 @@ The backend returns correct daily value and net-flow series for every owner, bro
 
 #### Deliverables
 
-- Replay computation with split, carry-forward and skip handling
+- Replay computation with carry-forward and skip handling
 - `GET /portfolio/timeline` endpoint and Pydantic response models
 - Backend unit and route tests
 - Updated `backend/README.md`

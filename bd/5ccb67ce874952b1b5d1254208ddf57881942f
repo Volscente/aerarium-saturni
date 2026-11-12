@@ -1,0 +1,39 @@
+CHANGELOG.md
+  s_b4b0a14adac564::t_97410611c74122 8-24
+frontend/package.json
+  s_b4b0a14adac564::t_97410611c74122 3
+backend/pyproject.toml
+  s_b4b0a14adac564::t_97410611c74122 3
+frontend/app/(tabularium)/tabularium/etf-actions.ts
+  s_b4b0a14adac564::t_5966b06b95c34f 81-82,211-212
+  s_b4b0a14adac564::t_8b91db255fb094 65,122,162,248
+frontend/app/api/etfs/[id]/holdings/upload/route.ts
+  s_b4b0a14adac564::t_8b91db255fb094 22
+frontend/app/(tabularium)/tabularium/portfolio/timeline-actions.ts
+  s_b4b0a14adac564::t_5966b06b95c34f 1-31
+frontend/app/(tabularium)/tabularium/portfolio/components/PortfolioPageClient.tsx
+  s_b4b0a14adac564::t_b79b14dc7daa05 3-5,97-133,165-204,223-235,285-326
+  s_b4b0a14adac564::t_51177055874a08 327-328
+frontend/app/(tabularium)/tabularium/actions.ts
+  s_b4b0a14adac564::t_8b91db255fb094 54,90,148
+  s_b4b0a14adac564::t_5966b06b95c34f 14-15,106-107
+frontend/README.md
+  s_b4b0a14adac564::t_97410611c74122 19-20,66,175-181
+  s_b4b0a14adac564::t_1e53ce1ddfe6af 182
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "bd5ccb67ce874952b1b5d1254208ddf57881942f",
+  "prompts": {},
+  "sessions": {
+    "s_b4b0a14adac564": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f3bfea65-69a3-4e37-83d9-bc4832893bd6",
+        "model": "claude-sonnet-5-5"
+      },
+      "human_author": "Simone Porreca <porrecasimone@gmail.com>"
+    }
+  }
+}

@@ -11,7 +11,8 @@ export async function updateTransaction(
    * Re-validates payload with TransactionFormSchema, calls PUT /transactions/{id},
    * and invalidates all three cache tags on success (transactions, portfolio-overview,
    * holdings-exposure — a transaction change can alter net ETF quantities and
-   * therefore look-through exposure).
+   * therefore look-through exposure). Also invalidates portfolio-timeline,
+   * since the timeline is replayed from transactions.
    *
    * Args:
    *   id: UUID of the transaction to update.
@@ -50,6 +51,7 @@ export async function updateTransaction(
     revalidateTag('holdings-exposure')
     revalidateTag('holdings-geography')
     revalidateTag('holdings-sectors')
+    revalidateTag('portfolio-timeline')
     return { success: true }
   } catch (err) {
     return { error: err instanceof Error ? err.message : 'Network error' }
@@ -85,6 +87,7 @@ export async function deleteTransaction(
     revalidateTag('holdings-exposure')
     revalidateTag('holdings-geography')
     revalidateTag('holdings-sectors')
+    revalidateTag('portfolio-timeline')
     return { success: true }
   } catch (err) {
     return { error: err instanceof Error ? err.message : 'Network error' }
@@ -100,7 +103,8 @@ export async function createTransaction(
    * Parses `payload` with `TransactionFormSchema` (Zod). On parse success, POSTs
    * to `${process.env.BACKEND_URL}/transactions`. On HTTP 201, calls
    * `revalidateTag('transactions')`, `revalidateTag('portfolio-overview')`, and
-   * `revalidateTag('holdings-exposure')` and returns `{ success: true }`. On Zod
+   * `revalidateTag('holdings-exposure')` (plus the geography, sectors and
+   * `portfolio-timeline` tags) and returns `{ success: true }`. On Zod
    * parse failure or non-201 HTTP response, returns `{ error: string }` without
    * throwing — callers receive a structured error they can render inline.
    *
@@ -141,6 +145,7 @@ export async function createTransaction(
     revalidateTag('holdings-exposure')
     revalidateTag('holdings-geography')
     revalidateTag('holdings-sectors')
+    revalidateTag('portfolio-timeline')
     return { success: true }
   } catch (err) {
     return { error: err instanceof Error ? err.message : 'Network error' }

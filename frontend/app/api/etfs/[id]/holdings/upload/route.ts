@@ -19,6 +19,7 @@ export async function POST(
     revalidateTag('holdings-exposure')
     revalidateTag('holdings-geography')
     revalidateTag('holdings-sectors')
+    revalidateTag('portfolio-timeline')
     revalidateTag('portfolio-overview')
   }
 
